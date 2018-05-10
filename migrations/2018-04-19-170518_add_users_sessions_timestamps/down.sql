@@ -1,0 +1,1 @@
+ALTER TABLE `users_sessions` DROP COLUMN `created`, DROP COLUMN `updated`;

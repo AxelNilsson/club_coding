@@ -1,0 +1,29 @@
+{% extends "base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+  <style>
+    #main {
+      margin-top: 20vh;
+      padding: 2em;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+  <v-container>
+    <v-layout wrap row>
+      <v-flex xs3></v-flex>
+      <v-flex xs6>
+        <v-card id="main">
+          <h1 class="display-1">{{ header }}</h1>
+          <form method="POST">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <v-text-field type="text" name="username" label="Username" required></v-text-field>
+            <v-text-field type="password" name="password" label="Password" required></v-text-field>
+            <v-btn block type="submit" color="primary">Sign up!</v-btn>
+          </form>
+        </v-card>
+      </v-flex>
+    </v-layout>
+  </v-container>
+{% endblock content %}

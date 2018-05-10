@@ -1,0 +1,70 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+  <style>
+    .application.theme--light {
+      background-color: #FFF;
+    }
+    .card__hover {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      padding: 25px 25px 20px;
+      width: 100%;
+      color: #fff;
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      opacity: 1;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+      flex-direction: column;
+      -webkit-box-align: start;
+      -ms-flex-align: start;
+      align-items: flex-start;
+      z-index: 10;
+      -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+      justify-content: space-between;
+      background: rgba(0,0,0,.7);
+      -webkit-transition: opacity .6s;
+      transition: opacity .6s;
+    }
+    .card__hover:hover {
+      opacity: 0;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {% if flash_name == "success" %}
+    <v-alert style="margin: 0; text-align: center; font-size: 16px;" color="success" :value="true">{{ flash_msg }}</v-alert>
+  {% endif %}
+  {{ super() }}
+  <v-container>
+    <v-layout wrap row>
+      <v-flex xs3 xl4></v-flex>
+      <v-flex xs6 xl4>
+        <h3 class="display-2 grey--text text--darken-3" style="text-align: center; margin-top: 1em;">Welcome back!</h3>
+        <p class="title grey--text text--darken-2" style="font-weight: 400; text-align: center; margin: 12px 0 45px; line-height: 1.4 !important;">Want to know what's new at Club Coding? Have a look down here!</p>
+      </v-flex>
+      <v-flex xs3 xl4></v-flex>
+    </v-layout>
+    <v-layout style="padding-bottom: 10vh;">
+      <v-flex xl8 offset-xl2 xs10 offset-xs1>
+        {% for serie in series %}
+          <v-card flat href="/watch/{{ serie.uuid }}">
+            <v-card-media src="/thumbnail/{{ serie.uuid }}" height="750px"></v-card-media>
+            <div class="card__hover">
+              <h2 class="display-2" style="color: white; line-height: 700px!important;">{{ serie.name }}</h2>
+            </div>
+          </v-card>
+        {% endfor %}
+      </v-flex>
+    </v-layout>
+  </v-container>
+{% endblock content %}
+{% block script %}
+  {{ super() }}
+{% endblock script %}

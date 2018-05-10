@@ -1,0 +1,145 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+  <style>
+    #main {
+        margin-top: 2em;
+        padding: 1em;
+    }
+    h2.display-1 {
+        font-weight: 400;
+    }
+    h2.display-1, p.subheading {
+        text-align: center;
+    }
+    h2.body-2 {
+        margin-left: 16px;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+    <v-container>
+  <v-layout wrap>
+    <v-flex lg12>
+        <v-card id="main">
+            <v-layout>
+                <v-flex lg2>
+                    <v-card flat>
+                        <h2 class="display-1">${ views.toLocaleString() }</h2>
+                        <p class="subheading">Views (today)</p>
+                    </v-card>
+                </v-flex>
+                <v-flex lg2>
+                    <v-card flat>
+                        <h2 class="display-1">${ total_videos.toLocaleString() }</h2>
+                        <p class="subheading">Videos (total)</p>
+                    </v-card>
+                </v-flex>
+                <v-flex lg2>
+                    <v-card flat>
+                        <h2 class="display-1">${ series.toLocaleString() }</h2>
+                        <p class="subheading">Series (total)</p>
+                    </v-card>
+                </v-flex>
+                <v-flex lg2>
+                    <v-card flat>
+                        <h2 class="display-1">${ revenue.toLocaleString() }</h2>
+                        <p class="subheading">Revenue (month)</p>
+                    </v-card>
+                </v-flex>
+                <v-flex lg2>
+                    <v-card flat>
+                        <h2 class="display-1">${ paying_users.toLocaleString() }</h2>
+                        <p class="subheading">Paying Users</p>
+                    </v-card>
+                </v-flex>
+                <v-flex lg2>
+                    <v-card flat>
+                        <h2 class="display-1">${ total_users.toLocaleString() }</h2>
+                        <p class="subheading">Total Users</p>
+                    </v-card>
+                </v-flex>
+            </v-layout>
+            <v-layout style="margin-top: 2em;">
+                <v-flex lg6>
+                    <v-card flat>
+                        <h2 class="body-2">Latest comments (127 comments)</h2>
+                        <v-list two-line>
+                        <template v-for="(item, index) in comments">
+                            <v-list-tile ripple :key="index" @click="">
+                                <v-list-tile-content>
+                                    <v-list-tile-title>${ item.subtitle } - <span class="caption">${ item.action } ago</span></v-list-tile-title>
+                                    <v-list-tile-sub-title class="text--primary">${ item.title }</v-list-tile-sub-title>
+                                    <v-list-tile-sub-title>${ item.headline }</v-list-tile-sub-title>
+                                </v-list-tile-content>
+                            </v-list-tile>
+                        </template>
+                        </v-list>
+                    </v-card>
+                </v-flex>
+                <v-flex lg6>
+                    <v-card flat>
+                        <h2 class="body-2">Latest videos</h2>
+                        <v-list two-line>
+                            <template v-for="(item, index) in videos">
+                                <v-subheader v-if="item.header" :key="item.header">${ item.header }</v-subheader>
+                                <v-list-tile :key="item.title" @click="">
+                                <v-list-tile-avatar tile>
+                                    <img :src="'https://vuetifyjs.com' + item.avatar">
+                                </v-list-tile-avatar>
+                                <v-list-tile-content>
+                                    <v-list-tile-title v-html="item.title"></v-list-tile-title>
+                                    <v-list-tile-sub-title v-html="item.subtitle"></v-list-tile-sub-title>
+                                </v-list-tile-content>
+                                </v-list-tile>
+                            </template>
+                        </v-list>
+                    </v-card>
+                </v-flex>
+            </v-layout>
+        </v-card>
+    </v-flex>
+  </v-layout>
+  </v-container>
+{% endblock content %}
+{% block script %}
+  <script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"],
+      data: {
+        views: {{ views_today }},
+        total_videos: {{ videos_total }},
+        series: {{ series_total }},
+        revenue: {{ revenue_month }},
+        paying_users: {{ paying_users }},
+        total_users: {{ total_users }},
+        comments: [
+          { action: '15 min', headline: 'Brunch this weekend?', title: 'Ali Connors', subtitle: "I'll be in your neighborhood doing errands this weekend. Do you want to hang out?" },
+          { action: '2 hr', headline: 'Summer BBQ', title: 'Jennifer Scrott', subtitle: "Wish I could come, but I'm out of town this weekend." },
+          { action: '6 hr', headline: 'Oui oui', title: 'Sandra Adams', subtitle: 'Do you have Paris recommendations? Have you ever been?' },
+          { action: '12 hr', headline: 'Birthday gift', title: 'Trevor Hansen', subtitle: 'Have any ideas about what we should get Heidi for her birthday?' },
+          { action: '18hr', headline: 'Recipe to try', title: 'Britta Holt', subtitle: 'We should eat this: Grate, Squash, Corn, and tomatillo Tacos.' },
+          { action: '15 min', headline: 'Brunch this weekend?', title: 'Ali Connors', subtitle: "I'll be in your neighborhood doing errands this weekend. Do you want to hang out?" },
+          { action: '2 hr', headline: 'Summer BBQ', title: 'Jennifer Scrott', subtitle: "Wish I could come, but I'm out of town this weekend." },
+          { action: '6 hr', headline: 'Oui oui', title: 'Sandra Adams', subtitle: 'Do you have Paris recommendations? Have you ever been?' },
+          { action: '12 hr', headline: 'Birthday gift', title: 'Trevor Hansen', subtitle: 'Have any ideas about what we should get Heidi for her birthday?' },
+          { action: '18hr', headline: 'Recipe to try', title: 'Britta Holt', subtitle: 'We should eat this: Grate, Squash, Corn, and tomatillo Tacos.' }
+        ],
+        videos: [
+          { avatar: '/static/doc-images/lists/1.jpg', title: 'Brunch this weekend?', subtitle: "<span class='text--primary'>Ali Connors</span> &mdash; I'll be in your neighborhood doing errands this weekend. Do you want to hang out?" },
+          { avatar: '/static/doc-images/lists/2.jpg', title: 'Summer BBQ <span class="grey--text text--lighten-1">4</span>', subtitle: "<span class='text--primary'>to Alex, Scott, Jennifer</span> &mdash; Wish I could come, but I'm out of town this weekend." },
+          { avatar: '/static/doc-images/lists/3.jpg', title: 'Oui oui', subtitle: "<span class='text--primary'>Sandra Adams</span> &mdash; Do you have Paris recommendations? Have you ever been?" },
+          { avatar: '/static/doc-images/lists/4.jpg', title: 'Birthday gift', subtitle: "<span class='text--primary'>Trevor Hansen</span> &mdash; Have any ideas about what we should get Heidi for her birthday?" },
+          { avatar: '/static/doc-images/lists/5.jpg', title: 'Recipe to try', subtitle: "<span class='text--primary'>Britta Holt</span> &mdash; We should eat this: Grate, Squash, Corn, and tomatillo Tacos." },
+          { avatar: '/static/doc-images/lists/1.jpg', title: 'Brunch this weekend?', subtitle: "<span class='text--primary'>Ali Connors</span> &mdash; I'll be in your neighborhood doing errands this weekend. Do you want to hang out?" },
+          { avatar: '/static/doc-images/lists/2.jpg', title: 'Summer BBQ <span class="grey--text text--lighten-1">4</span>', subtitle: "<span class='text--primary'>to Alex, Scott, Jennifer</span> &mdash; Wish I could come, but I'm out of town this weekend." },
+          { avatar: '/static/doc-images/lists/3.jpg', title: 'Oui oui', subtitle: "<span class='text--primary'>Sandra Adams</span> &mdash; Do you have Paris recommendations? Have you ever been?" },
+          { avatar: '/static/doc-images/lists/4.jpg', title: 'Birthday gift', subtitle: "<span class='text--primary'>Trevor Hansen</span> &mdash; Have any ideas about what we should get Heidi for her birthday?" },
+          { avatar: '/static/doc-images/lists/5.jpg', title: 'Recipe to try', subtitle: "<span class='text--primary'>Britta Holt</span> &mdash; We should eat this: Grate, Squash, Corn, and tomatillo Tacos." }
+        ]
+      }
+    });
+  </script>
+{% endblock script %}

@@ -1,0 +1,6 @@
+[development]
+address = "192.168.1.5"
+port = 8000
+log = "normal"
+limits = { forms = 32768 }
+secret_key = "I6zwdzlm3itGxZ44UBDIyeku/iWp+znCssBpDAbq9hg="

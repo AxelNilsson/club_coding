@@ -1,0 +1,90 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+  <style>
+  #main {
+    margin-top: 1em;
+  }
+    h1#header {
+        text-align: center;
+        padding: 12px 0;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+  <v-container>
+    <v-layout wrap>
+      <v-flex lg12>
+        <v-card flat id="main">
+          <h1 id="header">All Videos</h1>
+          <v-data-table :headers="headers" :items="videos" hide-actions class="elevation-1">
+            <template slot="items" slot-scope="props">
+              <td>${ props.item.name }</td>
+              <td class="text-xs-right">${ props.item.views }</td>
+              <td class="text-xs-right">${ props.item.comments }</td>
+              <td class="text-xs-right">${ props.item.serie }</td>
+              <td class="text-xs-right">${ props.item.membership }</td>
+              <td class="text-xs-right">${ props.item.published }</td>
+              <td class="text-xs-right">${ props.item.archived }</td>
+              <td class="text-xs-right">${ new Date(props.item.created).toDateString() }</td>
+              <td class="text-xs-right">${ new Date(props.item.updated).toDateString() }</td>
+              <td class="justify-center layout px-0">
+                <v-btn icon class="mx-0" :href='"/admin/videos/edit/" + props.item.uuid'>
+                  <v-icon color="teal">edit</v-icon>
+                </v-btn>
+                <v-btn icon class="mx-0" @click="">
+                  <v-icon color="pink">open_in_browser</v-icon>
+                </v-btn>
+              </td>
+            </template>
+          </v-data-table>
+          <v-btn style="float: right;" large color="primary" href="/admin/videos/new/">New Video</v-btn>
+        </v-card>
+      </v-flex>
+    </v-layout>
+  </v-container>
+{% endblock content %}
+{% block script %}
+<script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"],
+      data: {
+        headers: [
+          {
+            text: 'Title',
+            align: 'left',
+            sortable: false,
+            value: 'name'
+          },
+          { text: 'Views', value: 'views' },
+          { text: 'Comments', value: 'comments' },
+          { text: 'Serie', value: 'serie' },
+          { text: 'Membership only', value: 'membership' },
+          { text: 'Published', value: 'published' },
+          { text: 'Archived', value: 'archived' },
+          { text: 'Created', value: 'created' },
+          { text: 'Updated', value: 'updated' },
+          { text: 'Actions' }
+        ],
+        videos: [
+          {% for video in videos %}
+          {
+            uuid: '{{ video.uuid }}',
+            name: '{{ video.name }}',
+            views: '{{ video.views }}',
+            comments: '{{ video.comments }}',
+            serie: '{{ video.serie }}',
+            membership: 'No',
+            published: 'No',
+            archived: 'No',
+            created: '{{ video.created }}',
+            updated: '{{ video.updated }}'
+          },
+          {% endfor %}
+        ]
+      }
+    })
+  </script>
+{% endblock script %}

@@ -1,0 +1,45 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ title }}{% endblock title %}
+{% block head %}
+  <link href="https://cdn.plyr.io/3.2.4/plyr.css" rel="stylesheet">
+  <style>
+    .plyr {
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    p.title > a {
+      text-decoration: none;
+      color: rgba(0,0,0,.87) !important;
+      font-weight: 500;
+    }
+    p.title > a:hover {
+      font-weight: bold;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+  <v-layout wrap>
+    <v-flex lg10 offset-lg1 xl6 offset-xl3 style="margin-top: 1em;">
+      <video controls crossorigin playsinline poster="https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-HD.jpg" id="player">
+          <!-- Video files -->
+          <source src="/video/{{ uuid }}" type="video/mp4">
+      </video>
+      <h1 class="display-2" style="margin-top: 4px; font-weight:300;">{{ series_title }}: <span style="font-weight: 500">{{ title }}</span></h1>
+      <p class="title" style="margin-top: 4px; font-weight:300;">{{ description | safe }}</p>
+    </v-flex>
+  </v-layout>
+{% endblock content %}
+{% block script %}
+  <script src="https://cdn.plyr.io/3.2.4/plyr.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"],
+      mounted() {
+        const player = new Plyr('#player');
+        player.play();
+      }
+    });
+  </script>
+{% endblock script %}

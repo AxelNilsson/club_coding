@@ -1,0 +1,79 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+  <style>
+    #main {
+        margin-top: 2em;
+        padding: 1em;
+    }
+    .statistics {
+        padding: 4px;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+  <v-layout wrap>
+    <v-flex lg10 offset-lg1>
+        <v-card id="main">
+            <v-layout>
+                <v-flex lg3>
+                    <v-card flat class="statistics">
+                        <line-chart></line-chart>
+                        <h2><center>Views</center></h2>
+                    </v-card>
+                </v-flex>
+                <v-flex lg3>
+                    <v-card flat class="statistics">
+                        <line-chart></line-chart>
+                        <h2><center>Views</center></h2>
+                    </v-card>
+                </v-flex>
+                <v-flex lg3>
+                    <v-card flat class="statistics">
+                        <line-chart></line-chart>
+                        <h2><center>Views</center></h2>
+                    </v-card>
+                </v-flex>
+                <v-flex lg3>
+                    <v-card flat class="statistics">
+                        <line-chart></line-chart>
+                        <h2><center>Views</center></h2>
+                    </v-card>
+                </v-flex>
+            </v-layout>
+        </v-card>
+    </v-flex>
+  </v-layout>
+{% endblock content %}
+{% block script %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+  <script src="https://unpkg.com/vue-chartjs/dist/vue-chartjs.min.js"></script>
+  <script>
+
+    Vue.component('line-chart', {
+    extends: VueChartJs.Line,
+    mounted () {
+        this.renderChart({
+        labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+        datasets: [
+            {
+            label: 'Data One',
+            backgroundColor: '#f87979',
+            data: [40, 39, 10, 40, 39, 80, 40]
+            }
+        ]
+        }, {responsive: true, maintainAspectRatio: false})
+    }
+    
+    })
+
+    var vm = new Vue({
+        el: '#app',
+        data: {
+            message: 'Hello World'
+        }
+    })
+
+  </script>
+{% endblock script %}

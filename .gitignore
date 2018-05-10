@@ -1,0 +1,6 @@
+.env
+/target/
+**/*.rs.bk
+videos/*
+thumbnails/*
+.DS_Store

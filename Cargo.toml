@@ -1,0 +1,25 @@
+[package]
+name = "club_coding"
+version = "0.1.0"
+authors = ["Axel Nilsson"]
+
+[dependencies]
+rocket = "0.3.7"
+rocket_codegen = "0.3.7"
+serde_derive = "1.0.37"
+serde = "1.0.37"
+chrono = { version = "0.4", features = ["serde"] }
+diesel = { version = "1.2.0", features = ["mysql", "chrono"] }
+dotenv = "0.9.0"
+rand = "0.4.2"
+time = "0.1"
+bcrypt = "0.2.0"
+csrf = "0.3.0"
+data-encoding = "2.1.1"
+multipart = "0.14.2"
+stripe-rust = "0.4.5"
+
+[dependencies.rocket_contrib]
+version = "*"
+default-features = false
+features = ["tera_templates", "json"]

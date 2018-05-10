@@ -1,0 +1,74 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+  <style>
+  #main {
+    margin-top: 1em;
+  }
+    h1#header {
+        padding: 12px 0;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+  <v-container>
+    <v-layout wrap>
+      <v-flex lg12>
+        <v-card flat id="main">
+          <h1 id="header" style="text-align: center">All Users</h1>
+          <v-data-table :headers="headers" :items="users" hide-actions class="elevation-1">
+            <template slot="items" slot-scope="props">
+              <td>${ props.item.name }</td>
+              <td class="text-xs-right">${ props.item.paying_user }</td>
+              <td class="text-xs-right">${ new Date(props.item.registered).toDateString() }</td>
+              <td class="text-xs-right">${ new Date(props.item.updated).toDateString() }</td>
+              <td class="justify-center layout px-0">
+                <v-btn icon class="mx-0" :href='"/admin/users/edit/" + props.item.id'>
+                  <v-icon color="teal">edit</v-icon>
+                </v-btn>
+              </td>
+            </template>
+          </v-data-table>
+        </v-card>
+      </v-flex>
+    </v-layout>
+  </v-container>
+{% endblock content %}
+{% block script %}
+<script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"],
+      data: {
+        headers: [
+          {
+            text: 'E-Mail',
+            align: 'left',
+            sortable: false,
+            value: 'name'
+          },
+          { text: 'Paying User', value: 'paying_user', align: 'right' },
+          { text: 'Registered', value: 'registered', align: 'right' },
+          { text: 'Updated', value: 'updated', align: 'right' },
+          { text: 'Actions', align: 'center' }
+        ],
+        users: [
+          {% for user in users %}
+          {
+            id: {{ user.id }},
+            name: '{{ user.username }}',
+            {% if user.paying %}
+            paying_user: 'Yes',
+            {% else %}
+            paying_user: 'No',
+            {% endif %}
+            registered: '{{ user.created }}',
+            updated: '{{ user.updated }}'
+          },
+          {% endfor %}
+        ]
+      }
+    })
+  </script>
+{% endblock script %}

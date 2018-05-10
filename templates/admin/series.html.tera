@@ -1,0 +1,84 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+  <style>
+  #main {
+    margin-top: 1em;
+  }
+    h1#header {
+        text-align: center;
+        padding: 12px 0;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+  <v-container>
+    <v-layout wrap>
+      <v-flex lg12>
+        <v-card flat id="main">
+          <h1 id="header">All Series</h1>
+          <v-data-table :headers="headers" :items="series" hide-actions class="elevation-1">
+            <template slot="items" slot-scope="props">
+              <td>${ props.item.name }</td>
+              <td class="text-xs-right">${ props.item.views }</td>
+              <td class="text-xs-right">${ props.item.comments }</td>
+              <td class="text-xs-right">${ props.item.published }</td>
+              <td class="text-xs-right">${ props.item.archived }</td>
+              <td class="text-xs-right">${ new Date(props.item.created).toDateString() }</td>
+              <td class="text-xs-right">${ new Date(props.item.updated).toDateString() }</td>
+              <td class="justify-center layout px-0">
+                <v-btn icon class="mx-0" :href='"/admin/series/edit/" + props.item.uuid'>
+                  <v-icon color="teal">edit</v-icon>
+                </v-btn>
+                <v-btn icon class="mx-0" @click="">
+                  <v-icon color="pink">open_in_browser</v-icon>
+                </v-btn>
+              </td>
+            </template>
+          </v-data-table>
+          <v-btn style="float: right" large color="primary" href="/admin/series/new/">New Serie</v-btn>
+        </v-card>
+      </v-flex>
+    </v-layout>
+  </v-container>
+{% endblock content %}
+{% block script %}
+<script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"],
+      data: {
+        headers: [
+          {
+            text: 'Title',
+            align: 'left',
+            sortable: false,
+            value: 'name'
+          },
+          { text: 'Views', value: 'views' },
+          { text: 'Comments', value: 'comments' },
+          { text: 'Published', value: 'published' },
+          { text: 'Archived', value: 'archived' },
+          { text: 'Created', value: 'created' },
+          { text: 'Updated', value: 'updated' },
+          { text: 'Actions' }
+        ],
+        series: [
+          {% for serie in series %}
+          {
+            uuid: '{{ serie.uuid }}',
+            name: '{{ serie.name }}',
+            views: '{{serie.views }}',
+            comments: '{{ serie.comments }}',
+            published: 'No',
+            archived: 'No',
+            created: '{{ serie.created }}',
+            updated: '{{ serie.updated }}'
+          },
+          {% endfor %}
+        ]
+      }
+    })
+  </script>
+{% endblock script %}

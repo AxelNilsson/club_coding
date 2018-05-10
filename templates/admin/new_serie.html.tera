@@ -1,0 +1,55 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+  <style>
+    #main {
+        margin-top: 2em;
+        padding: 1em;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+  <v-container>
+    <v-layout wrap>
+      <v-flex lg12>
+        <v-card id="main">
+          <h1>New Serie</h1>
+          <v-form>
+            <v-text-field label="Title" required></v-text-field>
+            <v-text-field label="Description" required></v-text-field>
+          </v-form>
+        </v-card>
+       </v-flex>
+    </v-layout>
+  </v-container>
+{% endblock content %}
+{% block script %}
+<script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"],
+      data: {
+        valid: true,
+        name: '',
+        nameRules: [
+          v => !!v || 'Name is required',
+          v => (v && v.length <= 10) || 'Name must be less than 10 characters'
+        ],
+        email: '',
+        emailRules: [
+          v => !!v || 'E-mail is required',
+          v => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v) || 'E-mail must be valid'
+        ],
+        select: null,
+        items: [
+          'Item 1',
+          'Item 2',
+          'Item 3',
+          'Item 4'
+        ],
+        checkbox: false
+      }
+    })
+  </script>
+{% endblock script %}

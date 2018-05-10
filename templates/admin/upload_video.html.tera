@@ -1,0 +1,30 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+  <style>
+    #main {
+        margin-top: 2em;
+        padding: 1em;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+    <v-container>
+  <v-layout wrap>
+    <v-flex lg12>
+        <v-card id="main">
+
+          <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="file" id="file" />
+            <v-btn block type="submit" color="primary">Upload Video!</v-btn>
+          </form>
+
+        </v-card>
+    </v-flex>
+  </v-layout>
+  </v-container>
+{% endblock content %}
+{% block script %}
+    {{ super() }}
+{% endblock script %}

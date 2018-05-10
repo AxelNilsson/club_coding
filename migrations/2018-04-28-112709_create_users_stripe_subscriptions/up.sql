@@ -1,0 +1,23 @@
+CREATE TABLE `users_stripe_subscriptions` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `uuid` varchar(255) NOT NULL,
+  `application_fee_percent` float DEFAULT NULL,
+  `cancel_at_period_end` tinyint(1) NOT NULL,
+  `canceled_at` bigint(20) DEFAULT NULL,
+  `created_at` bigint(20) DEFAULT NULL,
+  `current_period_start` bigint(20) NOT NULL,
+  `current_period_end` bigint(20) NOT NULL,
+  `customer` varchar(255) NOT NULL,
+  `ended_at` bigint(20) DEFAULT NULL,
+  `livemode` tinyint(1) NOT NULL,
+  `quantity` bigint(20) unsigned NOT NULL,
+  `start` bigint(20) NOT NULL,
+  `status` varchar(255) NOT NULL,
+  `tax_percent` float DEFAULT NULL,
+  `trial_start` bigint(20) DEFAULT NULL,
+  `trial_end` bigint(20) DEFAULT NULL,
+  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

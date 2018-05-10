@@ -1,0 +1,74 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+  <style>
+    #main {
+        margin-top: 2em;
+        padding: 1em;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+  <v-container>
+    <v-layout wrap>
+      <v-flex lg12>
+        <v-card id="main">
+          <h1 style="text-align: center">Edit User</h1>
+          <v-form>
+            <v-text-field v-model="email" label="Email" :rules="emailRules" required></v-text-field>
+            <v-checkbox v-model="password" label="Force Password Change Email"></v-checkbox>
+            <v-checkbox v-model="resend_email" label="Resend Confirmation Email"></v-checkbox>
+            <v-checkbox v-model="free" label="Free Membership"></v-checkbox>
+            <v-checkbox v-model="deactivated" label="Deactivated"></v-checkbox>
+            <v-layout wrap row>
+              <v-flex xs4>
+                <v-btn large block color="error" href="/admin/users">Cancel</v-btn>
+              </v-flex>
+              <v-flex xs7 offset-xs1>
+                <v-btn large block color="success" @click="save">Save</v-btn>
+              </v-flex>
+            </v-layout>
+          </v-form>
+        </v-card>
+       </v-flex>
+    </v-layout>
+  </v-container>
+{% endblock content %}
+{% block script %}
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"],
+      data: {
+        emailRules: [
+          v => !!v || 'E-mail is required',
+          v => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v) || 'E-mail must be valid'
+        ],
+        email: '{{ user.email }}',
+        password: {{ user.force_change_password }},
+        resend_email: {{ user.force_resend_email }},
+        free: {{ user.free_membership }},
+        deactivated: {{ user.deactivated }}
+      },
+      methods: {
+        save() {
+          axios.post('/admin/users/edit/{{ uuid }}', {
+              email: this.email,
+              force_change_password: this.password,
+              force_resend_email: this.resend_email,
+              free_membership: this.free,
+              deactivated: this.deactivated
+            })
+            .then(response => {
+              console.log(response.data);
+            })
+            .catch(error => {
+              console.log(error);
+            });
+          }
+      }
+    })
+  </script>
+{% endblock script %}
