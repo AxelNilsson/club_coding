@@ -9,7 +9,7 @@ use rocket::response::status::Custom;
 use rocket::Data;
 use rocket::response::Redirect;
 use rocket::http::{ContentType, Status};
-use club_coding::models::Users;
+use club_coding::models::{Series, Users, Videos};
 use club_coding::{create_new_video, establish_connection};
 use structs::{Context, LoggedInContext};
 use std::{io, fs::File, io::Write};
@@ -182,13 +182,77 @@ fn new_series(user: User) -> Template {
     Template::render("admin/new_serie", &context)
 }
 
-#[get("/series/edit/<_uuid>")]
-fn edit_series(_uuid: String, user: User) -> Template {
-    let context = LoggedInContext {
-        header: "Club Coding".to_string(),
-        username: user.username,
-    };
-    Template::render("admin/edit_serie", &context)
+fn get_serie(uid: String) -> Option<Series> {
+    use club_coding::schema::series::dsl::*;
+
+    let connection = establish_connection();
+    let result = series
+        .filter(uuid.eq(uid))
+        .limit(1)
+        .load::<Series>(&connection)
+        .expect("Error loading series");
+
+    if result.len() == 1 {
+        return Some(result[0].clone());
+    } else {
+        return None;
+    }
+}
+
+#[derive(Serialize)]
+struct EditSeries {
+    header: String,
+    username: String,
+    uuid: String,
+    title: String,
+    description: String,
+    published: bool,
+    archived: bool,
+}
+
+#[get("/series/edit/<uuid>")]
+fn edit_series(uuid: String, user: User) -> Option<Template> {
+    match get_serie(uuid.clone()) {
+        Some(serie) => {
+            let context = EditSeries {
+                header: "Club Coding".to_string(),
+                username: user.username,
+                uuid: uuid,
+                title: serie.name,
+                description: serie.description,
+                published: serie.published,
+                archived: serie.is_archived,
+            };
+            Some(Template::render("admin/edit_serie", &context))
+        }
+        None => None,
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+struct UpdateSerie {
+    title: String,
+    description: String,
+    published: bool,
+    archived: bool,
+}
+
+#[post("/series/edit/<uid>", format = "application/json", data = "<data>")]
+fn update_serie(uid: String, _user: User, data: Json<UpdateSerie>) -> Json<UpdateSerie> {
+    use club_coding::schema::series::dsl::*;
+
+    let connection = establish_connection();
+
+    diesel::update(series.filter(uuid.eq(uid)))
+        .set((
+            name.eq(data.0.title.clone()),
+            description.eq(data.description.clone()),
+            published.eq(data.0.published),
+            is_archived.eq(data.0.archived),
+        ))
+        .execute(&connection)
+        .unwrap();
+    data
 }
 
 #[derive(Serialize)]
@@ -273,8 +337,16 @@ fn edit_users(uuid: String, user: User) -> Template {
     Template::render("admin/edit_user", &context)
 }
 
-#[post("/users/edit/<uuid>", format = "application/json", data = "<data>")]
-fn update_user(uuid: String, _user: User, data: Json<EditUser>) -> Json<EditUser> {
+#[post("/users/edit/<uid>", format = "application/json", data = "<data>")]
+fn update_user(uid: i64, _user: User, data: Json<EditUser>) -> Json<EditUser> {
+    use club_coding::schema::users::dsl::*;
+
+    let connection = establish_connection();
+
+    diesel::update(users.find(uid))
+        .set(username.eq(data.0.email.clone()))
+        .execute(&connection)
+        .unwrap();
     data
 }
 
@@ -340,13 +412,78 @@ fn upload_video(_uuid: String, user: User) -> Template {
     Template::render("admin/upload_video", &context)
 }
 
-#[get("/videos/edit/<_uuid>")]
-fn edit_video(_uuid: String, user: User) -> Template {
-    let context = LoggedInContext {
-        header: "Club Coding".to_string(),
-        username: user.username,
-    };
-    Template::render("admin/edit_video", &context)
+#[derive(Serialize)]
+struct EditVideo {
+    header: String,
+    username: String,
+    uuid: String,
+    title: String,
+    description: String,
+    published: bool,
+    membership: bool,
+}
+
+fn get_video(uid: String) -> Option<Videos> {
+    use club_coding::schema::videos::dsl::*;
+
+    let connection = establish_connection();
+    let result = videos
+        .filter(uuid.eq(uid))
+        .limit(1)
+        .load::<Videos>(&connection)
+        .expect("Error loading users");
+
+    if result.len() == 1 {
+        return Some(result[0].clone());
+    } else {
+        return None;
+    }
+}
+
+#[get("/videos/edit/<uuid>")]
+fn edit_video(uuid: String, user: User) -> Option<Template> {
+    match get_video(uuid.clone()) {
+        Some(video) => {
+            let context = EditVideo {
+                header: "Club Coding".to_string(),
+                username: user.username,
+                uuid: uuid,
+                title: video.title,
+                description: video.description,
+                published: video.published,
+                membership: video.membership_only,
+            };
+            Some(Template::render("admin/edit_video", &context))
+        }
+        None => None,
+    }
+}
+
+
+#[derive(Deserialize, Serialize)]
+struct UpdateVideo {
+    title: String,
+    description: String,
+    membership: bool,
+    published: bool,
+}
+
+#[post("/videos/edit/<uid>", format = "application/json", data = "<data>")]
+fn update_video(uid: String, _user: User, data: Json<UpdateVideo>) -> Json<UpdateVideo> {
+    use club_coding::schema::videos::dsl::*;
+
+    let connection = establish_connection();
+
+    diesel::update(videos.filter(uuid.eq(uid)))
+        .set((
+            title.eq(data.0.title.clone()),
+            description.eq(data.description.clone()),
+            membership_only.eq(data.0.membership),
+            published.eq(data.0.published),
+        ))
+        .execute(&connection)
+        .unwrap();
+    data
 }
 
 pub fn endpoints() -> Vec<Route> {
@@ -358,12 +495,14 @@ pub fn endpoints() -> Vec<Route> {
         series,
         new_series,
         edit_series,
+        update_serie,
         users,
         edit_users,
         update_user,
         videos,
         new_video,
         upload_video,
-        edit_video
+        edit_video,
+        update_video
     ]
 }

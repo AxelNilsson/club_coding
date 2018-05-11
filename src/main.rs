@@ -1,6 +1,7 @@
 #![feature(plugin)]
 #![plugin(rocket_codegen)]
 #![feature(custom_derive)]
+#![feature(extern_prelude)]
 extern crate bcrypt;
 extern crate chrono;
 extern crate club_coding;
