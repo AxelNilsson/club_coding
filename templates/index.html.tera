@@ -50,7 +50,7 @@
     </v-layout>
     <v-layout style="padding-bottom: 10vh;">
       <v-flex xl8 offset-xl2 xs10 offset-xs1>
-        <v-card flat href="/watch/9C2D35BB3D02B96AA0D5F994FBDA32B4C4349988A5A531A5">
+        <v-card flat href="/series/9C2D35BB3D02B96AA0D5F994FBDA32B4C4349988A5A531A5">
           <v-card-media src="/thumbnail/9C2D35BB3D02B96AA0D5F994FBDA32B4C4349988A5A531A5" height="750px"></v-card-media>
           <div class="card__hover">
             <h2 class="display-2" style="color: white; line-height: 700px!important;">Learning programming with Rust</h2>

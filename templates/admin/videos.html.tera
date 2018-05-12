@@ -76,9 +76,21 @@
             views: '{{ video.views }}',
             comments: '{{ video.comments }}',
             serie: '{{ video.serie }}',
-            membership: 'No',
-            published: 'No',
-            archived: 'No',
+            {% if video.membership %}
+              membership: 'Yes',
+            {% else %}
+              membership: 'No',
+            {% endif %}
+            {% if video.published %}
+              published: 'Yes',
+            {% else %}
+              published: 'No',
+            {% endif %}
+            {% if video.archived %}
+              archived: 'Yes',
+            {% else %}
+              archived: 'No',
+            {% endif %}
             created: '{{ video.created }}',
             updated: '{{ video.updated }}'
           },

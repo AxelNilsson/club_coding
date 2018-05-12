@@ -18,7 +18,6 @@ use std;
 use chrono::NaiveDateTime;
 use rocket_contrib::Json;
 use diesel::prelude::*;
-use chrono::prelude::*;
 
 fn generate_token(length: u8) -> Result<String, std::io::Error> {
     let bytes: Vec<u8> = (0..length).map(|_| rand::random::<u8>()).collect();
@@ -153,23 +152,37 @@ struct SeriesContext {
     series: Vec<Serie>,
 }
 
+fn get_all_series() -> Vec<Serie> {
+    use club_coding::schema::series::dsl::*;
+
+    let connection = establish_connection();
+    let result = series
+        .load::<Series>(&connection)
+        .expect("Error loading series");
+
+    let mut ret: Vec<Serie> = vec![];
+
+    for serie in result {
+        ret.push(Serie {
+            uuid: serie.uuid,
+            name: serie.name,
+            views: 0,
+            comments: 0,
+            published: serie.published,
+            archived: serie.is_archived,
+            created: serie.created,
+            updated: serie.updated,
+        })
+    }
+    ret
+}
+
 #[get("/series")]
 fn series(user: User) -> Template {
     let context = SeriesContext {
         header: "Club Coding".to_string(),
         username: user.username,
-        series: vec![
-            Serie {
-                uuid: "9C2D35BB3D02B96AA0D5F994FBDA32B4C4349988A5A531A5".to_string(),
-                name: "String".to_string(),
-                views: 100,
-                comments: 10,
-                published: true,
-                archived: false,
-                created: Utc::now().naive_utc(),
-                updated: Utc::now().naive_utc(),
-            },
-        ],
+        series: get_all_series(),
     };
     Template::render("admin/series", &context)
 }
@@ -356,10 +369,9 @@ struct Video {
     name: String,
     views: u64,
     comments: u64,
-    serie: String,
+    serie: Option<String>,
     membership: bool,
     published: bool,
-    archived: bool,
     created: NaiveDateTime,
     updated: NaiveDateTime,
 }
@@ -371,25 +383,51 @@ struct VideosContext {
     videos: Vec<Video>,
 }
 
+fn get_all_videos() -> Vec<Video> {
+    use club_coding::schema::videos::dsl::*;
+
+    let connection = establish_connection();
+    let result = videos
+        .load::<Videos>(&connection)
+        .expect("Error loading videos");
+
+    let mut ret: Vec<Video> = vec![];
+
+    for video in result {
+        let series_name: Option<String> = match video.series {
+            Some(serie_id) => {
+                use club_coding::schema::series::dsl::*;
+
+                let serie: Series = series
+                    .find(serie_id)
+                    .first(&connection)
+                    .expect("Unable to find series");
+                Some(serie.name)
+            }
+            None => None,
+        };
+
+        ret.push(Video {
+            uuid: video.uuid,
+            name: video.title,
+            views: 0,
+            comments: 0,
+            serie: series_name,
+            membership: video.membership_only,
+            published: video.published,
+            created: video.created,
+            updated: video.updated,
+        })
+    }
+    ret
+}
+
 #[get("/videos")]
 fn videos(user: User) -> Template {
     let context = VideosContext {
         header: "Club Coding".to_string(),
         username: user.username,
-        videos: vec![
-            Video {
-                uuid: "9C2D35BB3D02B96AA0D5F994FBDA32B4C4349988A5A531A5".to_string(),
-                name: "Test".to_string(),
-                views: 10,
-                comments: 22,
-                serie: "Veri nice".to_string(),
-                membership: true,
-                published: true,
-                archived: false,
-                created: Utc::now().naive_utc(),
-                updated: Utc::now().naive_utc(),
-            },
-        ],
+        videos: get_all_videos(),
     };
     Template::render("admin/videos", &context)
 }
@@ -458,7 +496,6 @@ fn edit_video(uuid: String, user: User) -> Option<Template> {
         None => None,
     }
 }
-
 
 #[derive(Deserialize, Serialize)]
 struct UpdateVideo {

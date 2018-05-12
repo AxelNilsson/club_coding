@@ -4,7 +4,9 @@
   <style>
     #main {
         margin-top: 2em;
-        padding: 1em;
+    }
+    .padding {
+      padding: 1em;
     }
   </style>
 {% endblock head %}
@@ -14,21 +16,25 @@
     <v-layout wrap>
       <v-flex lg12>
         <v-card id="main">
-          <h1>Edit Serie</h1>
-          <v-form>
-            <v-text-field v-model="title" label="Title" required></v-text-field>
-            <v-text-field v-model="description" label="Description" required></v-text-field>
-            <v-checkbox v-model="published" label="Published"></v-checkbox>
-            <v-checkbox v-model="archived" label="Archived"></v-checkbox>
-            <v-layout wrap row>
-              <v-flex xs4>
-                <v-btn large block color="error" href="/admin/series">Cancel</v-btn>
-              </v-flex>
-              <v-flex xs7 offset-xs1>
-                <v-btn large block color="success" @click="save">Save</v-btn>
-              </v-flex>
-            </v-layout>
-          </v-form>
+          <v-alert :value="success_alert" type="success">Series updated. <a style="color: white" href="/admin/series">Go back to all series.</a></v-alert>
+          <v-alert :value="error_alert" type="error">Update failed.</v-alert>
+          <div class="padding">
+            <h1>Edit Serie</h1>
+            <v-form>
+              <v-text-field v-model="title" label="Title" required></v-text-field>
+              <v-text-field multi-line v-model="description" label="Description" required></v-text-field>
+              <v-checkbox v-model="published" label="Published"></v-checkbox>
+              <v-checkbox v-model="archived" label="Archived"></v-checkbox>
+              <v-layout wrap row>
+                <v-flex xs4>
+                  <v-btn large block color="error" href="/admin/series">Cancel</v-btn>
+                </v-flex>
+                <v-flex xs7 offset-xs1>
+                  <v-btn large block color="success" @click="save" :loading="loading">Save</v-btn>
+                </v-flex>
+              </v-layout>
+            </v-form>
+          </div>
         </v-card>
        </v-flex>
     </v-layout>
@@ -41,24 +47,34 @@
       el: '#app',
       delimiters: ["${","}"],
       data: {
+        success_alert: false,
+        error_alert: false,
+        loading: false,
         title: '{{ title }}',
         description: '{{ description | safe }}',
         published: {{ published }},
         archived: {{ archived }}
       },
+      mounted() {
+        this.description = this.description.replace(/<br \/>/g, '\n');
+      },
       methods: {
         save() {
+          this.success_alert = this.error_alert = false;
+          this.loading = true;
           axios.post('/admin/series/edit/{{ uuid }}', {
               title: this.title,
-              description: this.description,
+              description: this.description.replace(/\n/g,'<br />').replace(/\'/g, '\\\''),
               published: this.published,
               archived: this.archived
             })
             .then(response => {
-              console.log(response.data);
+              this.loading = false;
+              this.success_alert = true;
             })
             .catch(error => {
-              console.log(error);
+              this.loading = false;
+              this.error_alert = true;
             });
           }
       }

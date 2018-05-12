@@ -10,6 +10,7 @@ use diesel::prelude::*;
 use member::Member;
 use users::User;
 use std;
+use series::PublicVideo;
 
 pub fn get_videos() -> Vec<Videos> {
     use club_coding::schema::videos::dsl::*;
@@ -65,6 +66,28 @@ fn get_series_title(uid: Option<i64>) -> String {
     }
 }
 
+fn get_videos_of_series(uid: i64) -> Vec<PublicVideo> {
+    use club_coding::schema::videos::dsl::*;
+
+    let connection = establish_connection();
+    let v_ideos = videos
+        .filter(series.eq(uid))
+        .order(episode_number.asc())
+        .load::<Videos>(&connection)
+        .expect("Error loading users");
+
+    let mut to_return: Vec<PublicVideo> = vec![];
+    for video in v_ideos {
+        to_return.push(PublicVideo {
+            episode_number: video.episode_number,
+            uuid: video.uuid,
+            title: video.title,
+            description: video.description,
+        });
+    }
+    to_return
+}
+
 #[derive(Serialize)]
 struct WatchContext {
     uuid: String,
@@ -72,18 +95,24 @@ struct WatchContext {
     title: String,
     description: String,
     username: String,
+    videos: Vec<PublicVideo>,
 }
 
 #[get("/watch/<uuid>")]
 fn watch_as_member(_member: Member, user: User, uuid: String) -> Result<Template, Redirect> {
     match get_video_data_from_uuid(uuid) {
         Ok(video) => {
+            let videos: Vec<PublicVideo> = match video.series {
+                Some(series_id) => get_videos_of_series(series_id),
+                None => vec![],
+            };
             let context = WatchContext {
                 uuid: video.uuid,
                 series_title: get_series_title(video.series),
                 title: video.title,
                 description: video.description,
                 username: user.username,
+                videos: videos,
             };
             Ok(Template::render("watch", &context))
         }
@@ -91,7 +120,7 @@ fn watch_as_member(_member: Member, user: User, uuid: String) -> Result<Template
     }
 }
 
-#[get("/watch/<uuid>", rank = 2)]
+/*#[get("/watch/<uuid>", rank = 2)]
 fn watch_as_user(user: User, uuid: String) -> Result<Template, Redirect> {
     match get_video_data_from_uuid(uuid) {
         Ok(video) => {
@@ -106,9 +135,9 @@ fn watch_as_user(user: User, uuid: String) -> Result<Template, Redirect> {
         }
         Err(_video_not_found) => Err(Redirect::to("/")),
     }
-}
+}*/
 
-#[get("/watch/<_uuid>", rank = 3)]
+#[get("/watch/<_uuid>", rank = 2)]
 fn watch_nouser(_uuid: String) -> Redirect {
     Redirect::to("/login")
 }
@@ -133,7 +162,7 @@ pub fn endpoints() -> Vec<Route> {
     routes![
         thumbnail,
         watch_as_member,
-        watch_as_user,
+        //watch_as_user,
         watch_nouser,
         video
     ]

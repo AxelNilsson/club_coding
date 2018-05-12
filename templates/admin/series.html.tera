@@ -71,8 +71,16 @@
             name: '{{ serie.name }}',
             views: '{{serie.views }}',
             comments: '{{ serie.comments }}',
+            {% if serie.published %}
+            published: 'Yes',
+            {% else %}
             published: 'No',
-            archived: 'No',
+            {% endif %}
+            {% if serie.archived %}
+              archived: 'Yes',
+            {% else %}
+              archived: 'No',
+            {% endif %}
             created: '{{ serie.created }}',
             updated: '{{ serie.updated }}'
           },

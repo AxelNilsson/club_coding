@@ -4,7 +4,9 @@
   <style>
     #main {
         margin-top: 2em;
-        padding: 1em;
+    }
+    .padding {
+      padding: 1em;
     }
   </style>
 {% endblock head %}
@@ -14,22 +16,26 @@
     <v-layout wrap>
       <v-flex lg12>
         <v-card id="main">
-          <h1>Edit Video</h1>
-          <v-form>
-            <v-text-field v-model="title" label="Title" required></v-text-field>
-            <v-text-field v-model="description" label="Description" required></v-text-field>
-            <v-select v-model="select" :items="items" label="Serie" required></v-select>
-            <v-checkbox v-model="membership" label="Membership Only"></v-checkbox>
-            <v-checkbox v-model="published" label="Published"></v-checkbox>
-            <v-layout wrap row>
-              <v-flex xs4>
-                <v-btn large block color="error" href="/admin/videos">Cancel</v-btn>
-              </v-flex>
-              <v-flex xs7 offset-xs1>
-                <v-btn large block color="success" @click="save">Save</v-btn>
-              </v-flex>
-            </v-layout>
-          </v-form>
+          <v-alert :value="success_alert" type="success">Video updated. <a style="color: white" href="/admin/videos">Go back to all videos.</a></v-alert>
+          <v-alert :value="error_alert" type="error">Update failed.</v-alert>
+          <div class="padding">
+            <h1>Edit Video</h1>
+            <v-form>
+              <v-text-field v-model="title" label="Title" required></v-text-field>
+              <v-text-field v-model="description" label="Description" required></v-text-field>
+              <v-select v-model="select" :items="items" label="Serie" required></v-select>
+              <v-checkbox v-model="membership" label="Membership Only"></v-checkbox>
+              <v-checkbox v-model="published" label="Published"></v-checkbox>
+              <v-layout wrap row>
+                <v-flex xs4>
+                  <v-btn large block color="error" href="/admin/videos">Cancel</v-btn>
+                </v-flex>
+                <v-flex xs7 offset-xs1>
+                  <v-btn large block color="success" @click="save" :loading="loading">Save</v-btn>
+                </v-flex>
+              </v-layout>
+            </v-form>
+          </div>
         </v-card>
        </v-flex>
     </v-layout>
@@ -42,6 +48,9 @@
       el: '#app',
       delimiters: ["${","}"],
       data: {
+        success_alert: false,
+        error_alert: false,
+        loading: false,
         title: '{{ title }}',
         description: '{{ description | safe }}',
         membership: {{ membership }},
@@ -56,6 +65,8 @@
       },
       methods: {
         save() {
+          this.success_alert = this.error_alert = false;
+          this.loading = true;
           axios.post('/admin/videos/edit/{{ uuid }}', {
               title: this.title,
               description: this.description,
@@ -63,10 +74,12 @@
               published: this.published
             })
             .then(response => {
-              console.log(response.data);
+              this.loading = false;
+              this.success_alert = true;
             })
             .catch(error => {
-              console.log(error);
+              this.loading = false;
+              this.error_alert = true;
             });
           }
       }
