@@ -11,7 +11,7 @@ pub fn get_series() -> Vec<Series> {
     let connection = establish_connection();
     series
         .filter(published.eq(true))
-        .filter(is_archived.eq(false))
+        .filter(archived.eq(false))
         .order(updated.asc())
         .load::<Series>(&connection)
         .expect("Error loading users")
@@ -20,7 +20,7 @@ pub fn get_series() -> Vec<Series> {
 #[derive(Serialize)]
 pub struct PublicSeries {
     uuid: String,
-    name: String,
+    title: String,
     slug: String,
     description: String,
 }
@@ -31,7 +31,7 @@ pub fn get_last_10_series() -> Vec<PublicSeries> {
     let connection = establish_connection();
     let s_eries = series
         .filter(published.eq(true))
-        .filter(is_archived.eq(false))
+        .filter(archived.eq(false))
         .limit(10)
         .order(updated.asc())
         .load::<Series>(&connection)
@@ -41,7 +41,7 @@ pub fn get_last_10_series() -> Vec<PublicSeries> {
     for serie in s_eries {
         to_return.push(PublicSeries {
             uuid: serie.uuid,
-            name: serie.name,
+            title: serie.title,
             slug: serie.slug,
             description: serie.description,
         });
@@ -105,10 +105,10 @@ fn serie(user: User, uuid: String) -> Template {
     let mut description = serie.description;
     description.retain(|c| c != '\\');
     let context = SerieStruct {
-        header: serie.name.clone(),
+        header: serie.title.clone(),
         username: user.username,
         uuid: uuid,
-        title: serie.name,
+        title: serie.title,
         description: description,
         videos: get_videos(serie.id),
     };

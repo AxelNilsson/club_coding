@@ -16,7 +16,6 @@ time = "0.1"
 bcrypt = "0.2.0"
 csrf = "0.3.0"
 data-encoding = "2.1.1"
-multipart = "0.14.2"
 stripe-rust = "0.4.5"
 
 [dependencies.rocket_contrib]

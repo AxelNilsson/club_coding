@@ -2,11 +2,11 @@ table! {
     series (id) {
         id -> Bigint,
         uuid -> Varchar,
-        name -> Varchar,
+        title -> Varchar,
         slug -> Varchar,
         description -> Text,
         published -> Bool,
-        is_archived -> Bool,
+        archived -> Bool,
         created -> Timestamp,
         updated -> Timestamp,
     }
@@ -121,6 +121,16 @@ table! {
 }
 
 table! {
+    users_views (id) {
+        id -> Bigint,
+        user_id -> Bigint,
+        video_id -> Bigint,
+        created -> Timestamp,
+        updated -> Timestamp,
+    }
+}
+
+table! {
     videos (id) {
         id -> Bigint,
         uuid -> Varchar,
@@ -133,6 +143,8 @@ table! {
         updated -> Timestamp,
         series -> Nullable<Bigint>,
         episode_number -> Nullable<Integer>,
+        archived -> Bool,
+        vimeo_id -> Varchar,
     }
 }
 
@@ -144,5 +156,6 @@ allow_tables_to_appear_in_same_query!(
     users_stripe_customer,
     users_stripe_subscriptions,
     users_stripe_token,
+    users_views,
     videos,
 );

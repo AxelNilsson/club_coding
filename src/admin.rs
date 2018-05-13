@@ -3,98 +3,21 @@ use rocket_contrib::Template;
 use users::{get_users, User};
 use series::get_series;
 use videos::get_videos;
-use multipart::server::Multipart;
-use multipart::server::save::SaveResult::*;
-use rocket::response::status::Custom;
-use rocket::Data;
 use rocket::response::Redirect;
-use rocket::http::{ContentType, Status};
 use club_coding::models::{Series, Users, Videos};
-use club_coding::{create_new_video, establish_connection};
-use structs::{Context, LoggedInContext};
-use std::{io, fs::File, io::Write};
+use club_coding::{create_new_series, create_new_video, establish_connection};
+use structs::LoggedInContext;
 use rand;
 use std;
 use chrono::NaiveDateTime;
 use rocket_contrib::Json;
 use diesel::prelude::*;
+use rocket::request::Form;
 
 fn generate_token(length: u8) -> Result<String, std::io::Error> {
     let bytes: Vec<u8> = (0..length).map(|_| rand::random::<u8>()).collect();
     let strings: Vec<String> = bytes.iter().map(|byte| format!("{:02X}", byte)).collect();
     return Ok(strings.join(""));
-}
-
-#[get("/upload")]
-fn upload_page(_user: User) -> Template {
-    let context = Context {
-        header: "Sign up!".to_string(),
-    };
-
-    Template::render("admin/upload_video", &context)
-}
-
-#[post("/upload", data = "<data>")]
-// signature requires the request to have a `Content-Type`
-fn upload(cont_type: &ContentType, data: Data, _user: User) -> Result<Redirect, Custom<String>> {
-    // this and the next check can be implemented as a request guard but it seems like just
-    // more boilerplate than necessary
-    if !cont_type.is_form_data() {
-        return Err(Custom(
-            Status::BadRequest,
-            "Content-Type not multipart/form-data".into(),
-        ));
-    }
-
-    let (_, boundary) = cont_type
-        .params()
-        .find(|&(k, _)| k == "boundary")
-        .ok_or_else(|| {
-            Custom(
-                Status::BadRequest,
-                "`Content-Type: multipart/form-data` boundary param not provided".into(),
-            )
-        })?;
-
-    match generate_token(24) {
-        Ok(token) => match process_upload(token.clone(), boundary, data) {
-            Ok(_) => {
-                let connection = establish_connection();
-                create_new_video(
-                    &connection,
-                    token.clone(),
-                    token.clone(),
-                    token.clone(),
-                    token.clone(),
-                    false,
-                    false,
-                    Some(1),
-                    Some(1),
-                );
-                Ok(Redirect::to(&format!("/video/{}", token)))
-            }
-            Err(err) => Err(Custom(Status::InternalServerError, err.to_string())),
-        },
-        Err(err) => Err(Custom(Status::InternalServerError, err.to_string())),
-    }
-}
-
-fn process_upload(filename: String, boundary: &str, data: Data) -> io::Result<()> {
-    Multipart::with_body(data.open(), boundary).foreach_entry(|mut field| {
-        let mut bytes = Vec::new();
-        match field.data.save().size_limit(None).write_to(&mut bytes) {
-            Full(_) => {
-                let mut file = File::create(&format!("{}.mp4", filename) as &str).unwrap();
-                match file.write(&bytes) {
-                    Ok(_) => {}
-                    Err(_) => {}
-                };
-            }
-            _ => {}
-        };
-    })?;
-
-    Ok(())
 }
 
 #[derive(Serialize)]
@@ -136,7 +59,7 @@ fn views(user: User) -> Template {
 #[derive(Serialize)]
 struct Serie {
     uuid: String,
-    name: String,
+    title: String,
     views: u64,
     comments: u64,
     published: bool,
@@ -165,11 +88,11 @@ fn get_all_series() -> Vec<Serie> {
     for serie in result {
         ret.push(Serie {
             uuid: serie.uuid,
-            name: serie.name,
+            title: serie.title,
             views: 0,
             comments: 0,
             published: serie.published,
-            archived: serie.is_archived,
+            archived: serie.archived,
             created: serie.created,
             updated: serie.updated,
         })
@@ -193,6 +116,45 @@ fn new_series(user: User) -> Template {
         username: user.username,
     };
     Template::render("admin/new_serie", &context)
+}
+
+#[derive(FromForm)]
+struct NewSerie {
+    title: String,
+    description: String,
+}
+
+fn create_slug(title: &String) -> String {
+    title
+        .chars()
+        .map(|character| match character {
+            'A'...'Z' => ((character as u8) - b'A' + b'a') as char,
+            'a'...'z' | '0'...'9' => character,
+            _ => '-',
+        })
+        .collect()
+}
+
+#[post("/series/new", data = "<serie>")]
+fn insert_new_series(_user: User, serie: Form<NewSerie>) -> Result<Redirect, Redirect> {
+    let new_serie: NewSerie = serie.into_inner();
+    let slug = create_slug(&new_serie.title);
+    let connection = establish_connection();
+    match generate_token(24) {
+        Ok(uuid) => {
+            create_new_series(
+                &connection,
+                uuid.clone(),
+                new_serie.title,
+                slug,
+                new_serie.description,
+                false,
+                false,
+            );
+            Ok(Redirect::to(&format!("/admin/series/edit/{}", uuid)))
+        }
+        Err(_) => Err(Redirect::to("/admin/series/new")),
+    }
 }
 
 fn get_serie(uid: String) -> Option<Series> {
@@ -231,10 +193,10 @@ fn edit_series(uuid: String, user: User) -> Option<Template> {
                 header: "Club Coding".to_string(),
                 username: user.username,
                 uuid: uuid,
-                title: serie.name,
+                title: serie.title,
                 description: serie.description,
                 published: serie.published,
-                archived: serie.is_archived,
+                archived: serie.archived,
             };
             Some(Template::render("admin/edit_serie", &context))
         }
@@ -258,10 +220,10 @@ fn update_serie(uid: String, _user: User, data: Json<UpdateSerie>) -> Json<Updat
 
     diesel::update(series.filter(uuid.eq(uid)))
         .set((
-            name.eq(data.0.title.clone()),
+            title.eq(data.0.title.clone()),
             description.eq(data.description.clone()),
             published.eq(data.0.published),
-            is_archived.eq(data.0.archived),
+            archived.eq(data.0.archived),
         ))
         .execute(&connection)
         .unwrap();
@@ -402,7 +364,7 @@ fn get_all_videos() -> Vec<Video> {
                     .find(serie_id)
                     .first(&connection)
                     .expect("Unable to find series");
-                Some(serie.name)
+                Some(serie.title)
             }
             None => None,
         };
@@ -434,20 +396,49 @@ fn videos(user: User) -> Template {
 
 #[get("/videos/new")]
 fn new_video(user: User) -> Template {
-    let context = LoggedInContext {
+    let context = SeriesContext {
         header: "Club Coding".to_string(),
         username: user.username,
+        series: get_all_series(),
     };
     Template::render("admin/new_video", &context)
 }
 
-#[get("/videos/upload/<_uuid>")]
-fn upload_video(_uuid: String, user: User) -> Template {
-    let context = LoggedInContext {
-        header: "Club Coding".to_string(),
-        username: user.username,
-    };
-    Template::render("admin/upload_video", &context)
+#[derive(FromForm)]
+struct NewVideo {
+    title: String,
+    description: String,
+    vimeo_id: String,
+    serie: Option<String>,
+    membership_only: bool,
+}
+
+#[post("/videos/new", data = "<video>")]
+fn insert_new_video(_user: User, video: Form<NewVideo>) -> Result<Redirect, Redirect> {
+    let new_video: NewVideo = video.into_inner();
+    let slug = create_slug(&new_video.title);
+    let connection = establish_connection();
+    let series: Option<i64> = Some(0);
+    let episode_number: Option<i32> = Some(0);
+    match generate_token(24) {
+        Ok(uuid) => {
+            create_new_video(
+                &connection,
+                uuid.clone(),
+                new_video.title,
+                slug,
+                new_video.description,
+                false,
+                new_video.membership_only,
+                series,
+                episode_number,
+                false,
+                new_video.vimeo_id,
+            );
+            Ok(Redirect::to(&format!("/admin/videos/edit/{}", uuid)))
+        }
+        Err(_) => Err(Redirect::to("/admin/videos/new")),
+    }
 }
 
 #[derive(Serialize)]
@@ -527,10 +518,9 @@ pub fn endpoints() -> Vec<Route> {
     routes![
         index,
         views,
-        upload,
-        upload_page,
         series,
         new_series,
+        insert_new_series,
         edit_series,
         update_serie,
         users,
@@ -538,7 +528,7 @@ pub fn endpoints() -> Vec<Route> {
         update_user,
         videos,
         new_video,
-        upload_video,
+        insert_new_video,
         edit_video,
         update_video
     ]

@@ -47,6 +47,7 @@
               <v-menu offset-y>
                 <v-btn large outline color="white" slot="activator">{{ username }}<v-icon>arrow_drop_down</v-icon></v-btn>
                 <v-list>
+                  {% if username == "axel" %}
                   <v-list-tile href="/admin/users">
                     <v-list-tile-title>All Users</v-list-tile-title>
                   </v-list-tile>
@@ -56,6 +57,7 @@
                   <v-list-tile href="/admin/videos">
                     <v-list-tile-title>All Videos</v-list-tile-title>
                   </v-list-tile>
+                  {% endif %}
                   <v-list-tile href="/settings/subscription">
                     <v-list-tile-title>Subcription</v-list-tile-title>
                   </v-list-tile>

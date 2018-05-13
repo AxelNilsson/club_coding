@@ -57,7 +57,7 @@
           <v-card flat href="/series/{{ serie.uuid }}">
             <v-card-media src="/thumbnail/{{ serie.uuid }}" height="750px"></v-card-media>
             <div class="card__hover">
-              <h2 class="display-2" style="color: white; line-height: 700px!important;">{{ serie.name }}</h2>
+              <h2 class="display-2" style="color: white; line-height: 700px!important;">{{ serie.title }}</h2>
             </div>
           </v-card>
         {% endfor %}

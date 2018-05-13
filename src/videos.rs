@@ -2,8 +2,8 @@ use rocket::Route;
 use rocket_contrib::Template;
 use rocket::response::{NamedFile, Redirect};
 use rocket::http::ContentType;
-use club_coding::establish_connection;
-use club_coding::models::{Series, Videos};
+use club_coding::{create_new_user_view, establish_connection};
+use club_coding::models::{Series, UsersViews, Videos};
 use std::fs::File;
 use rocket::response::content::Content;
 use diesel::prelude::*;
@@ -57,7 +57,7 @@ fn get_series_title(uid: Option<i64>) -> String {
                 .expect("Error loading series");
 
             if results.len() == 1 {
-                return results[0].name.clone();
+                return results[0].title.clone();
             } else {
                 return "".to_string();
             }
@@ -98,10 +98,26 @@ struct WatchContext {
     videos: Vec<PublicVideo>,
 }
 
+fn create_new_view(vid: i64, uid: i64) {
+    use club_coding::schema::users_views::dsl::*;
+    let connection = establish_connection();
+
+    let view = users_views
+        .filter(user_id.eq(uid))
+        .filter(video_id.eq(vid))
+        .load::<UsersViews>(&connection)
+        .expect("Error loading user views");
+
+    if view.len() == 0 {
+        create_new_user_view(&connection, uid, vid);
+    }
+}
+
 #[get("/watch/<uuid>")]
 fn watch_as_member(_member: Member, user: User, uuid: String) -> Result<Template, Redirect> {
     match get_video_data_from_uuid(uuid) {
         Ok(video) => {
+            create_new_view(video.id, user.id);
             let videos: Vec<PublicVideo> = match video.series {
                 Some(series_id) => get_videos_of_series(series_id),
                 None => vec![],
@@ -140,14 +156,6 @@ fn watch_as_user(user: User, uuid: String) -> Result<Template, Redirect> {
 #[get("/watch/<_uuid>", rank = 2)]
 fn watch_nouser(_uuid: String) -> Redirect {
     Redirect::to("/login")
-}
-
-#[get("/video/<uuid>")]
-fn video(_user: Member, uuid: String) -> Result<Content<File>, String> {
-    match File::open(format!("videos/{}.mp4", uuid)) {
-        Ok(file) => Ok(Content(ContentType::new("video", "mp4"), file)),
-        Err(err) => Err(err.to_string()),
-    }
 }
 
 #[get("/thumbnail/<uuid>")]

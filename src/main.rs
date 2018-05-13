@@ -8,7 +8,6 @@ extern crate club_coding;
 extern crate csrf;
 extern crate data_encoding;
 extern crate diesel;
-extern crate multipart;
 extern crate rand;
 extern crate rocket;
 extern crate rocket_contrib;

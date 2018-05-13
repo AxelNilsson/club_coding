@@ -20,7 +20,7 @@
           <h1 id="header">All Series</h1>
           <v-data-table :headers="headers" :items="series" hide-actions class="elevation-1">
             <template slot="items" slot-scope="props">
-              <td>${ props.item.name }</td>
+              <td>${ props.item.title }</td>
               <td class="text-xs-right">${ props.item.views }</td>
               <td class="text-xs-right">${ props.item.comments }</td>
               <td class="text-xs-right">${ props.item.published }</td>
@@ -54,7 +54,7 @@
             text: 'Title',
             align: 'left',
             sortable: false,
-            value: 'name'
+            value: 'title'
           },
           { text: 'Views', value: 'views' },
           { text: 'Comments', value: 'comments' },
@@ -68,7 +68,7 @@
           {% for serie in series %}
           {
             uuid: '{{ serie.uuid }}',
-            name: '{{ serie.name }}',
+            title: '{{ serie.title }}',
             views: '{{serie.views }}',
             comments: '{{ serie.comments }}',
             {% if serie.published %}

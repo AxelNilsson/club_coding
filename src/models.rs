@@ -7,11 +7,11 @@ use self::chrono::NaiveDateTime;
 pub struct Series {
     pub id: i64,
     pub uuid: String,
-    pub name: String,
+    pub title: String,
     pub slug: String,
     pub description: String,
     pub published: bool,
-    pub is_archived: bool,
+    pub archived: bool,
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
 }
@@ -20,11 +20,11 @@ pub struct Series {
 #[table_name = "series"]
 pub struct NewSerie {
     pub uuid: String,
-    pub name: String,
+    pub title: String,
     pub slug: String,
     pub description: String,
     pub published: bool,
-    pub is_archived: bool,
+    pub archived: bool,
 }
 
 #[derive(Queryable, Clone)]
@@ -219,6 +219,22 @@ pub struct NewUserSession {
     pub token: String,
 }
 
+#[derive(Queryable)]
+pub struct UsersViews {
+    pub id: i64,
+    pub user_id: i64,
+    pub video_id: i64,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name = "users_views"]
+pub struct NewUserView {
+    pub user_id: i64,
+    pub video_id: i64,
+}
+
 #[derive(Queryable, Clone)]
 pub struct Videos {
     pub id: i64,
@@ -232,6 +248,8 @@ pub struct Videos {
     pub updated: NaiveDateTime,
     pub series: Option<i64>,
     pub episode_number: Option<i32>,
+    pub archived: bool,
+    pub vimeo_id: String,
 }
 
 #[derive(Insertable)]
@@ -245,4 +263,6 @@ pub struct NewVideo {
     pub membership_only: bool,
     pub series: Option<i64>,
     pub episode_number: Option<i32>,
+    pub archived: bool,
+    pub vimeo_id: String,
 }

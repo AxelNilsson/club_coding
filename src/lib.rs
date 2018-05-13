@@ -10,10 +10,10 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
-use self::models::{NewSerie, NewUser, NewUserSession, NewUsersStripeCard, NewUsersStripeCustomer,
-                   NewUsersStripeSubscription, NewUsersStripeToken, NewVideo, Series, Users,
-                   UsersSessions, UsersStripeCard, UsersStripeCustomer, UsersStripeSubscriptions,
-                   UsersStripeToken, Videos};
+use self::models::{NewSerie, NewUser, NewUserSession, NewUserView, NewUsersStripeCard,
+                   NewUsersStripeCustomer, NewUsersStripeSubscription, NewUsersStripeToken,
+                   NewVideo, Series, Users, UsersSessions, UsersStripeCard, UsersStripeCustomer,
+                   UsersStripeSubscriptions, UsersStripeToken, UsersViews, Videos};
 
 pub fn establish_connection() -> MysqlConnection {
     dotenv().ok();
@@ -21,6 +21,34 @@ pub fn establish_connection() -> MysqlConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set!");
     MysqlConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url))
+}
+
+pub fn create_new_series(
+    conn: &MysqlConnection,
+    uuid: String,
+    title: String,
+    slug: String,
+    description: String,
+    published: bool,
+    archived: bool,
+) -> Series {
+    use schema::series;
+
+    let new_video = NewSerie {
+        uuid: uuid,
+        title: title,
+        slug: slug,
+        description: description,
+        published: published,
+        archived: archived,
+    };
+
+    diesel::insert_into(series::table)
+        .values(&new_video)
+        .execute(conn)
+        .expect("Error saving new user");
+
+    series::table.order(series::id.desc()).first(conn).unwrap()
 }
 
 pub fn create_new_user_session(
@@ -60,66 +88,6 @@ pub fn create_new_user(conn: &MysqlConnection, username: String, password: Strin
         .expect("Error saving new user");
 
     users::table.order(users::id.desc()).first(conn).unwrap()
-}
-
-pub fn create_new_video(
-    conn: &MysqlConnection,
-    uuid: String,
-    title: String,
-    slug: String,
-    description: String,
-    published: bool,
-    membership_only: bool,
-    series: Option<i64>,
-    episode_number: Option<i32>,
-) -> Videos {
-    use schema::videos;
-
-    let new_video = NewVideo {
-        uuid: uuid,
-        title: title,
-        slug: slug,
-        description: description,
-        published: published,
-        membership_only: membership_only,
-        series: series,
-        episode_number: episode_number,
-    };
-
-    diesel::insert_into(videos::table)
-        .values(&new_video)
-        .execute(conn)
-        .expect("Error saving new user");
-
-    videos::table.order(videos::id.desc()).first(conn).unwrap()
-}
-
-pub fn create_new_series(
-    conn: &MysqlConnection,
-    uuid: String,
-    name: String,
-    slug: String,
-    description: String,
-    published: bool,
-    is_archived: bool,
-) -> Series {
-    use schema::series;
-
-    let new_video = NewSerie {
-        uuid: uuid,
-        name: name,
-        slug: slug,
-        description: description,
-        published: published,
-        is_archived: is_archived,
-    };
-
-    diesel::insert_into(series::table)
-        .values(&new_video)
-        .execute(conn)
-        .expect("Error saving new user");
-
-    series::table.order(series::id.desc()).first(conn).unwrap()
 }
 
 pub fn insert_new_card(
@@ -320,4 +288,59 @@ pub fn insert_new_subscription(
         .order(users_stripe_subscriptions::id.desc())
         .first(conn)
         .unwrap()
+}
+
+pub fn create_new_user_view(conn: &MysqlConnection, user_id: i64, video_id: i64) -> UsersViews {
+    use schema::users_views;
+
+    let new_user_view = NewUserView {
+        user_id: user_id,
+        video_id: video_id,
+    };
+
+    diesel::insert_into(users_views::table)
+        .values(&new_user_view)
+        .execute(conn)
+        .expect("Error saving new user view");
+
+    users_views::table
+        .order(users_views::id.desc())
+        .first(conn)
+        .unwrap()
+}
+
+pub fn create_new_video(
+    conn: &MysqlConnection,
+    uuid: String,
+    title: String,
+    slug: String,
+    description: String,
+    published: bool,
+    membership_only: bool,
+    series: Option<i64>,
+    episode_number: Option<i32>,
+    archived: bool,
+    vimeo_id: String,
+) -> Videos {
+    use schema::videos;
+
+    let new_video = NewVideo {
+        uuid: uuid,
+        title: title,
+        slug: slug,
+        description: description,
+        published: published,
+        membership_only: membership_only,
+        series: series,
+        episode_number: episode_number,
+        archived: archived,
+        vimeo_id: vimeo_id,
+    };
+
+    diesel::insert_into(videos::table)
+        .values(&new_video)
+        .execute(conn)
+        .expect("Error saving new user");
+
+    videos::table.order(videos::id.desc()).first(conn).unwrap()
 }

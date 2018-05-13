@@ -16,10 +16,19 @@
         <v-card id="main">
           <h1>New Video</h1>
           <v-form>
-            <v-text-field label="Title" required></v-text-field>
-            <v-text-field label="Description" required></v-text-field>
-            <v-select :items="items" label="Serie" required></v-select>
-            <v-checkbox label="Membership Only"></v-checkbox>
+            <v-text-field v-model="title" label="Title" required></v-text-field>
+            <v-text-field v-model="description" label="Description" required></v-text-field>
+            <v-text-field v-model="vimeo_id" label="Vimeo ID" required></v-text-field>
+            <v-select v-model="selected_serie" :items="series" label="Serie" required></v-select>
+            <v-checkbox v-model="membership_only" label="Membership Only"></v-checkbox>
+            <v-layout wrap row>
+              <v-flex xs4>
+                <v-btn large block color="error" href="/admin/videos">Cancel</v-btn>
+              </v-flex>
+              <v-flex xs7 offset-xs1>
+                <v-btn large block color="success" type="submit">Save</v-btn>
+              </v-flex>
+            </v-layout>
           </v-form>
         </v-card>
        </v-flex>
@@ -32,25 +41,16 @@
       el: '#app',
       delimiters: ["${","}"],
       data: {
-        valid: true,
-        name: '',
-        nameRules: [
-          v => !!v || 'Name is required',
-          v => (v && v.length <= 10) || 'Name must be less than 10 characters'
+        title: "",
+        description: "",
+        vimeo_id: "",
+        series: [
+        {% for serie in series %}
+          { text: '{{ serie.title }}', value: '{{ serie.uuid }}' },
+        {% endfor %}
         ],
-        email: '',
-        emailRules: [
-          v => !!v || 'E-mail is required',
-          v => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v) || 'E-mail must be valid'
-        ],
-        select: null,
-        items: [
-          'Item 1',
-          'Item 2',
-          'Item 3',
-          'Item 4'
-        ],
-        checkbox: false
+        selected_serie: null,
+        membership_only: false
       }
     })
   </script>
