@@ -43,7 +43,7 @@ fn get_all_users() -> Vec<UsersC> {
 #[derive(Serialize)]
 struct UsersContext {
     header: String,
-    username: String,
+    user: User,
     users: Vec<UsersC>,
 }
 
@@ -51,7 +51,7 @@ struct UsersContext {
 pub fn users(user: User) -> Template {
     let context = UsersContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
         users: get_all_users(),
     };
     Template::render("admin/users", &context)
@@ -97,11 +97,11 @@ pub struct EditUser {
 }
 
 #[derive(Serialize)]
-struct EditUsersContext {
+struct EditUsersContext<'a> {
     header: String,
-    username: String,
+    user: &'a User,
     uuid: String,
-    user: EditUser,
+    user_data: EditUser,
     groups: Vec<GroupC>,
 }
 
@@ -109,11 +109,11 @@ struct EditUsersContext {
 pub fn edit_users(uuid: String, user: User) -> Template {
     let context = EditUsersContext {
         header: "Club Coding".to_string(),
-        username: user.username.clone(),
+        user: &user,
         uuid: uuid,
         groups: get_all_groups(),
-        user: EditUser {
-            email: user.username,
+        user_data: EditUser {
+            email: user.username.clone(),
             groups: get_all_groups_for_user(user.id),
             force_change_password: false,
             force_resend_email: false,

@@ -43,7 +43,7 @@ pub fn get_all_groups() -> Vec<GroupC> {
 #[derive(Serialize)]
 struct GroupsContext {
     header: String,
-    username: String,
+    user: User,
     groups: Vec<GroupC>,
 }
 
@@ -51,7 +51,7 @@ struct GroupsContext {
 pub fn groups(user: User) -> Template {
     let context = GroupsContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
         groups: get_all_groups(),
     };
     Template::render("admin/groups", &context)
@@ -61,7 +61,7 @@ pub fn groups(user: User) -> Template {
 pub fn new_group(user: User) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
     };
     Template::render("admin/new_group", &context)
 }
@@ -92,7 +92,7 @@ pub struct EditGroup {
 #[derive(Serialize)]
 struct EditGroupsContext {
     header: String,
-    username: String,
+    user: User,
     uuid: String,
     group: EditGroup,
 }
@@ -120,7 +120,7 @@ pub fn edit_group(uuid: String, user: User) -> Option<Template> {
         Some(group) => {
             let context = EditGroupsContext {
                 header: "Club Coding".to_string(),
-                username: user.username.clone(),
+                user: user,
                 uuid: uuid,
                 group: EditGroup { name: group.name },
             };

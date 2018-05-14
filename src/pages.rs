@@ -9,7 +9,7 @@ use series::get_last_10_series;
 #[derive(Serialize)]
 struct IndexLoggedInContext {
     header: String,
-    username: String,
+    user: User,
     flash_name: String,
     flash_msg: String,
     series: Vec<PublicSeries>,
@@ -24,7 +24,7 @@ fn index(flash: Option<FlashMessage>, user: User) -> Template {
 
     let context = IndexLoggedInContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
         flash_name: name,
         flash_msg: msg,
         series: get_last_10_series(),

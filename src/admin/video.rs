@@ -30,7 +30,7 @@ struct Video {
 #[derive(Serialize)]
 struct VideosContext {
     header: String,
-    username: String,
+    user: User,
     videos: Vec<Video>,
 }
 
@@ -77,7 +77,7 @@ fn get_all_videos() -> Vec<Video> {
 pub fn videos(user: User) -> Template {
     let context = VideosContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
         videos: get_all_videos(),
     };
     Template::render("admin/videos", &context)
@@ -87,7 +87,7 @@ pub fn videos(user: User) -> Template {
 pub fn new_video(user: User) -> Template {
     let context = SeriesContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
         series: get_all_series(),
     };
     Template::render("admin/new_video", &context)
@@ -171,13 +171,10 @@ pub fn insert_new_video(_user: User, video: Form<NewVideo>) -> Result<Redirect, 
 #[derive(Serialize)]
 struct EditVideo {
     header: String,
-    username: String,
+    user: User,
     uuid: String,
-    title: String,
-    description: String,
-    published: bool,
-    membership: bool,
     series: Vec<Serie>,
+    video: UpdateVideo,
 }
 
 fn get_video(uid: String) -> Option<Videos> {
@@ -197,19 +194,40 @@ fn get_video(uid: String) -> Option<Videos> {
     }
 }
 
+fn get_serie_from_video(series_id: Option<i64>) -> String {
+    match series_id {
+        Some(sid) => {
+            use club_coding::schema::series::dsl::*;
+
+            let connection = establish_connection();
+            let serie: Series = series
+                .find(sid)
+                .first(&connection)
+                .expect("Unable to find series");
+
+            serie.uuid
+        }
+        None => "".to_string(),
+    }
+}
+
 #[get("/videos/edit/<uuid>")]
 pub fn edit_video(uuid: String, user: User) -> Option<Template> {
     match get_video(uuid.clone()) {
         Some(video) => {
             let context = EditVideo {
                 header: "Club Coding".to_string(),
-                username: user.username,
+                user: user,
                 uuid: uuid,
-                title: video.title,
-                description: video.description,
-                published: video.published,
-                membership: video.membership_only,
                 series: get_all_series(),
+                video: UpdateVideo {
+                    title: video.title,
+                    description: video.description,
+                    vimeo_id: video.vimeo_id,
+                    membership: video.membership_only,
+                    published: video.published,
+                    serie: get_serie_from_video(video.series),
+                },
             };
             Some(Template::render("admin/edit_video", &context))
         }
@@ -221,8 +239,10 @@ pub fn edit_video(uuid: String, user: User) -> Option<Template> {
 pub struct UpdateVideo {
     title: String,
     description: String,
+    vimeo_id: String,
     membership: bool,
     published: bool,
+    serie: String,
 }
 
 #[post("/videos/edit/<uid>", format = "application/json", data = "<data>")]
@@ -235,6 +255,7 @@ pub fn update_video(uid: String, _user: User, data: Json<UpdateVideo>) -> Json<U
         .set((
             title.eq(data.0.title.clone()),
             description.eq(data.description.clone()),
+            vimeo_id.eq(data.vimeo_id.clone()),
             membership_only.eq(data.0.membership),
             published.eq(data.0.published),
         ))

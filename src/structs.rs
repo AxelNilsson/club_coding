@@ -1,3 +1,5 @@
+use users::User;
+
 #[derive(Serialize)]
 pub struct Context {
     pub header: String,
@@ -6,5 +8,5 @@ pub struct Context {
 #[derive(Serialize)]
 pub struct LoggedInContext {
     pub header: String,
-    pub username: String,
+    pub user: User,
 }

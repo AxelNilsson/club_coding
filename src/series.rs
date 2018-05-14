@@ -106,9 +106,9 @@ fn get_videos(uid: i64, sid: i64) -> Vec<PublicVideo> {
 }
 
 #[derive(Serialize)]
-struct SerieStruct {
+struct SerieStruct<'a> {
     header: String,
-    username: String,
+    user: &'a User,
     uuid: String,
     title: String,
     description: String,
@@ -122,7 +122,7 @@ fn serie(user: User, uuid: String) -> Template {
     description.retain(|c| c != '\\');
     let context = SerieStruct {
         header: serie.title.clone(),
-        username: user.username,
+        user: &user,
         uuid: uuid,
         title: serie.title,
         description: description,

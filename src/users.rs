@@ -1,5 +1,5 @@
 use club_coding::establish_connection;
-use club_coding::models::{Users, UsersSessions};
+use club_coding::models::{Users, UsersGroup, UsersSessions};
 use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
 
@@ -25,9 +25,11 @@ pub fn get_paying_users() -> Vec<Users> {
         .expect("Error loading users")
 }
 
+#[derive(Serialize)]
 pub struct User {
     pub id: i64,
     pub username: String,
+    pub admin: bool,
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for User {
@@ -59,9 +61,22 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                         .expect("Error loading sessions");
 
                     if results.len() == 1 {
+                        use club_coding::schema::users_group::dsl::*;
+
+                        let connection = establish_connection();
+                        let admin = users_group
+                            .filter(user_id.eq(results[0].id))
+                            .filter(group_id.eq(1))
+                            .limit(1)
+                            .load::<UsersGroup>(&connection)
+                            .expect("Error loading user groups");
+
+                        let is_admin = admin.len() == 1;
+
                         return Some(User {
                             id: results[0].id,
                             username: results[0].username.clone(),
+                            admin: is_admin,
                         });
                     } else {
                         return None;

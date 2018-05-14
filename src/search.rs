@@ -7,7 +7,7 @@ use users::User;
 fn search(user: User, _query: String) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
     };
     Template::render("home", &context)
 }

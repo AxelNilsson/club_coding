@@ -63,7 +63,7 @@
           this.success_alert = this.error_alert = false;
           this.loading = true;
           axios.post('/admin/series/edit/{{ uuid }}', {
-              title: this.title,
+              title: this.title.replace(/\'/g, '\\\''),
               description: this.description.replace(/\n/g,'<br />').replace(/\'/g, '\\\''),
               published: this.published,
               archived: this.archived

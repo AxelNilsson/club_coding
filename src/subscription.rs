@@ -4,87 +4,26 @@ use rocket_contrib::Template;
 use rocket::response::{Flash, Redirect};
 use club_coding::{establish_connection, insert_new_card, insert_new_subscription,
                   insert_new_users_stripe_customer, insert_new_users_stripe_token};
-use club_coding::models::{Users, UsersSessions};
-use rocket::http::Cookies;
 use users::User;
 use member::Member;
 use structs::LoggedInContext;
 use stripe;
 use std;
-use diesel::prelude::*;
-
-fn get_user_id_from_session_token(session_token: String) -> Result<i64, std::io::Error> {
-    use club_coding::schema::users_sessions::dsl::*;
-
-    let connection = establish_connection();
-
-    let results = users_sessions
-        .filter(token.eq(session_token))
-        .limit(1)
-        .load::<UsersSessions>(&connection)
-        .expect("Error loading sessions");
-
-    if results.len() == 1 {
-        return Ok(results[0].user_id);
-    } else {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "no token found",
-        ));
-    }
-}
-
-pub fn get_user_id_from_cookies(cookies: &mut Cookies) -> Result<i64, std::io::Error> {
-    match cookies.get_private("session_token") {
-        Some(cookie) => match get_user_id_from_session_token(cookie.value().to_string()) {
-            Ok(user_id) => Ok(user_id),
-            Err(error) => Err(error),
-        },
-        _ => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "no token found",
-            ))
-        }
-    }
-}
-
-fn get_user_from_cookie(cookies: &mut Cookies) -> Result<Users, std::io::Error> {
-    let user_id = get_user_id_from_cookies(cookies)?;
-
-    use club_coding::schema::users::dsl::*;
-
-    let connection = establish_connection();
-    let results = users
-        .filter(id.eq(user_id))
-        .limit(1)
-        .load::<Users>(&connection)
-        .expect("Error loading sessions");
-
-    if results.len() == 1 {
-        return Ok(results[0].clone());
-    } else {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "no token found",
-        ));
-    }
-}
 
 #[get("/settings/subscription")]
 fn member_page(user: User, _user: Member) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
     };
-    Template::render("subscription", &context)
+    Template::render("member_subscription", &context)
 }
 
 #[get("/settings/subscription", rank = 2)]
 fn user_page(user: User) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
     };
     Template::render("subscription", &context)
 }
@@ -252,26 +191,15 @@ fn charge(data: &Stripe, plan: &str, username: &str, user_id: i64) -> Result<(),
 }
 
 #[post("/charge/monthly", data = "<form_data>")]
-fn charge_monthly(
-    mut cookies: Cookies,
-    form_data: Form<Stripe>,
-) -> Result<Flash<Redirect>, Flash<Redirect>> {
-    match get_user_from_cookie(&mut cookies) {
-        Ok(user) => {
-            let data = form_data.into_inner();
-            let monthly_plan = "plan_ChdX4TFEThzwWe";
-            match charge(&data, monthly_plan, &user.username, user.id) {
-                Ok(()) => Ok(Flash::success(
-                    Redirect::to("/"),
-                    "Monthly subscription activated. Welcome to the club!",
-                )),
-                _ => Err(Flash::error(
-                    Redirect::to("/settings/subscription"),
-                    "An error occured, please try again later.",
-                )),
-            }
-        }
-        Err(_not_logged_in) => Err(Flash::error(
+fn charge_monthly(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>, Flash<Redirect>> {
+    let data = form_data.into_inner();
+    let monthly_plan = "plan_ChdX4TFEThzwWe";
+    match charge(&data, monthly_plan, &user.username, user.id) {
+        Ok(()) => Ok(Flash::success(
+            Redirect::to("/"),
+            "Monthly subscription activated. Welcome to the club!",
+        )),
+        _ => Err(Flash::error(
             Redirect::to("/settings/subscription"),
             "An error occured, please try again later.",
         )),
@@ -280,25 +208,17 @@ fn charge_monthly(
 
 #[post("/charge/quarterly", data = "<form_data>")]
 fn charge_quarterly(
-    mut cookies: Cookies,
+    user: User,
     form_data: Form<Stripe>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
-    match get_user_from_cookie(&mut cookies) {
-        Ok(user) => {
-            let data = form_data.into_inner();
-            let quarterly_plan = "plan_ChdYJPgVLiHbaz";
-            match charge(&data, quarterly_plan, &user.username, user.id) {
-                Ok(()) => Ok(Flash::success(
-                    Redirect::to("/"),
-                    "Quarterly subscription activated. Welcome to the club!",
-                )),
-                _ => Err(Flash::error(
-                    Redirect::to("/settings/subscription"),
-                    "An error occured, please try again later.",
-                )),
-            }
-        }
-        Err(_not_logged_in) => Err(Flash::error(
+    let data = form_data.into_inner();
+    let quarterly_plan = "plan_ChdYJPgVLiHbaz";
+    match charge(&data, quarterly_plan, &user.username, user.id) {
+        Ok(()) => Ok(Flash::success(
+            Redirect::to("/"),
+            "Quarterly subscription activated. Welcome to the club!",
+        )),
+        _ => Err(Flash::error(
             Redirect::to("/settings/subscription"),
             "An error occured, please try again later.",
         )),
@@ -306,26 +226,15 @@ fn charge_quarterly(
 }
 
 #[post("/charge/yearly", data = "<form_data>")]
-fn charge_yearly(
-    mut cookies: Cookies,
-    form_data: Form<Stripe>,
-) -> Result<Flash<Redirect>, Flash<Redirect>> {
-    match get_user_from_cookie(&mut cookies) {
-        Ok(user) => {
-            let data = form_data.into_inner();
-            let yearly_plan = "plan_ChdZSLPkhnIroM";
-            match charge(&data, yearly_plan, &user.username, user.id) {
-                Ok(()) => Ok(Flash::success(
-                    Redirect::to("/"),
-                    "Yearly subscription activated. Welcome to the club!",
-                )),
-                _ => Err(Flash::error(
-                    Redirect::to("/settings/subscription"),
-                    "An error occured, please try again later.",
-                )),
-            }
-        }
-        Err(_not_logged_in) => Err(Flash::error(
+fn charge_yearly(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>, Flash<Redirect>> {
+    let data = form_data.into_inner();
+    let yearly_plan = "plan_ChdZSLPkhnIroM";
+    match charge(&data, yearly_plan, &user.username, user.id) {
+        Ok(()) => Ok(Flash::success(
+            Redirect::to("/"),
+            "Yearly subscription activated. Welcome to the club!",
+        )),
+        _ => Err(Flash::error(
             Redirect::to("/settings/subscription"),
             "An error occured, please try again later.",
         )),

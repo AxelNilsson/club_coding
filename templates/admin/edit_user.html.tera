@@ -56,21 +56,21 @@
           v => !!v || 'E-mail is required',
           v => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v) || 'E-mail must be valid'
         ],
-        email: '{{ user.email }}',
+        email: '{{ user_data.email }}',
         groups: [
         {% for group in groups %}
           { text: '{{ group.name }}', value: '{{ group.uuid }}' },
         {% endfor %}
         ],
         groups_select: [
-        {% for group in user.groups %}
+        {% for group in user_data.groups %}
           '{{ group }}',
         {% endfor %}
         ],
-        password: {{ user.force_change_password }},
-        resend_email: {{ user.force_resend_email }},
-        free: {{ user.free_membership }},
-        deactivated: {{ user.deactivated }}
+        password: {{ user_data.force_change_password }},
+        resend_email: {{ user_data.force_resend_email }},
+        free: {{ user_data.free_membership }},
+        deactivated: {{ user_data.deactivated }}
       },
       methods: {
         save() {

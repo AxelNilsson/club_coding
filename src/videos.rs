@@ -87,12 +87,12 @@ fn get_videos_of_series(uid: i64, sid: i64) -> Vec<PublicVideo> {
 }
 
 #[derive(Serialize)]
-struct WatchContext {
+struct WatchContext<'a> {
     uuid: String,
     series_title: String,
     title: String,
     description: String,
-    username: String,
+    user: &'a User,
     vimeo_id: String,
     videos: Vec<PublicVideo>,
 }
@@ -125,7 +125,7 @@ fn watch_as_member(_member: Member, user: User, uuid: String) -> Result<Template
                 series_title: get_series_title(video.series),
                 title: video.title,
                 description: video.description,
-                username: user.username,
+                user: &user,
                 vimeo_id: video.vimeo_id,
                 videos: videos,
             };

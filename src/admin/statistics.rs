@@ -8,7 +8,7 @@ use rocket::Route;
 #[derive(Serialize)]
 struct AdminContext {
     header: String,
-    username: String,
+    user: User,
     views_today: usize,
     videos_total: usize,
     series_total: usize,
@@ -21,7 +21,7 @@ struct AdminContext {
 pub fn index(user: User) -> Template {
     let context = AdminContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
         views_today: 187232,
         videos_total: get_videos().len(),
         series_total: get_series().len(),
@@ -36,7 +36,7 @@ pub fn index(user: User) -> Template {
 pub fn views(user: User) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
     };
     Template::render("admin/views", &context)
 }

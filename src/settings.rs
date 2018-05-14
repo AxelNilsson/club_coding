@@ -16,7 +16,7 @@ use std;
 fn password_page(user: User) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
     };
     Template::render("password", &context)
 }

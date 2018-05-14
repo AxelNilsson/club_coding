@@ -27,7 +27,7 @@ pub struct Serie {
 #[derive(Serialize)]
 pub struct SeriesContext {
     pub header: String,
-    pub username: String,
+    pub user: User,
     pub series: Vec<Serie>,
 }
 
@@ -60,7 +60,7 @@ pub fn get_all_series() -> Vec<Serie> {
 pub fn series(user: User) -> Template {
     let context = SeriesContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
         series: get_all_series(),
     };
     Template::render("admin/series", &context)
@@ -70,7 +70,7 @@ pub fn series(user: User) -> Template {
 pub fn new_series(user: User) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
-        username: user.username,
+        user: user,
     };
     Template::render("admin/new_serie", &context)
 }
@@ -123,7 +123,7 @@ fn get_serie(uid: String) -> Option<Series> {
 #[derive(Serialize)]
 pub struct EditSeries {
     header: String,
-    username: String,
+    user: User,
     uuid: String,
     title: String,
     description: String,
@@ -137,7 +137,7 @@ pub fn edit_series(uuid: String, user: User) -> Option<Template> {
         Some(serie) => {
             let context = EditSeries {
                 header: "Club Coding".to_string(),
-                username: user.username,
+                user: user,
                 uuid: uuid,
                 title: serie.title,
                 description: serie.description,

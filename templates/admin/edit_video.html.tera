@@ -23,7 +23,7 @@
             <v-form>
               <v-text-field v-model="title" label="Title" required></v-text-field>
               <v-text-field v-model="description" label="Description" required></v-text-field>
-              <v-text-field name="vimeo_id" label="Vimeo ID" required></v-text-field>
+              <v-text-field v-model="vimeo_id" label="Vimeo ID" required></v-text-field>
               <v-select :items="series" label="Serie" v-model="series_select" required></v-select>
               <v-checkbox v-model="membership" label="Membership Only"></v-checkbox>
               <v-checkbox v-model="published" label="Published"></v-checkbox>
@@ -52,26 +52,32 @@
         success_alert: false,
         error_alert: false,
         loading: false,
-        title: '{{ title }}',
-        description: '{{ description | safe }}',
-        membership: {{ membership }},
-        published: {{ published }},
+        title: '{{ video.title }}',
+        description: '{{ video.description | safe }}',
+        vimeo_id: '{{ video.vimeo_id }}',
+        membership: {{ video.membership }},
+        published: {{ video.published }},
         series: [
         {% for serie in series %}
           { text: '{{ serie.title }}', value: '{{ serie.uuid }}' },
         {% endfor %}
         ],
-        series_select: null
+        series_select: '{{ video.serie }}'
+      },
+      mounted() {
+        this.description = this.description.replace(/<br \/>/g, '\n');
       },
       methods: {
         save() {
           this.success_alert = this.error_alert = false;
           this.loading = true;
           axios.post('/admin/videos/edit/{{ uuid }}', {
-              title: this.title,
-              description: this.description,
+              title: this.title.replace(/\'/g, '\\\''),
+              description: this.description.replace(/\n/g,'<br />').replace(/\'/g, '\\\''),
+              vimeo_id: this.vimeo_id,
               membership: this.membership,
-              published: this.published
+              published: this.published,
+              serie: this.series_select
             })
             .then(response => {
               this.loading = false;
