@@ -3,6 +3,7 @@ use users::{get_users, User};
 use series::get_series;
 use videos::get_videos;
 use structs::LoggedInContext;
+use rocket::Route;
 
 #[derive(Serialize)]
 struct AdminContext {
@@ -38,4 +39,8 @@ pub fn views(user: User) -> Template {
         username: user.username,
     };
     Template::render("admin/views", &context)
+}
+
+pub fn endpoints() -> Vec<Route> {
+    routes![index, views]
 }

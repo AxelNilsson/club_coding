@@ -10,6 +10,7 @@ use diesel::prelude::*;
 use rocket::request::Form;
 use admin::generate_token;
 use admin::create_slug;
+use rocket::Route;
 
 #[derive(Serialize)]
 pub struct Serie {
@@ -25,9 +26,9 @@ pub struct Serie {
 
 #[derive(Serialize)]
 pub struct SeriesContext {
-   pub header: String,
-pub username: String,
-   pub series: Vec<Serie>,
+    pub header: String,
+    pub username: String,
+    pub series: Vec<Serie>,
 }
 
 pub fn get_all_series() -> Vec<Serie> {
@@ -173,4 +174,14 @@ pub fn update_serie(uid: String, _user: User, data: Json<UpdateSerie>) -> Json<U
         .execute(&connection)
         .unwrap();
     data
+}
+
+pub fn endpoints() -> Vec<Route> {
+    routes![
+        series,
+        new_series,
+        insert_new_series,
+        edit_series,
+        update_serie,
+    ]
 }

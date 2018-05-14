@@ -7,6 +7,7 @@ use rocket_contrib::Json;
 use diesel::prelude::*;
 use admin::group::get_all_groups;
 use admin::group::GroupC;
+use rocket::Route;
 
 #[derive(Serialize)]
 struct UsersC {
@@ -159,4 +160,8 @@ pub fn update_user(uid: i64, _user: User, data: Json<EditUser>) -> Result<(), ()
     }
 
     Ok(())
+}
+
+pub fn endpoints() -> Vec<Route> {
+    routes![users, edit_users, update_user]
 }

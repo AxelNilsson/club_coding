@@ -12,6 +12,7 @@ use admin::series::Serie;
 use admin::generate_token;
 use admin::create_slug;
 use admin::series::SeriesContext;
+use rocket::Route;
 
 #[derive(Serialize)]
 struct Video {
@@ -240,4 +241,14 @@ pub fn update_video(uid: String, _user: User, data: Json<UpdateVideo>) -> Json<U
         .execute(&connection)
         .unwrap();
     data
+}
+
+pub fn endpoints() -> Vec<Route> {
+    routes![
+        videos,
+        new_video,
+        insert_new_video,
+        edit_video,
+        update_video
+    ]
 }

@@ -26,26 +26,22 @@ pub fn create_slug(title: &String) -> String {
 }
 
 pub fn endpoints() -> Vec<Route> {
-    routes![
-        statistics::index,
-        statistics::views,
-        series::series,
-        series::new_series,
-        series::insert_new_series,
-        series::edit_series,
-        series::update_serie,
-        users::users,
-        users::edit_users,
-        users::update_user,
-        group::groups,
-        group::new_group,
-        group::insert_new_group,
-        group::edit_group,
-        group::update_group,
-        video::videos,
-        video::new_video,
-        video::insert_new_video,
-        video::edit_video,
-        video::update_video
-    ]
+    let mut total = vec![];
+
+    let mut stats = statistics::endpoints();
+    total.append(&mut stats);
+
+    let mut series = series::endpoints();
+    total.append(&mut series);
+
+    let mut users = users::endpoints();
+    total.append(&mut users);
+
+    let mut group = group::endpoints();
+    total.append(&mut group);
+
+    let mut video = video::endpoints();
+    total.append(&mut video);
+
+    total
 }

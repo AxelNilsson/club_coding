@@ -9,6 +9,7 @@ use rocket_contrib::Json;
 use diesel::prelude::*;
 use rocket::request::Form;
 use admin::generate_token;
+use rocket::Route;
 
 #[derive(Deserialize, Serialize)]
 pub struct GroupC {
@@ -140,4 +141,14 @@ pub fn update_group(uid: String, _user: User, data: Json<EditGroup>) -> Json<Edi
         .execute(&connection)
         .unwrap();
     data
+}
+
+pub fn endpoints() -> Vec<Route> {
+    routes![
+        groups,
+        new_group,
+        insert_new_group,
+        edit_group,
+        update_group,
+    ]
 }
