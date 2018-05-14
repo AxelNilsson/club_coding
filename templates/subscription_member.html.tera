@@ -2,32 +2,61 @@
 {% block title %}{{ header }}{% endblock title %}
 {% block head %}
 <style>
-    #main {
-      margin-top: 5vh;
-    }
+  #main {
+    margin-top: 2.5vh;
+  }
 </style>
 {% endblock head %}
 {% block content %}
   {{ super() }}
   <v-container>
-    <v-layout wrap row>
-      <v-flex xs8 offset-xs2>
-        <div id="main">
-          <v-layout>
-            <v-flex xs10 offset-xs1 style="text-align: center;">
-              <h1 class="display-2 blue-grey--text text--darken-2" style="text-align: center; font-weight: 400!important;">You're already a member.</h1>
-            </v-flex>
+    <div id="main">
+      <v-layout wrap row>
+        <v-flex xs2>
+          <v-btn large depressed block dark color="grey lighten-1" style="font-weight: 700;"><span class="title">My Subscription</span></v-btn>
+          <v-btn @click.stop="cancel_subscription = true" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Cancel Subscription</span></v-btn>
+        </v-flex>
+        <v-flex xs9 offset-xs1>
+          <div>
+            <h2 class="headline" style="font-weight: 400; color: #4d545d;">Woohoo!</h2>
+            <h2 class="headline" style="font-weight: 400; color: #4d545d;">You currently have an ongoing subscription!</h2>
+            <h2 class="title" style="font-weight: 400; color: #4d545d;">Everything looks good from our part!</h2>
+          </div>
+
+          <div style="margin-top: 3em;">
+            <h2 class="title" style="font-weight: 300; color: #4d545d;">Your subscription was started on: <span style="font-weight: 700;">${ new Date(updated).toDateString() }</span></h2>
+            <h2 class="title" style="margin-top: 8px; font-weight: 300; color: #4d545d;">And it's valid to: <span style="font-weight: 700;">forever!</span></h2>          
+          </div>
+
+          <v-btn large dark style="margin-top: 2em;" color="orange darken-2" href="/">Get back to learning</v-btn>
+        </v-flex>
+      </v-layout>
+    </div>
+    <v-dialog v-model="cancel_subscription" max-width="500px">
+      <v-card>
+        <v-card-title><span class="display-1" style="text-align: center;">Are you sure?</span></v-card-title>
+        <v-card-actions>
+          <v-layout wrap row>
+          <v-flex xs5>
+            <v-btn color="primary" large block @click.stop="cancel_subscription=false">Close</v-btn>
+          </v-flex>
+          <v-flex xs6 offset-xs1>
+            <v-btn color="green" large block dark @click.stop="dialog3 = !dialog3">Yes I'm sure!</v-btn>
+          </v-flex>
           </v-layout>
-        </div>
-      </v-flex>
-    </v-layout>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 {% endblock content %}
 {% block script %}
   <script>
     new Vue({
       el: '#app',
-      delimiters: ["${","}"]
+      delimiters: ["${","}"],
+      data: {
+        cancel_subscription: false
+      }
     })
   </script>
 {% endblock script %}
