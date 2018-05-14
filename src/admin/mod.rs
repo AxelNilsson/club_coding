@@ -7,6 +7,7 @@ mod group;
 mod video;
 mod users;
 mod statistics;
+mod structs;
 
 pub fn generate_token(length: u8) -> Result<String, std::io::Error> {
     let bytes: Vec<u8> = (0..length).map(|_| rand::random::<u8>()).collect();

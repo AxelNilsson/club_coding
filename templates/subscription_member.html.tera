@@ -1,0 +1,33 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+<style>
+    #main {
+      margin-top: 5vh;
+    }
+</style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+  <v-container>
+    <v-layout wrap row>
+      <v-flex xs8 offset-xs2>
+        <div id="main">
+          <v-layout>
+            <v-flex xs10 offset-xs1 style="text-align: center;">
+              <h1 class="display-2 blue-grey--text text--darken-2" style="text-align: center; font-weight: 400!important;">You're already a member.</h1>
+            </v-flex>
+          </v-layout>
+        </div>
+      </v-flex>
+    </v-layout>
+  </v-container>
+{% endblock content %}
+{% block script %}
+  <script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"]
+    })
+  </script>
+{% endblock script %}

@@ -1,5 +1,5 @@
 use rocket_contrib::Template;
-use users::User;
+use admin::structs::Administrator;
 use club_coding::models::{Groups, Users, UsersGroup};
 use club_coding::{create_new_user_group, establish_connection};
 use chrono::NaiveDateTime;
@@ -43,12 +43,12 @@ fn get_all_users() -> Vec<UsersC> {
 #[derive(Serialize)]
 struct UsersContext {
     header: String,
-    user: User,
+    user: Administrator,
     users: Vec<UsersC>,
 }
 
 #[get("/users")]
-pub fn users(user: User) -> Template {
+pub fn users(user: Administrator) -> Template {
     let context = UsersContext {
         header: "Club Coding".to_string(),
         user: user,
@@ -99,14 +99,14 @@ pub struct EditUser {
 #[derive(Serialize)]
 struct EditUsersContext<'a> {
     header: String,
-    user: &'a User,
+    user: &'a Administrator,
     uuid: String,
     user_data: EditUser,
     groups: Vec<GroupC>,
 }
 
 #[get("/users/edit/<uuid>")]
-pub fn edit_users(uuid: String, user: User) -> Template {
+pub fn edit_users(uuid: String, user: Administrator) -> Template {
     let context = EditUsersContext {
         header: "Club Coding".to_string(),
         user: &user,
@@ -125,7 +125,7 @@ pub fn edit_users(uuid: String, user: User) -> Template {
 }
 
 #[post("/users/edit/<uid>", format = "application/json", data = "<data>")]
-pub fn update_user(uid: i64, _user: User, data: Json<EditUser>) -> Result<(), ()> {
+pub fn update_user(uid: i64, _user: Administrator, data: Json<EditUser>) -> Result<(), ()> {
     use club_coding::schema::users::dsl::*;
     let connection = establish_connection();
 

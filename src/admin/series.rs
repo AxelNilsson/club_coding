@@ -1,9 +1,8 @@
 use rocket_contrib::Template;
-use users::User;
+use admin::structs::{LoggedInContext, Administrator};
 use rocket::response::Redirect;
 use club_coding::models::Series;
 use club_coding::{create_new_series, establish_connection};
-use structs::LoggedInContext;
 use chrono::NaiveDateTime;
 use rocket_contrib::Json;
 use diesel::prelude::*;
@@ -27,7 +26,7 @@ pub struct Serie {
 #[derive(Serialize)]
 pub struct SeriesContext {
     pub header: String,
-    pub user: User,
+    pub user: Administrator,
     pub series: Vec<Serie>,
 }
 
@@ -57,7 +56,7 @@ pub fn get_all_series() -> Vec<Serie> {
 }
 
 #[get("/series")]
-pub fn series(user: User) -> Template {
+pub fn series(user: Administrator) -> Template {
     let context = SeriesContext {
         header: "Club Coding".to_string(),
         user: user,
@@ -67,7 +66,7 @@ pub fn series(user: User) -> Template {
 }
 
 #[get("/series/new")]
-pub fn new_series(user: User) -> Template {
+pub fn new_series(user: Administrator) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
         user: user,
@@ -82,7 +81,10 @@ pub struct NewSerie {
 }
 
 #[post("/series/new", data = "<serie>")]
-pub fn insert_new_series(_user: User, serie: Form<NewSerie>) -> Result<Redirect, Redirect> {
+pub fn insert_new_series(
+    _user: Administrator,
+    serie: Form<NewSerie>,
+) -> Result<Redirect, Redirect> {
     let new_serie: NewSerie = serie.into_inner();
     let slug = create_slug(&new_serie.title);
     let connection = establish_connection();
@@ -123,7 +125,7 @@ fn get_serie(uid: String) -> Option<Series> {
 #[derive(Serialize)]
 pub struct EditSeries {
     header: String,
-    user: User,
+    user: Administrator,
     uuid: String,
     title: String,
     description: String,
@@ -132,7 +134,7 @@ pub struct EditSeries {
 }
 
 #[get("/series/edit/<uuid>")]
-pub fn edit_series(uuid: String, user: User) -> Option<Template> {
+pub fn edit_series(uuid: String, user: Administrator) -> Option<Template> {
     match get_serie(uuid.clone()) {
         Some(serie) => {
             let context = EditSeries {
@@ -159,7 +161,7 @@ pub struct UpdateSerie {
 }
 
 #[post("/series/edit/<uid>", format = "application/json", data = "<data>")]
-pub fn update_serie(uid: String, _user: User, data: Json<UpdateSerie>) -> Json<UpdateSerie> {
+pub fn update_serie(uid: String, _user: Administrator, data: Json<UpdateSerie>) -> Json<UpdateSerie> {
     use club_coding::schema::series::dsl::*;
 
     let connection = establish_connection();

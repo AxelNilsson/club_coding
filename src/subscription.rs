@@ -16,7 +16,7 @@ fn member_page(user: User, _user: Member) -> Template {
         header: "Club Coding".to_string(),
         user: user,
     };
-    Template::render("member_subscription", &context)
+    Template::render("subscription_member", &context)
 }
 
 #[get("/settings/subscription", rank = 2)]

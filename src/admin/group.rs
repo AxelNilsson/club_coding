@@ -1,9 +1,8 @@
 use rocket_contrib::Template;
-use users::User;
+use admin::structs::{LoggedInContext, Administrator};
 use rocket::response::Redirect;
 use club_coding::models::Groups;
 use club_coding::{create_new_group, establish_connection};
-use structs::LoggedInContext;
 use chrono::NaiveDateTime;
 use rocket_contrib::Json;
 use diesel::prelude::*;
@@ -43,12 +42,12 @@ pub fn get_all_groups() -> Vec<GroupC> {
 #[derive(Serialize)]
 struct GroupsContext {
     header: String,
-    user: User,
+    user: Administrator,
     groups: Vec<GroupC>,
 }
 
 #[get("/groups")]
-pub fn groups(user: User) -> Template {
+pub fn groups(user: Administrator) -> Template {
     let context = GroupsContext {
         header: "Club Coding".to_string(),
         user: user,
@@ -58,7 +57,7 @@ pub fn groups(user: User) -> Template {
 }
 
 #[get("/groups/new")]
-pub fn new_group(user: User) -> Template {
+pub fn new_group(user: Administrator) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
         user: user,
@@ -72,7 +71,7 @@ pub struct NewGroup {
 }
 
 #[post("/groups/new", data = "<group>")]
-pub fn insert_new_group(_user: User, group: Form<NewGroup>) -> Result<Redirect, Redirect> {
+pub fn insert_new_group(_user: Administrator, group: Form<NewGroup>) -> Result<Redirect, Redirect> {
     let new_group: NewGroup = group.into_inner();
     let connection = establish_connection();
     match generate_token(24) {
@@ -92,7 +91,7 @@ pub struct EditGroup {
 #[derive(Serialize)]
 struct EditGroupsContext {
     header: String,
-    user: User,
+    user: Administrator,
     uuid: String,
     group: EditGroup,
 }
@@ -115,7 +114,7 @@ fn get_group_by_uuid(uid: String) -> Option<Groups> {
 }
 
 #[get("/groups/edit/<uuid>")]
-pub fn edit_group(uuid: String, user: User) -> Option<Template> {
+pub fn edit_group(uuid: String, user: Administrator) -> Option<Template> {
     match get_group_by_uuid(uuid.clone()) {
         Some(group) => {
             let context = EditGroupsContext {
@@ -131,7 +130,7 @@ pub fn edit_group(uuid: String, user: User) -> Option<Template> {
 }
 
 #[post("/groups/edit/<uid>", format = "application/json", data = "<data>")]
-pub fn update_group(uid: String, _user: User, data: Json<EditGroup>) -> Json<EditGroup> {
+pub fn update_group(uid: String, _user: Administrator, data: Json<EditGroup>) -> Json<EditGroup> {
     use club_coding::schema::groups::dsl::*;
 
     let connection = establish_connection();

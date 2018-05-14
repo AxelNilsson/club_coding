@@ -1,14 +1,14 @@
 use rocket_contrib::Template;
-use users::{get_users, User};
+use users::get_users;
+use admin::structs::{LoggedInContext, Administrator};
 use series::get_series;
 use videos::get_videos;
-use structs::LoggedInContext;
 use rocket::Route;
 
 #[derive(Serialize)]
 struct AdminContext {
     header: String,
-    user: User,
+    user: Administrator,
     views_today: usize,
     videos_total: usize,
     series_total: usize,
@@ -18,7 +18,7 @@ struct AdminContext {
 }
 
 #[get("/")]
-pub fn index(user: User) -> Template {
+pub fn index(user: Administrator) -> Template {
     let context = AdminContext {
         header: "Club Coding".to_string(),
         user: user,
@@ -33,7 +33,7 @@ pub fn index(user: User) -> Template {
 }
 
 #[get("/views")]
-pub fn views(user: User) -> Template {
+pub fn views(user: Administrator) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
         user: user,

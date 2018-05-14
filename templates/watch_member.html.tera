@@ -1,0 +1,23 @@
+{% extends "watch" %}
+{% block title %}{{ super() }}{% endblock title %}
+{% block head %}
+{{ super() }}
+<style>
+    #main {
+      background-color: rgb(0, 0, 0);
+    }
+</style>
+{% endblock head %}
+{% block content %}{{ super() }}{% endblock content %}
+{% block player %}
+  <div id="main">
+    <v-layout wrap>
+      <v-flex lg10 offset-lg1 xl8 offset-xl2>
+        <div style="padding:56.25% 0 0 0; position:relative;">
+            <iframe src="https://player.vimeo.com/video/{{ vimeo_id }}" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen="" data-ready="true"></iframe>
+        </div>
+      </v-flex>
+    </v-layout>
+  </div>
+{% endblock player %}
+{% block script %}{{ super() }}{% endblock script %}

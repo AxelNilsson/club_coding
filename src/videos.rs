@@ -130,30 +130,40 @@ fn watch_as_member(_member: Member, user: User, uuid: String) -> Result<Template
                 videos: videos,
             };
             create_new_view(video.id, user.id);
-            Ok(Template::render("watch", &context))
+            Ok(Template::render("watch_member", &context))
         }
         Err(_video_not_found) => Err(Redirect::to("/")),
     }
 }
 
-/*#[get("/watch/<uuid>", rank = 2)]
+#[get("/watch/<uuid>", rank = 2)]
 fn watch_as_user(user: User, uuid: String) -> Result<Template, Redirect> {
     match get_video_data_from_uuid(uuid) {
         Ok(video) => {
+            let videos: Vec<PublicVideo> = match video.series {
+                Some(series_id) => get_videos_of_series(user.id, series_id),
+                None => vec![],
+            };
             let context = WatchContext {
                 uuid: video.uuid,
                 series_title: get_series_title(video.series),
                 title: video.title,
                 description: video.description,
-                username: user.username,
+                user: &user,
+                vimeo_id: video.vimeo_id,
+                videos: videos,
             };
-            Ok(Template::render("watch", &context))
+            if video.membership_only {
+                Ok(Template::render("watch_member", &context))
+            } else {
+                Ok(Template::render("watch_nomember", &context))
+            }
         }
         Err(_video_not_found) => Err(Redirect::to("/")),
     }
-}*/
+}
 
-#[get("/watch/<_uuid>", rank = 2)]
+#[get("/watch/<_uuid>", rank = 3)]
 fn watch_nouser(_uuid: String) -> Redirect {
     Redirect::to("/login")
 }
@@ -167,5 +177,5 @@ fn thumbnail(uuid: String) -> Result<NamedFile, String> {
 }
 
 pub fn endpoints() -> Vec<Route> {
-    routes![thumbnail, watch_as_member, watch_nouser]
+    routes![thumbnail, watch_as_member, watch_as_user, watch_nouser]
 }

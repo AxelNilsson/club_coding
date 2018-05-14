@@ -1,5 +1,5 @@
 use rocket_contrib::Template;
-use users::User;
+use admin::structs::Administrator;
 use rocket::response::Redirect;
 use club_coding::models::{Series, Videos};
 use club_coding::{create_new_video, establish_connection};
@@ -30,7 +30,7 @@ struct Video {
 #[derive(Serialize)]
 struct VideosContext {
     header: String,
-    user: User,
+    user: Administrator,
     videos: Vec<Video>,
 }
 
@@ -74,7 +74,7 @@ fn get_all_videos() -> Vec<Video> {
 }
 
 #[get("/videos")]
-pub fn videos(user: User) -> Template {
+pub fn videos(user: Administrator) -> Template {
     let context = VideosContext {
         header: "Club Coding".to_string(),
         user: user,
@@ -84,7 +84,7 @@ pub fn videos(user: User) -> Template {
 }
 
 #[get("/videos/new")]
-pub fn new_video(user: User) -> Template {
+pub fn new_video(user: Administrator) -> Template {
     let context = SeriesContext {
         header: "Club Coding".to_string(),
         user: user,
@@ -141,7 +141,7 @@ fn get_highest_episode_from_series(series_id: Option<i64>) -> Option<i32> {
 }
 
 #[post("/videos/new", data = "<video>")]
-pub fn insert_new_video(_user: User, video: Form<NewVideo>) -> Result<Redirect, Redirect> {
+pub fn insert_new_video(_user: Administrator, video: Form<NewVideo>) -> Result<Redirect, Redirect> {
     let new_video: NewVideo = video.into_inner();
     let slug = create_slug(&new_video.title);
     let connection = establish_connection();
@@ -171,7 +171,7 @@ pub fn insert_new_video(_user: User, video: Form<NewVideo>) -> Result<Redirect, 
 #[derive(Serialize)]
 struct EditVideo {
     header: String,
-    user: User,
+    user: Administrator,
     uuid: String,
     series: Vec<Serie>,
     video: UpdateVideo,
@@ -212,7 +212,7 @@ fn get_serie_from_video(series_id: Option<i64>) -> String {
 }
 
 #[get("/videos/edit/<uuid>")]
-pub fn edit_video(uuid: String, user: User) -> Option<Template> {
+pub fn edit_video(uuid: String, user: Administrator) -> Option<Template> {
     match get_video(uuid.clone()) {
         Some(video) => {
             let context = EditVideo {
@@ -246,7 +246,7 @@ pub struct UpdateVideo {
 }
 
 #[post("/videos/edit/<uid>", format = "application/json", data = "<data>")]
-pub fn update_video(uid: String, _user: User, data: Json<UpdateVideo>) -> Json<UpdateVideo> {
+pub fn update_video(uid: String, _user: Administrator, data: Json<UpdateVideo>) -> Json<UpdateVideo> {
     use club_coding::schema::videos::dsl::*;
 
     let connection = establish_connection();

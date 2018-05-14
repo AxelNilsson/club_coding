@@ -1,0 +1,21 @@
+{% extends "watch" %}
+{% block title %}{{ super() }}{% endblock title %}
+{% block head %}
+{{ super() }}
+<style>
+</style>
+{% endblock head %}
+{% block content %}{{ super() }}{% endblock content %}
+{% block player %}
+  <v-layout wrap>
+    <v-flex lg8 offset-lg2 xl6 offset-xl3>
+      <div style="text-align: center; padding: 15vh 0;">
+        <h2 class="display-3" style="color: #4d545d;">Back to the Learning!</h2>
+        <p class="subheading" style="margin: 1em 0; color: rgb(77, 84, 93);">It looks like you don't have access to subscription-only videos at Club Coding.<br />Don't worry, it's an easy fix!</p>
+        <v-btn large style="background-color: #ef6733; color: #FFF" href="/settings/subscription">ACTIVATE YOUR MEMBERSHIP TO KEEP LEARNING.</v-btn>
+      </div>
+      <v-divider style="margin-bottom: 2em;"/>
+    </v-flex>
+  </v-layout>
+{% endblock player %}
+{% block script %}{{ super() }}{% endblock script %}
