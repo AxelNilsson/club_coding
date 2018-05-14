@@ -37,6 +37,10 @@
     border: 1px solid #007f80;
   }
 
+  .green--circle {
+    background: #4caf50!important;
+  }
+
   div.circle > span.display-1 {
     color: #FFF;
     margin: auto;
@@ -71,7 +75,11 @@
       <v-card>
         <v-layout wrap row>
           <v-flex xs2>
+            {% if video.watched %}
+            <div class="green--circle circle">
+            {% else %}
             <div class="circle">
+            {% endif %}
               <span class="display-1">
                 {% if video.episode_number > 9 %}
                   {{ video.episode_number }}

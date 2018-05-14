@@ -15,12 +15,13 @@
       <v-flex lg12>
         <v-card id="main">
           <h1>New Video</h1>
-          <v-form>
-            <v-text-field v-model="title" label="Title" required></v-text-field>
-            <v-text-field v-model="description" label="Description" required></v-text-field>
-            <v-text-field v-model="vimeo_id" label="Vimeo ID" required></v-text-field>
-            <v-select v-model="selected_serie" :items="series" label="Serie" required></v-select>
-            <v-checkbox v-model="membership_only" label="Membership Only"></v-checkbox>
+          <v-form method="POST">
+            <v-text-field name="title" label="Title" required></v-text-field>
+            <v-text-field name="description" label="Description" required></v-text-field>
+            <v-text-field name="vimeo_id" label="Vimeo ID" required></v-text-field>
+            <input type="hidden" name="serie" v-model="series_select">
+            <v-select :items="series" label="Serie" v-model="series_select" required></v-select>
+            <v-checkbox name="membership_only" label="Membership Only"></v-checkbox>
             <v-layout wrap row>
               <v-flex xs4>
                 <v-btn large block color="error" href="/admin/videos">Cancel</v-btn>
@@ -41,16 +42,12 @@
       el: '#app',
       delimiters: ["${","}"],
       data: {
-        title: "",
-        description: "",
-        vimeo_id: "",
         series: [
         {% for serie in series %}
           { text: '{{ serie.title }}', value: '{{ serie.uuid }}' },
         {% endfor %}
         ],
-        selected_serie: null,
-        membership_only: false
+        series_select: null,
       }
     })
   </script>

@@ -1,16 +1,13 @@
 use rocket::Route;
 use rocket_contrib::Template;
 use rocket::response::{NamedFile, Redirect};
-use rocket::http::ContentType;
 use club_coding::{create_new_user_view, establish_connection};
 use club_coding::models::{Series, UsersViews, Videos};
-use std::fs::File;
-use rocket::response::content::Content;
 use diesel::prelude::*;
 use member::Member;
 use users::User;
 use std;
-use series::PublicVideo;
+use series::{get_video_watched, PublicVideo};
 
 pub fn get_videos() -> Vec<Videos> {
     use club_coding::schema::videos::dsl::*;
@@ -66,12 +63,12 @@ fn get_series_title(uid: Option<i64>) -> String {
     }
 }
 
-fn get_videos_of_series(uid: i64) -> Vec<PublicVideo> {
+fn get_videos_of_series(uid: i64, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
     let connection = establish_connection();
     let v_ideos = videos
-        .filter(series.eq(uid))
+        .filter(series.eq(sid))
         .order(episode_number.asc())
         .load::<Videos>(&connection)
         .expect("Error loading users");
@@ -83,6 +80,7 @@ fn get_videos_of_series(uid: i64) -> Vec<PublicVideo> {
             uuid: video.uuid,
             title: video.title,
             description: video.description,
+            watched: get_video_watched(uid, video.id),
         });
     }
     to_return
@@ -95,6 +93,7 @@ struct WatchContext {
     title: String,
     description: String,
     username: String,
+    vimeo_id: String,
     videos: Vec<PublicVideo>,
 }
 
@@ -117,9 +116,8 @@ fn create_new_view(vid: i64, uid: i64) {
 fn watch_as_member(_member: Member, user: User, uuid: String) -> Result<Template, Redirect> {
     match get_video_data_from_uuid(uuid) {
         Ok(video) => {
-            create_new_view(video.id, user.id);
             let videos: Vec<PublicVideo> = match video.series {
-                Some(series_id) => get_videos_of_series(series_id),
+                Some(series_id) => get_videos_of_series(user.id, series_id),
                 None => vec![],
             };
             let context = WatchContext {
@@ -128,8 +126,10 @@ fn watch_as_member(_member: Member, user: User, uuid: String) -> Result<Template
                 title: video.title,
                 description: video.description,
                 username: user.username,
+                vimeo_id: video.vimeo_id,
                 videos: videos,
             };
+            create_new_view(video.id, user.id);
             Ok(Template::render("watch", &context))
         }
         Err(_video_not_found) => Err(Redirect::to("/")),
@@ -167,11 +167,5 @@ fn thumbnail(uuid: String) -> Result<NamedFile, String> {
 }
 
 pub fn endpoints() -> Vec<Route> {
-    routes![
-        thumbnail,
-        watch_as_member,
-        //watch_as_user,
-        watch_nouser,
-        video
-    ]
+    routes![thumbnail, watch_as_member, watch_nouser]
 }

@@ -1,4 +1,14 @@
 table! {
+    groups (id) {
+        id -> Bigint,
+        uuid -> Varchar,
+        name -> Varchar,
+        created -> Timestamp,
+        updated -> Timestamp,
+    }
+}
+
+table! {
     series (id) {
         id -> Bigint,
         uuid -> Varchar,
@@ -17,6 +27,16 @@ table! {
         id -> Bigint,
         username -> Varchar,
         password -> Varchar,
+        created -> Timestamp,
+        updated -> Timestamp,
+    }
+}
+
+table! {
+    users_group (id) {
+        id -> Bigint,
+        user_id -> Bigint,
+        group_id -> Bigint,
         created -> Timestamp,
         updated -> Timestamp,
     }
@@ -149,8 +169,10 @@ table! {
 }
 
 allow_tables_to_appear_in_same_query!(
+    groups,
     series,
     users,
+    users_group,
     users_sessions,
     users_stripe_card,
     users_stripe_customer,

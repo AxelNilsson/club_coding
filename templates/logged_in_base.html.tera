@@ -51,11 +51,14 @@
                   <v-list-tile href="/admin/users">
                     <v-list-tile-title>All Users</v-list-tile-title>
                   </v-list-tile>
-                  <v-list-tile href="/admin/series">
-                    <v-list-tile-title>All Series</v-list-tile-title>
+                  <v-list-tile href="/admin/groups">
+                    <v-list-tile-title>All Groups</v-list-tile-title>
                   </v-list-tile>
                   <v-list-tile href="/admin/videos">
                     <v-list-tile-title>All Videos</v-list-tile-title>
+                  </v-list-tile>
+                  <v-list-tile href="/admin/series">
+                    <v-list-tile-title>All Series</v-list-tile-title>
                   </v-list-tile>
                   {% endif %}
                   <v-list-tile href="/settings/subscription">

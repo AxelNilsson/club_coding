@@ -1,0 +1,41 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+  <style>
+    #main {
+        margin-top: 2em;
+        padding: 1em;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {{ super() }}
+  <v-container>
+    <v-layout wrap>
+      <v-flex lg12>
+        <v-card id="main">
+          <h1>New Group</h1>
+          <v-form method="POST">
+            <v-text-field label="Name" name="name" required></v-text-field>
+            <v-layout wrap row>
+              <v-flex xs4>
+                <v-btn large block color="error" href="/admin/groups">Cancel</v-btn>
+              </v-flex>
+              <v-flex xs7 offset-xs1>
+                <v-btn large block color="success" type="submit">Save</v-btn>
+              </v-flex>
+            </v-layout>
+          </v-form>
+        </v-card>
+       </v-flex>
+    </v-layout>
+  </v-container>
+{% endblock content %}
+{% block script %}
+<script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"]
+    })
+  </script>
+{% endblock script %}

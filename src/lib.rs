@@ -10,10 +10,11 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
-use self::models::{NewSerie, NewUser, NewUserSession, NewUserView, NewUsersStripeCard,
-                   NewUsersStripeCustomer, NewUsersStripeSubscription, NewUsersStripeToken,
-                   NewVideo, Series, Users, UsersSessions, UsersStripeCard, UsersStripeCustomer,
-                   UsersStripeSubscriptions, UsersStripeToken, UsersViews, Videos};
+use self::models::{Groups, NewGroup, NewSerie, NewUser, NewUserGroup, NewUserSession, NewUserView,
+                   NewUsersStripeCard, NewUsersStripeCustomer, NewUsersStripeSubscription,
+                   NewUsersStripeToken, NewVideo, Series, Users, UsersGroup, UsersSessions,
+                   UsersStripeCard, UsersStripeCustomer, UsersStripeSubscriptions,
+                   UsersStripeToken, UsersViews, Videos};
 
 pub fn establish_connection() -> MysqlConnection {
     dotenv().ok();
@@ -21,6 +22,22 @@ pub fn establish_connection() -> MysqlConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set!");
     MysqlConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url))
+}
+
+pub fn create_new_group(conn: &MysqlConnection, uuid: String, name: String) -> Groups {
+    use schema::groups;
+
+    let new_group = NewGroup {
+        uuid: uuid, 
+        name: name
+    };
+
+    diesel::insert_into(groups::table)
+        .values(&new_group)
+        .execute(conn)
+        .expect("Error saving new group");
+
+    groups::table.order(groups::id.desc()).first(conn).unwrap()
 }
 
 pub fn create_new_series(
@@ -88,6 +105,25 @@ pub fn create_new_user(conn: &MysqlConnection, username: String, password: Strin
         .expect("Error saving new user");
 
     users::table.order(users::id.desc()).first(conn).unwrap()
+}
+
+pub fn create_new_user_group(conn: &MysqlConnection, user_id: i64, group_id: i64) -> UsersGroup {
+    use schema::users_group;
+
+    let new_user_group = NewUserGroup {
+        user_id: user_id,
+        group_id: group_id,
+    };
+
+    diesel::insert_into(users_group::table)
+        .values(&new_user_group)
+        .execute(conn)
+        .expect("Error saving new user group");
+
+    users_group::table
+        .order(users_group::id.desc())
+        .first(conn)
+        .unwrap()
 }
 
 pub fn insert_new_card(

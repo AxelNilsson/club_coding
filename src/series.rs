@@ -1,7 +1,7 @@
 use rocket::Route;
 use club_coding::establish_connection;
 use diesel::prelude::*;
-use club_coding::models::{Series, Videos};
+use club_coding::models::{Series, UsersViews, Videos};
 use rocket_contrib::Template;
 use users::User;
 
@@ -65,14 +65,29 @@ pub struct PublicVideo {
     pub uuid: String,
     pub title: String,
     pub description: String,
+    pub watched: bool,
 }
 
-fn get_videos(uid: i64) -> Vec<PublicVideo> {
+pub fn get_video_watched(uid: i64, vid: i64) -> bool {
+    use club_coding::schema::users_views::dsl::*;
+
+    let connection = establish_connection();
+
+    let results = users_views
+        .filter(user_id.eq(uid))
+        .filter(video_id.eq(vid))
+        .load::<UsersViews>(&connection)
+        .expect("Error loading users views");
+
+    return results.len() == 1;
+}
+
+fn get_videos(uid: i64, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
     let connection = establish_connection();
     let v_ideos = videos
-        .filter(series.eq(uid))
+        .filter(series.eq(sid))
         .order(episode_number.asc())
         .load::<Videos>(&connection)
         .expect("Error loading users");
@@ -84,6 +99,7 @@ fn get_videos(uid: i64) -> Vec<PublicVideo> {
             uuid: video.uuid,
             title: video.title,
             description: video.description,
+            watched: get_video_watched(uid, video.id),
         });
     }
     to_return
@@ -110,7 +126,7 @@ fn serie(user: User, uuid: String) -> Template {
         uuid: uuid,
         title: serie.title,
         description: description,
-        videos: get_videos(serie.id),
+        videos: get_videos(user.id, serie.id),
     };
     Template::render("series", &context)
 }

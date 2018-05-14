@@ -16,20 +16,15 @@
     <v-layout wrap>
       <v-flex lg12>
         <v-card id="main">
-          <v-alert :value="success_alert" type="success">Video updated. <a style="color: white" href="/admin/videos">Go back to all videos.</a></v-alert>
+          <v-alert :value="success_alert" type="success">Group updated. <a style="color: white" href="/admin/groups">Go back to all groups.</a></v-alert>
           <v-alert :value="error_alert" type="error">Update failed.</v-alert>
           <div class="padding">
-            <h1>Edit Video</h1>
+            <h1 style="text-align: center">Edit Group</h1>
             <v-form>
-              <v-text-field v-model="title" label="Title" required></v-text-field>
-              <v-text-field v-model="description" label="Description" required></v-text-field>
-              <v-text-field name="vimeo_id" label="Vimeo ID" required></v-text-field>
-              <v-select :items="series" label="Serie" v-model="series_select" required></v-select>
-              <v-checkbox v-model="membership" label="Membership Only"></v-checkbox>
-              <v-checkbox v-model="published" label="Published"></v-checkbox>
+            <v-text-field v-model="name" label="Name" name="name" required></v-text-field>
               <v-layout wrap row>
                 <v-flex xs4>
-                  <v-btn large block color="error" href="/admin/videos">Cancel</v-btn>
+                  <v-btn large block color="error" href="/admin/groups">Cancel</v-btn>
                 </v-flex>
                 <v-flex xs7 offset-xs1>
                   <v-btn large block color="success" @click="save" :loading="loading">Save</v-btn>
@@ -52,26 +47,14 @@
         success_alert: false,
         error_alert: false,
         loading: false,
-        title: '{{ title }}',
-        description: '{{ description | safe }}',
-        membership: {{ membership }},
-        published: {{ published }},
-        series: [
-        {% for serie in series %}
-          { text: '{{ serie.title }}', value: '{{ serie.uuid }}' },
-        {% endfor %}
-        ],
-        series_select: null
+        name: '{{ group.name }}'
       },
       methods: {
         save() {
           this.success_alert = this.error_alert = false;
           this.loading = true;
-          axios.post('/admin/videos/edit/{{ uuid }}', {
-              title: this.title,
-              description: this.description,
-              membership: this.membership,
-              published: this.published
+          axios.post('/admin/groups/edit/{{ uuid }}', {
+              name: this.name
             })
             .then(response => {
               this.loading = false;

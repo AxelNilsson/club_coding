@@ -22,6 +22,7 @@
             <h1 style="text-align: center">Edit User</h1>
             <v-form>
               <v-text-field v-model="email" label="Email" :rules="emailRules" required></v-text-field>
+              <v-select :items="groups" label="Groups" v-model="groups_select" multiple required></v-select>
               <v-checkbox v-model="password" label="Force Password Change Email"></v-checkbox>
               <v-checkbox v-model="resend_email" label="Resend Confirmation Email"></v-checkbox>
               <v-checkbox v-model="free" label="Free Membership"></v-checkbox>
@@ -56,6 +57,16 @@
           v => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v) || 'E-mail must be valid'
         ],
         email: '{{ user.email }}',
+        groups: [
+        {% for group in groups %}
+          { text: '{{ group.name }}', value: '{{ group.uuid }}' },
+        {% endfor %}
+        ],
+        groups_select: [
+        {% for group in user.groups %}
+          '{{ group }}',
+        {% endfor %}
+        ],
         password: {{ user.force_change_password }},
         resend_email: {{ user.force_resend_email }},
         free: {{ user.free_membership }},
@@ -70,7 +81,8 @@
               force_change_password: this.password,
               force_resend_email: this.resend_email,
               free_membership: this.free,
-              deactivated: this.deactivated
+              deactivated: this.deactivated,
+              groups: this.groups_select,
             })
             .then(response => {
               this.loading = false;

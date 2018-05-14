@@ -4,6 +4,22 @@ use schema::*;
 use self::chrono::NaiveDateTime;
 
 #[derive(Queryable, Clone)]
+pub struct Groups {
+    pub id: i64,
+    pub uuid: String,
+    pub name: String,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name = "groups"]
+pub struct NewGroup {
+    pub uuid: String,
+    pub name: String,
+}
+
+#[derive(Queryable, Clone)]
 pub struct Series {
     pub id: i64,
     pub uuid: String,
@@ -41,6 +57,22 @@ pub struct Users {
 pub struct NewUser {
     pub username: String,
     pub password: String,
+}
+
+#[derive(Queryable, Clone)]
+pub struct UsersGroup {
+    pub id: i64,
+    pub user_id: i64,
+    pub group_id: i64,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name = "users_group"]
+pub struct NewUserGroup {
+    pub user_id: i64,
+    pub group_id: i64,
 }
 
 #[derive(Queryable)]
