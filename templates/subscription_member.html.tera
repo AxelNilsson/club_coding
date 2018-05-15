@@ -24,7 +24,7 @@
           </div>
 
           <div style="margin-top: 3em;">
-            <h2 class="title" style="font-weight: 300; color: #4d545d;">Your subscription was started on: <span style="font-weight: 700;">${ new Date(updated).toDateString() }</span></h2>
+            <h2 class="title" style="font-weight: 300; color: #4d545d;">Your subscription was started on: <span style="font-weight: 700;">${ new Date(updated).toDateString() }.</span></h2>
             <h2 class="title" style="margin-top: 8px; font-weight: 300; color: #4d545d;">And it's valid to: <span style="font-weight: 700;">forever!</span></h2>          
           </div>
 
@@ -34,14 +34,16 @@
     </div>
     <v-dialog v-model="cancel_subscription" max-width="500px">
       <v-card>
-        <v-card-title><span class="display-1" style="text-align: center;">Are you sure?</span></v-card-title>
+        <v-card-title><span class="display-1" style="width: 100%; text-align: center;">Are you sure?</span></v-card-title>
         <v-card-actions>
           <v-layout wrap row>
           <v-flex xs5>
-            <v-btn color="primary" large block @click.stop="cancel_subscription=false">Close</v-btn>
+            <v-btn color="primary" large block @click.stop="cancel_subscription = false">Close</v-btn>
           </v-flex>
           <v-flex xs6 offset-xs1>
-            <v-btn color="green" large block dark @click.stop="dialog3 = !dialog3">Yes I'm sure!</v-btn>
+            <v-form method="POST" action="/settings/subscription/cancel">
+              <v-btn color="green" large block dark type="submit">Yes I'm sure!</v-btn>
+            <v-form>
           </v-flex>
           </v-layout>
         </v-card-actions>
@@ -55,6 +57,7 @@
       el: '#app',
       delimiters: ["${","}"],
       data: {
+        updated: '2018-04-18',
         cancel_subscription: false
       }
     })

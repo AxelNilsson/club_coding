@@ -9,6 +9,67 @@ use member::Member;
 use structs::LoggedInContext;
 use stripe;
 use std;
+use club_coding::models::{UsersSessions, UsersStripeSubscriptions};
+use rocket::request::{self, FromRequest, Request};
+use rocket::Outcome;
+
+use diesel::prelude::*;
+
+#[derive(Serialize)]
+pub struct Subscription {
+    pub id: String,
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for Subscription {
+    type Error = ();
+
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<Subscription, ()> {
+        let username = request
+            .cookies()
+            .get_private("session_token")
+            .map(|cookie| {
+                use club_coding::schema::users_sessions::dsl::*;
+
+                let connection = establish_connection();
+
+                let results = users_sessions
+                    .filter(token.eq(cookie.value().to_string()))
+                    .limit(1)
+                    .load::<UsersSessions>(&connection)
+                    .expect("Error loading sessions");
+
+                if results.len() == 1 {
+                    use club_coding::schema::users_stripe_subscriptions::dsl::*;
+
+                    let connection = establish_connection();
+                    let results = users_stripe_subscriptions
+                        .filter(user_id.eq(results[0].user_id))
+                        .limit(1)
+                        .load::<UsersStripeSubscriptions>(&connection)
+                        .expect("Error loading sessions");
+
+                    if results.len() == 1 {
+                        return Some(Subscription {
+                            id: results[0].uuid.clone(),
+                        });
+                    } else {
+                        return None;
+                    }
+                } else {
+                    return None;
+                }
+            });
+        match username {
+            Some(uid) => match uid {
+                Some(user) => {
+                    return Outcome::Success(user);
+                }
+                None => return Outcome::Forward(()),
+            },
+            None => return Outcome::Forward(()),
+        }
+    }
+}
 
 #[get("/settings/subscription")]
 fn member_page(user: User, _user: Member) -> Template {
@@ -241,6 +302,27 @@ fn charge_yearly(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>,
     }
 }
 
+#[post("/settings/subscription/cancel")]
+fn cancel(subscription: Subscription) -> Result<Flash<Redirect>, Flash<Redirect>> {
+    let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
+    match stripe::Subscription::cancel(
+        &client,
+        &subscription.id,
+        stripe::CancelParams {
+            at_period_end: Some(true),
+        },
+    ) {
+        Ok(_) => Ok(Flash::success(
+            Redirect::to("/"),
+            "Subscription cancelled. We are sad to see you leave.",
+        )),
+        _ => Err(Flash::error(
+            Redirect::to("/settings/subscription"),
+            "An error occured, please try again later.",
+        )),
+    }
+}
+
 pub fn endpoints() -> Vec<Route> {
     routes![
         member_page,
@@ -248,6 +330,7 @@ pub fn endpoints() -> Vec<Route> {
         nouser_page,
         charge_monthly,
         charge_quarterly,
-        charge_yearly
+        charge_yearly,
+        cancel
     ]
 }
