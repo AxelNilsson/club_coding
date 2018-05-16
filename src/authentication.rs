@@ -1,20 +1,18 @@
 use bcrypt::{hash, verify, DEFAULT_COST};
-use rocket::request::Form;
+use rocket::request::{FlashMessage, Form};
 use rocket_contrib::Template;
-use rocket::response::Redirect;
+use rocket::response::{Flash, Redirect};
 use club_coding::{create_new_user, create_new_user_session, create_new_users_verify_email,
                   establish_connection};
 use rocket::http::{Cookie, Cookies};
 use time::Duration;
 use rocket::Route;
 use users::User as UserStruct;
-use rand;
+use {rand, std};
 use email::{EmailBody, PostmarkClient};
 use club_coding::models::{Users, UsersVerifyEmail};
-use std;
 use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
 use diesel::prelude::*;
-use rocket::response::Flash;
 
 #[derive(FromForm)]
 struct User {
@@ -55,6 +53,7 @@ fn get_user_id_from_username(name: String) -> Result<i64, std::io::Error> {
     let connection = establish_connection();
     let results = users
         .filter(username.eq(name))
+        .filter(verified.eq(true))
         .limit(1)
         .load::<Users>(&connection)
         .expect("Error loading users");
@@ -74,13 +73,27 @@ fn login_page_loggedin(_user: UserStruct) -> Redirect {
     Redirect::to("/")
 }
 
+#[derive(Serialize)]
+struct LoginContext {
+    header: String,
+    csrf: String,
+    flash_name: String,
+    flash_msg: String,
+}
+
 #[get("/login", rank = 2)]
-fn login_page(token: CsrfToken) -> Template {
-    let context = CSRFContext {
+fn login_page(token: CsrfToken, flash: Option<FlashMessage>) -> Template {
+    let (name, msg) = match flash {
+        Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
+        None => ("".to_string(), "".to_string()),
+    };
+    let context = LoginContext {
         header: "Login Page!".to_string(),
         csrf: token.value(),
+        flash_name: name,
+        flash_msg: msg,
     };
-    Template::render("index", &context)
+    Template::render("login", &context)
 }
 
 #[post("/login", data = "<user>")]
@@ -88,7 +101,7 @@ fn login(
     csrf_cookie: CsrfCookie,
     mut cookies: Cookies,
     user: Form<User>,
-) -> Result<Redirect, String> {
+) -> Result<Redirect, Flash<Redirect>> {
     let input_data: User = user.into_inner();
     if csrf_matches(input_data.csrf, csrf_cookie.value()) {
         match get_password_hash_from_username(input_data.username.clone()) {
@@ -104,15 +117,15 @@ fn login(
                         cookies.add_private(c);
                         Ok(Redirect::to("/"))
                     } else {
-                        Err(String::from("Password incorrect"))
+                        Err(Flash::error(Redirect::to("/login"), "Password incorrect"))
                     }
                 }
-                Err(_) => Err(String::from("An error occurred")),
+                Err(_) => Err(Flash::error(Redirect::to("/login"), "An error occurred")),
             },
-            Err(_) => Err(String::from("No user in database")),
+            Err(_) => Err(Flash::error(Redirect::to("/login"), "No user found")),
         }
     } else {
-        Err(String::from("csrf failed"))
+        Err(Flash::error(Redirect::to("/login"), "CSRF Failed."))
     }
 }
 
@@ -182,7 +195,12 @@ fn signup_page(token: CsrfToken) -> Template {
     Template::render("signup", &context)
 }
 
-#[get("/email/verify/<uuid>")]
+#[get("/email/verify/<_uuid>")]
+fn verify_email_loggedin(_uuid: String, _userid: UserStruct) -> Flash<Redirect> {
+    Flash::error(Redirect::to("/"), "Link already used.")
+}
+
+#[get("/email/verify/<uuid>", rank = 2)]
 fn verify_email(uuid: String) -> Result<Flash<Redirect>, Flash<Redirect>> {
     use club_coding::schema::users_verify_email::dsl::*;
 
@@ -232,6 +250,7 @@ pub fn endpoints() -> Vec<Route> {
         register_user,
         signup_page_loggedin,
         signup_page,
+        verify_email_loggedin,
         verify_email,
         logout
     ]

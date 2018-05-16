@@ -6,12 +6,12 @@ use club_coding::{establish_connection, insert_new_card, insert_new_subscription
                   insert_new_users_stripe_customer, insert_new_users_stripe_token};
 use users::User;
 use member::Member;
-use structs::LoggedInContext;
 use stripe;
 use std;
 use club_coding::models::{UsersSessions, UsersStripeSubscriptions};
 use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
+use rocket::request::FlashMessage;
 
 use diesel::prelude::*;
 
@@ -71,20 +71,50 @@ impl<'a, 'r> FromRequest<'a, 'r> for Subscription {
     }
 }
 
+#[derive(Serialize)]
+struct MemberSubscriptionContext {
+    header: String,
+    user: User,
+    member: Member,
+    flash_name: String,
+    flash_msg: String,
+}
+
+#[derive(Serialize)]
+struct SubscriptionContext {
+    header: String,
+    user: User,
+    flash_name: String,
+    flash_msg: String,
+}
+
 #[get("/settings/subscription")]
-fn member_page(user: User, _user: Member) -> Template {
-    let context = LoggedInContext {
+fn member_page(user: User, member: Member, flash: Option<FlashMessage>) -> Template {
+    let (name, msg) = match flash {
+        Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
+        None => ("".to_string(), "".to_string()),
+    };
+    let context = MemberSubscriptionContext {
         header: "Club Coding".to_string(),
         user: user,
+        member: member,
+        flash_name: name,
+        flash_msg: msg,
     };
     Template::render("subscription_member", &context)
 }
 
 #[get("/settings/subscription", rank = 2)]
-fn user_page(user: User) -> Template {
-    let context = LoggedInContext {
+fn user_page(user: User, flash: Option<FlashMessage>) -> Template {
+    let (name, msg) = match flash {
+        Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
+        None => ("".to_string(), "".to_string()),
+    };
+    let context = SubscriptionContext {
         header: "Club Coding".to_string(),
         user: user,
+        flash_name: name,
+        flash_msg: msg,
     };
     Template::render("subscription", &context)
 }

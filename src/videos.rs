@@ -169,10 +169,10 @@ fn watch_nouser(_uuid: String) -> Redirect {
 }
 
 #[get("/thumbnail/<uuid>")]
-fn thumbnail(uuid: String) -> Result<NamedFile, String> {
+fn thumbnail(uuid: String) -> Option<NamedFile> {
     match NamedFile::open(format!("thumbnails/{}.png", uuid)) {
-        Ok(file) => Ok(file),
-        Err(err) => Err(err.to_string()),
+        Ok(file) => Some(file),
+        Err(_) => None,
     }
 }
 
