@@ -5,14 +5,13 @@ use rocket::response::Redirect;
 use club_coding::{create_new_user, create_new_user_session, establish_connection};
 use rocket::http::{Cookie, Cookies};
 use time::Duration;
-use csrf::{AesGcmCsrfProtection, CsrfProtection};
-use data_encoding::BASE64;
 use rocket::Route;
 use users::User as UserStruct;
 use rand;
-
+use email::{EmailBody, PostmarkClient};
 use club_coding::models::Users;
 use std;
+use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
 use diesel::prelude::*;
 
 #[derive(FromForm)]
@@ -22,10 +21,10 @@ struct User {
     csrf: String,
 }
 
-fn generate_session_token(length: u8) -> Result<String, std::io::Error> {
+fn generate_session_token(length: u8) -> String {
     let bytes: Vec<u8> = (0..length).map(|_| rand::random::<u8>()).collect();
     let strings: Vec<String> = bytes.iter().map(|byte| format!("{:02X}", byte)).collect();
-    return Ok(strings.join(""));
+    return strings.join("");
 }
 
 fn get_password_hash_from_username(name: String) -> Result<String, std::io::Error> {
@@ -74,112 +73,83 @@ fn login_page_loggedin(_user: UserStruct) -> Redirect {
 }
 
 #[get("/login", rank = 2)]
-fn login_page(mut cookies: Cookies) -> Template {
-    let protect = AesGcmCsrfProtection::from_key(*b"01234567012345670123456701234567");
-    let (token, cookie) = protect
-        .generate_token_pair(None, 300)
-        .expect("couldn't generate token/cookie pair");
-
-    let mut c = Cookie::new("csrf", cookie.b64_string());
-    c.set_max_age(Duration::hours(24));
-    cookies.add_private(c);
-
+fn login_page(token: CsrfToken) -> Template {
     let context = CSRFContext {
         header: "Login Page!".to_string(),
-        csrf: token.b64_string(),
+        csrf: token.value(),
     };
-
-    Template::render("login", &context)
+    Template::render("index", &context)
 }
 
 #[post("/login", data = "<user>")]
-fn login(mut cookies: Cookies, user: Form<User>) -> Result<Redirect, String> {
-    match cookies.get_private("csrf") {
-        Some(cookie) => {
-            let input_data: User = user.into_inner();
-            let protect = AesGcmCsrfProtection::from_key(*b"01234567012345670123456701234567");
-            let token_bytes = BASE64
-                .decode(input_data.csrf.as_bytes())
-                .expect("token not base64");
-            let cookie_bytes = BASE64
-                .decode(cookie.value().to_string().as_bytes())
-                .expect("cookie not base64");
-
-            let parsed_token = protect.parse_token(&token_bytes).expect("token not parsed");
-            let parsed_cookie = protect
-                .parse_cookie(&cookie_bytes)
-                .expect("cookie not parsed");
-
-            if protect.verify_token_pair(&parsed_token, &parsed_cookie) {
-                match get_password_hash_from_username(input_data.username.clone()) {
-                    Ok(password_hash) => match verify(&input_data.password, &password_hash) {
-                        Ok(passwords_match) => {
-                            if passwords_match {
-                                match generate_session_token(64) {
-                                    Ok(session_token) => {
-                                        let connection = establish_connection();
-                                        let user_id =
-                                            get_user_id_from_username(input_data.username).unwrap();
-                                        create_new_user_session(
-                                            &connection,
-                                            user_id,
-                                            session_token.clone(),
-                                        );
-                                        let mut c = Cookie::new("session_token", session_token);
-                                        c.set_max_age(Duration::hours(24));
-                                        cookies.add_private(c);
-                                        Ok(Redirect::to("/"))
-                                    }
-                                    Err(_) => Err(String::from("Login failed")),
-                                }
-                            } else {
-                                Err(String::from("Password incorrect"))
-                            }
-                        }
-                        Err(_) => Err(String::from("An error occurred")),
-                    },
-                    Err(_) => Err(String::from("No user in database")),
+fn login(csrf_cookie: CsrfCookie, mut cookies: Cookies, user: Form<User>) -> Result<Redirect, String> {
+    let input_data: User = user.into_inner();
+    if csrf_matches(input_data.csrf, csrf_cookie.value()) {
+        match get_password_hash_from_username(input_data.username.clone()) {
+            Ok(password_hash) => match verify(&input_data.password, &password_hash) {
+                Ok(passwords_match) => {
+                    if passwords_match {
+                        let session_token = generate_session_token(64);
+                        let connection = establish_connection();
+                        let user_id =
+                            get_user_id_from_username(input_data.username).unwrap();
+                        create_new_user_session(
+                            &connection,
+                            user_id,
+                            session_token.clone(),
+                        );
+                        let mut c = Cookie::new("session_token", session_token);
+                        c.set_max_age(Duration::hours(24));
+                        cookies.add_private(c);
+                        Ok(Redirect::to("/"))
+                    } else {
+                        Err(String::from("Password incorrect"))
+                    }
                 }
-            } else {
-                Err(String::from("csrf failed"))
-            }
+                Err(_) => Err(String::from("An error occurred")),
+            },
+            Err(_) => Err(String::from("No user in database")),
         }
-        _ => Err(String::from("registration failed")),
+    } else {
+        Err(String::from("csrf failed"))
     }
 }
 
 #[post("/signup", data = "<user>")]
-fn register_user(mut cookies: Cookies, user: Form<User>) -> String {
-    match cookies.get_private("csrf") {
-        Some(cookie) => {
-            let input: User = user.into_inner();
-            let protect = AesGcmCsrfProtection::from_key(*b"01234567012345670123456701234567");
-            let token_bytes = BASE64
-                .decode(input.csrf.as_bytes())
-                .expect("token not base64");
-            let cookie_bytes = BASE64
-                .decode(cookie.value().to_string().as_bytes())
-                .expect("cookie not base64");
+fn register_user(csrf_cookie: CsrfCookie, user: Form<User>) -> String {
+    let input: User = user.into_inner();
+    if csrf_matches(input.csrf, csrf_cookie.value()) {
+        match hash(&input.password, DEFAULT_COST) {
+            Ok(hashed_password) => {
+                let body = EmailBody {
+                    from: "axel@clubcoding.com".to_string(),
+                    to: input.username.clone(),
+                    subject: Some("Welcome to ClubCoding!".to_string()),
+                    html_body: Some(
+                        "<html><body>David. <strong>Daveed.</strong></body></html>"
+                            .to_string(),
+                    ),
+                    cc: None,
+                    bcc: None,
+                    tag: None,
+                    text_body: None,
+                    reply_to: None,
+                    headers: None,
+                    track_opens: None,
+                    track_links: None,
+                };
+                let postmark_client =
+                    PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+                let response = postmark_client.send_email(&body).unwrap();
 
-            let parsed_token = protect.parse_token(&token_bytes).expect("token not parsed");
-            let parsed_cookie = protect
-                .parse_cookie(&cookie_bytes)
-                .expect("cookie not parsed");
-
-            if protect.verify_token_pair(&parsed_token, &parsed_cookie) {
-                match hash(&input.password, DEFAULT_COST) {
-                    Ok(hashed_password) => {
-                        let connection = establish_connection();
-                        create_new_user(&connection, input.username, hashed_password);
-                        return String::from("User registered");
-                    }
-                    Err(_) => return String::from("registration failed"),
-                }
-            } else {
-                String::from("csrf failed")
+                let connection = establish_connection();
+                create_new_user(&connection, input.username, hashed_password);
+                return String::from("User registered");
             }
+            Err(_) => return String::from("registration failed"),
         }
-        _ => String::from("registration failed"),
+    } else {
+        String::from("csrf failed")
     }
 }
 
@@ -195,21 +165,11 @@ fn signup_page_loggedin(_userid: UserStruct) -> Redirect {
 }
 
 #[get("/signup", rank = 2)]
-fn signup_page(mut cookies: Cookies) -> Template {
-    let protect = AesGcmCsrfProtection::from_key(*b"01234567012345670123456701234567");
-    let (token, cookie) = protect
-        .generate_token_pair(None, 300)
-        .expect("couldn't generate token/cookie pair");
-
-    let mut c = Cookie::new("csrf", cookie.b64_string());
-    c.set_max_age(Duration::hours(24));
-    cookies.add_private(c);
-
+fn signup_page(token: CsrfToken) -> Template {
     let context = CSRFContext {
         header: "Sign up!".to_string(),
-        csrf: token.b64_string(),
+        csrf: token.value(),
     };
-
     Template::render("signup", &context)
 }
 

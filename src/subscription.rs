@@ -312,10 +312,34 @@ fn cancel(subscription: Subscription) -> Result<Flash<Redirect>, Flash<Redirect>
             at_period_end: Some(true),
         },
     ) {
-        Ok(_) => Ok(Flash::success(
-            Redirect::to("/"),
-            "Subscription cancelled. We are sad to see you leave.",
-        )),
+        Ok(subscription) => {
+            use club_coding::schema::users_stripe_subscriptions::dsl::*;
+
+            let connection = establish_connection();
+
+            diesel::update(users_stripe_subscriptions.filter(uuid.eq(subscription.id)))
+                .set((
+                    cancel_at_period_end.eq(subscription.cancel_at_period_end),
+                    canceled_at.eq(subscription.canceled_at),
+                    created_at.eq(subscription.created),
+                    current_period_start.eq(subscription.current_period_start),
+                    current_period_end.eq(subscription.current_period_end),
+                    customer.eq(subscription.customer),
+                    ended_at.eq(subscription.ended_at),
+                    livemode.eq(subscription.livemode),
+                    quantity.eq(subscription.quantity as i64),
+                    start.eq(subscription.start),
+                    status.eq(subscription.status),
+                    trial_start.eq(subscription.trial_start),
+                    trial_end.eq(subscription.trial_end),
+                ))
+                .execute(&connection)
+                .unwrap();
+            Ok(Flash::success(
+                Redirect::to("/"),
+                "Subscription cancelled. We are sad to see you leave.",
+            ))
+        }
         _ => Err(Flash::error(
             Redirect::to("/settings/subscription"),
             "An error occured, please try again later.",

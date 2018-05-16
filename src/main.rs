@@ -8,12 +8,19 @@ extern crate club_coding;
 extern crate csrf;
 extern crate data_encoding;
 extern crate diesel;
+extern crate futures;
+extern crate hyper_tls;
 extern crate rand;
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate serde;
+extern crate serde_json;
 extern crate stripe;
 extern crate time;
+extern crate tokio_core;
+
+#[macro_use]
+extern crate hyper;
 
 #[macro_use]
 extern crate serde_derive;
@@ -29,6 +36,8 @@ mod users;
 mod structs;
 mod admin;
 mod series;
+mod email;
+mod custom_csrf;
 
 fn main() {
     rocket::ignite()
