@@ -12,9 +12,9 @@ use std::env;
 
 use self::models::{Groups, NewGroup, NewSerie, NewUser, NewUserGroup, NewUserSession, NewUserView,
                    NewUsersStripeCard, NewUsersStripeCustomer, NewUsersStripeSubscription,
-                   NewUsersStripeToken, NewVideo, Series, Users, UsersGroup, UsersSessions,
-                   UsersStripeCard, UsersStripeCustomer, UsersStripeSubscriptions,
-                   UsersStripeToken, UsersViews, Videos};
+                   NewUsersStripeToken, NewUsersVerifyEmail, NewVideo, Series, Users, UsersGroup,
+                   UsersSessions, UsersStripeCard, UsersStripeCustomer, UsersStripeSubscriptions,
+                   UsersStripeToken, UsersVerifyEmail, UsersViews, Videos};
 
 pub fn establish_connection() -> MysqlConnection {
     dotenv().ok();
@@ -28,8 +28,8 @@ pub fn create_new_group(conn: &MysqlConnection, uuid: String, name: String) -> G
     use schema::groups;
 
     let new_group = NewGroup {
-        uuid: uuid, 
-        name: name
+        uuid: uuid,
+        name: name,
     };
 
     diesel::insert_into(groups::table)
@@ -322,6 +322,29 @@ pub fn insert_new_subscription(
 
     users_stripe_subscriptions::table
         .order(users_stripe_subscriptions::id.desc())
+        .first(conn)
+        .unwrap()
+}
+
+pub fn create_new_users_verify_email(
+    conn: &MysqlConnection,
+    user_id: i64,
+    token: String,
+) -> UsersVerifyEmail {
+    use schema::users_verify_email;
+
+    let new_user_verify_email = NewUsersVerifyEmail {
+        user_id: user_id,
+        token: token,
+    };
+
+    diesel::insert_into(users_verify_email::table)
+        .values(&new_user_verify_email)
+        .execute(conn)
+        .expect("Error saving new user verify email");
+
+    users_verify_email::table
+        .order(users_verify_email::id.desc())
         .first(conn)
         .unwrap()
 }

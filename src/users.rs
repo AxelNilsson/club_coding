@@ -15,16 +15,6 @@ pub fn get_users() -> Vec<Users> {
         .expect("Error loading users")
 }
 
-pub fn get_paying_users() -> Vec<Users> {
-    use club_coding::schema::users::dsl::*;
-
-    let connection = establish_connection();
-    users
-        .order(created.asc())
-        .load::<Users>(&connection)
-        .expect("Error loading users")
-}
-
 #[derive(Serialize)]
 pub struct User {
     pub id: i64,

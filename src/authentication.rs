@@ -2,17 +2,19 @@ use bcrypt::{hash, verify, DEFAULT_COST};
 use rocket::request::Form;
 use rocket_contrib::Template;
 use rocket::response::Redirect;
-use club_coding::{create_new_user, create_new_user_session, establish_connection};
+use club_coding::{create_new_user, create_new_user_session, create_new_users_verify_email,
+                  establish_connection};
 use rocket::http::{Cookie, Cookies};
 use time::Duration;
 use rocket::Route;
 use users::User as UserStruct;
 use rand;
 use email::{EmailBody, PostmarkClient};
-use club_coding::models::Users;
+use club_coding::models::{Users, UsersVerifyEmail};
 use std;
 use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
 use diesel::prelude::*;
+use rocket::response::Flash;
 
 #[derive(FromForm)]
 struct User {
@@ -21,7 +23,7 @@ struct User {
     csrf: String,
 }
 
-fn generate_session_token(length: u8) -> String {
+fn generate_token(length: u8) -> String {
     let bytes: Vec<u8> = (0..length).map(|_| rand::random::<u8>()).collect();
     let strings: Vec<String> = bytes.iter().map(|byte| format!("{:02X}", byte)).collect();
     return strings.join("");
@@ -82,22 +84,21 @@ fn login_page(token: CsrfToken) -> Template {
 }
 
 #[post("/login", data = "<user>")]
-fn login(csrf_cookie: CsrfCookie, mut cookies: Cookies, user: Form<User>) -> Result<Redirect, String> {
+fn login(
+    csrf_cookie: CsrfCookie,
+    mut cookies: Cookies,
+    user: Form<User>,
+) -> Result<Redirect, String> {
     let input_data: User = user.into_inner();
     if csrf_matches(input_data.csrf, csrf_cookie.value()) {
         match get_password_hash_from_username(input_data.username.clone()) {
             Ok(password_hash) => match verify(&input_data.password, &password_hash) {
                 Ok(passwords_match) => {
                     if passwords_match {
-                        let session_token = generate_session_token(64);
+                        let session_token = generate_token(64);
                         let connection = establish_connection();
-                        let user_id =
-                            get_user_id_from_username(input_data.username).unwrap();
-                        create_new_user_session(
-                            &connection,
-                            user_id,
-                            session_token.clone(),
-                        );
+                        let user_id = get_user_id_from_username(input_data.username).unwrap();
+                        create_new_user_session(&connection, user_id, session_token.clone());
                         let mut c = Cookie::new("session_token", session_token);
                         c.set_max_age(Duration::hours(24));
                         cookies.add_private(c);
@@ -116,19 +117,24 @@ fn login(csrf_cookie: CsrfCookie, mut cookies: Cookies, user: Form<User>) -> Res
 }
 
 #[post("/signup", data = "<user>")]
-fn register_user(csrf_cookie: CsrfCookie, user: Form<User>) -> String {
+fn register_user(
+    csrf_cookie: CsrfCookie,
+    user: Form<User>,
+) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input: User = user.into_inner();
     if csrf_matches(input.csrf, csrf_cookie.value()) {
         match hash(&input.password, DEFAULT_COST) {
             Ok(hashed_password) => {
+                let connection = establish_connection();
+                let new_user =
+                    create_new_user(&connection, input.username.clone(), hashed_password);
+                let token = generate_token(30);
+                create_new_users_verify_email(&connection, new_user.id, token.clone());
                 let body = EmailBody {
                     from: "axel@clubcoding.com".to_string(),
                     to: input.username.clone(),
                     subject: Some("Welcome to ClubCoding!".to_string()),
-                    html_body: Some(
-                        "<html><body>David. <strong>Daveed.</strong></body></html>"
-                            .to_string(),
-                    ),
+                    html_body: Some(format!("<html><body><a href='https://clubcoding.com/email/verify/{}'>Please press this link to confirm your e-mail.</a></body></html>", token)),
                     cc: None,
                     bcc: None,
                     tag: None,
@@ -138,18 +144,21 @@ fn register_user(csrf_cookie: CsrfCookie, user: Form<User>) -> String {
                     track_opens: None,
                     track_links: None,
                 };
-                let postmark_client =
-                    PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
-                let response = postmark_client.send_email(&body).unwrap();
+                let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+                postmark_client.send_email(&body).unwrap();
 
-                let connection = establish_connection();
-                create_new_user(&connection, input.username, hashed_password);
-                return String::from("User registered");
+                Ok(Flash::success(
+                    Redirect::to("/"),
+                    "Registration successful! Please check your email.",
+                ))
             }
-            Err(_) => return String::from("registration failed"),
+            Err(_) => Err(Flash::error(
+                Redirect::to("/signup"),
+                "An error occured, please try again later.",
+            )),
         }
     } else {
-        String::from("csrf failed")
+        Err(Flash::error(Redirect::to("/signup"), "CSRF Failed."))
     }
 }
 
@@ -173,6 +182,42 @@ fn signup_page(token: CsrfToken) -> Template {
     Template::render("signup", &context)
 }
 
+#[get("/email/verify/<uuid>")]
+fn verify_email(uuid: String) -> Result<Flash<Redirect>, Flash<Redirect>> {
+    use club_coding::schema::users_verify_email::dsl::*;
+
+    let connection = establish_connection();
+    let results = users_verify_email
+        .filter(token.eq(uuid))
+        .limit(1)
+        .load::<UsersVerifyEmail>(&connection)
+        .expect("Error loading users verify email");
+
+    if results.len() == 1 {
+        if results[0].used {
+            Err(Flash::error(Redirect::to("/"), "Link already used."))
+        } else {
+            diesel::update(users_verify_email.find(results[0].id))
+                .set(used.eq(true))
+                .execute(&connection)
+                .unwrap();
+
+            use club_coding::schema::users::dsl::*;
+            diesel::update(users.find(results[0].user_id))
+                .set(verified.eq(true))
+                .execute(&connection)
+                .unwrap();
+
+            Ok(Flash::success(
+                Redirect::to("/"),
+                "Email verified, please sign in.",
+            ))
+        }
+    } else {
+        Err(Flash::error(Redirect::to("/"), "Link incorrect."))
+    }
+}
+
 #[get("/logout")]
 fn logout(mut cookies: Cookies) -> Redirect {
     cookies.remove_private(Cookie::named("session_token"));
@@ -187,6 +232,7 @@ pub fn endpoints() -> Vec<Route> {
         register_user,
         signup_page_loggedin,
         signup_page,
+        verify_email,
         logout
     ]
 }

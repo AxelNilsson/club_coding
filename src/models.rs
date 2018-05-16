@@ -48,6 +48,7 @@ pub struct Users {
     pub id: i64,
     pub username: String,
     pub password: String,
+    pub verified: bool,
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
 }
@@ -247,6 +248,23 @@ pub struct UsersSessions {
 #[derive(Insertable)]
 #[table_name = "users_sessions"]
 pub struct NewUserSession {
+    pub user_id: i64,
+    pub token: String,
+}
+
+#[derive(Queryable)]
+pub struct UsersVerifyEmail {
+    pub id: i64,
+    pub user_id: i64,
+    pub token: String,
+    pub used: bool,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name = "users_verify_email"]
+pub struct NewUsersVerifyEmail {
     pub user_id: i64,
     pub token: String,
 }

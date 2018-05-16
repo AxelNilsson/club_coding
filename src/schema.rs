@@ -27,6 +27,7 @@ table! {
         id -> Bigint,
         username -> Varchar,
         password -> Varchar,
+        verified -> Bool,
         created -> Timestamp,
         updated -> Timestamp,
     }
@@ -141,6 +142,17 @@ table! {
 }
 
 table! {
+    users_verify_email (id) {
+        id -> Bigint,
+        user_id -> Bigint,
+        token -> Varchar,
+        used -> Bool,
+        created -> Timestamp,
+        updated -> Timestamp,
+    }
+}
+
+table! {
     users_views (id) {
         id -> Bigint,
         user_id -> Bigint,
@@ -178,6 +190,7 @@ allow_tables_to_appear_in_same_query!(
     users_stripe_customer,
     users_stripe_subscriptions,
     users_stripe_token,
+    users_verify_email,
     users_views,
     videos,
 );

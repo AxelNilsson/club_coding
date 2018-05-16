@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `verified` tinyint(1) NOT NULL DEFAULT '0';
