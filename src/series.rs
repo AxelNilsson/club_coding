@@ -131,6 +131,51 @@ fn serie(user: User, uuid: String) -> Template {
     Template::render("series", &context)
 }
 
+#[derive(Serialize)]
+struct SerieNoLogin {
+    header: String,
+    uuid: String,
+    title: String,
+    description: String,
+    videos: Vec<PublicVideo>,
+}
+
+fn get_videos_nologin(sid: i64) -> Vec<PublicVideo> {
+    use club_coding::schema::videos::dsl::*;
+
+    let connection = establish_connection();
+    let v_ideos = videos
+        .filter(series.eq(sid))
+        .order(episode_number.asc())
+        .load::<Videos>(&connection)
+        .expect("Error loading users");
+
+    let mut to_return: Vec<PublicVideo> = vec![];
+    for video in v_ideos {
+        to_return.push(PublicVideo {
+            episode_number: video.episode_number,
+            uuid: video.uuid,
+            title: video.title,
+            description: video.description,
+            watched: false,
+        });
+    }
+    to_return
+}
+
+#[get("/<uuid>", rank = 2)]
+fn serie_nologin(uuid: String) -> Template {
+    let serie = get_serie(uuid.clone());
+    let context = SerieNoLogin {
+        header: serie.title.clone(),
+        uuid: uuid,
+        title: serie.title,
+        description: serie.description,
+        videos: get_videos_nologin(serie.id),
+    };
+    Template::render("series_nologin", &context)
+}
+
 pub fn endpoints() -> Vec<Route> {
-    routes![serie]
+    routes![serie, serie_nologin]
 }

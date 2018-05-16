@@ -163,9 +163,58 @@ fn watch_as_user(user: User, uuid: String) -> Result<Template, Redirect> {
     }
 }
 
-#[get("/watch/<_uuid>", rank = 3)]
-fn watch_nouser(_uuid: String) -> Redirect {
-    Redirect::to("/login")
+fn get_videos_of_series_nologin(sid: i64) -> Vec<PublicVideo> {
+    use club_coding::schema::videos::dsl::*;
+
+    let connection = establish_connection();
+    let v_ideos = videos
+        .filter(series.eq(sid))
+        .order(episode_number.asc())
+        .load::<Videos>(&connection)
+        .expect("Error loading users");
+
+    let mut to_return: Vec<PublicVideo> = vec![];
+    for video in v_ideos {
+        to_return.push(PublicVideo {
+            episode_number: video.episode_number,
+            uuid: video.uuid,
+            title: video.title,
+            description: video.description,
+            watched: false,
+        });
+    }
+    to_return
+}
+
+
+#[derive(Serialize)]
+struct WatchNoUser {
+    uuid: String,
+    series_title: String,
+    title: String,
+    description: String,
+    videos: Vec<PublicVideo>,
+}
+
+#[get("/watch/<uuid>", rank = 3)]
+fn watch_nouser(uuid: String) -> Result<Template, Redirect> {
+    match get_video_data_from_uuid(uuid) {
+        Ok(video) => {
+            let videos: Vec<PublicVideo> = match video.series {
+                Some(series_id) => get_videos_of_series_nologin(series_id),
+                None => vec![],
+            };
+            let context = WatchNoUser {
+                uuid: video.uuid,
+                series_title: get_series_title(video.series),
+                title: video.title,
+                description: video.description,
+                videos: videos,
+            };
+            Ok(Template::render("watch_nologin", &context))
+        }
+        Err(_video_not_found) => Err(Redirect::to("/")),
+    }
 }
 
 #[get("/thumbnail/<uuid>")]
