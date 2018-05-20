@@ -25,9 +25,7 @@ extern crate hyper;
 #[macro_use]
 extern crate serde_derive;
 
-mod member;
 mod authentication;
-mod subscription;
 mod settings;
 mod pages;
 mod search;
@@ -38,15 +36,16 @@ mod admin;
 mod series;
 mod email;
 mod custom_csrf;
+mod charge;
 
 fn main() {
     rocket::ignite()
         .mount("/", authentication::endpoints())
-        .mount("/", subscription::endpoints())
         .mount("/", settings::endpoints())
         .mount("/", pages::endpoints())
         .mount("/", search::endpoints())
         .mount("/", videos::endpoints())
+        .mount("/", charge::endpoints())
         .mount("/series", series::endpoints())
         .mount("/admin", admin::endpoints())
         .attach(rocket_contrib::Template::fairing())

@@ -96,7 +96,9 @@
         </v-layout>
       </v-card>
      {% endfor %}
+     {% if in_development %}
      <p style="text-align: center; color: #919499; margin-top: 2em!important; font-weight: 400; font-size: 16px;">*Series still in development. Check back often for updates.</p>
+     {% endif %}
     </v-flex>
   </v-layout>
 {% endblock content %}

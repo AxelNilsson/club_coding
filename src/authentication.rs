@@ -101,7 +101,7 @@ fn login(
     csrf_cookie: CsrfCookie,
     mut cookies: Cookies,
     user: Form<User>,
-) -> Result<Redirect, Flash<Redirect>> {
+) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input_data: User = user.into_inner();
     if csrf_matches(input_data.csrf, csrf_cookie.value()) {
         match get_password_hash_from_username(input_data.username.clone()) {
@@ -115,7 +115,7 @@ fn login(
                         let mut c = Cookie::new("session_token", session_token);
                         c.set_max_age(Duration::hours(24));
                         cookies.add_private(c);
-                        Ok(Redirect::to("/"))
+                        Ok(Flash::success(Redirect::to("/"), "You're now logged in."))
                     } else {
                         Err(Flash::error(Redirect::to("/login"), "Password incorrect"))
                     }

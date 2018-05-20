@@ -73,7 +73,7 @@
           <v-layout>
             <v-flex xs10 offset-xs1 style="text-align: center;">
               <img src="https://laracasts.com/svg-loaders/hearts.svg" style="margin-bottom: 2em;">
-              <h1 class="display-2 blue-grey--text text--darken-2" style="text-align: center; font-weight: 400!important;">Choose a plan that fits your needs.</h1>
+              <h1 class="display-2 blue-grey--text text--darken-2" style="text-align: center; font-weight: 400!important;">You're almost there.</h1>
               <v-layout>
                 <v-flex xs8 offset-xs2>
                   <p class="subheading blue-grey--text text--lighten-1" style="letter-spacing: 0.5px!important; margin-top: 1em; line-height: 1.4!important; font-size: 18px!important; font-weight: 400; text-align: center">Joining takes less than a minute, and, if your peers are correct, is a pretty dang good decision. If you're still on the fence, we have a plan called “monthly” - and it’s not like the gym. Seriously - you can cancel in five seconds, if this isn't for you.</p>
@@ -82,65 +82,25 @@
             </v-flex>
           </v-layout>
           <v-layout style="margin-top: 4em;">
-            <v-flex xs3 offset-xs1>
-              <v-card style="text-align: center; padding: 2em;">
-                <h2 class="headline blue-grey--text text--lighten-1">MONTHLY</h2>
-                <v-layout>
-                  <v-flex xs2 offset-xs5>
-                    <v-divider style="margin: 1em 0; padding: 2px;"></v-divider>
-                  </v-flex>
-                </v-layout>
-                <h1 class="display-3 blue-grey--text text--darken-2" style="text-align: center; font-weight: 500!important;"><span class="display-1 blue-grey--text text--lighten-1">$</span>15</h1>
-                <p class="subheading blue-grey--text" style="line-height: 1.5!important; font-weight: 400!important; padding: 1em">Still undecided? Ease in with a monthly plan that can be canceled in ten seconds.</p>
-                <v-btn large outline color="deep-orange darken-1" @click.native="open('monthly')">Start learning</v-btn>
-              </v-card>
-            </v-flex>
-            <v-flex xs3 style="margin: -1em 5% 0">
-              <v-card style="text-align: center; padding: 2em;">
-                <h2 class="headline blue-grey--text text--lighten-1">QUARTERLY</h2>
-                <v-layout>
-                  <v-flex xs2 offset-xs5>
-                    <v-divider style="margin: 1em 0; padding: 2px;"></v-divider>
-                  </v-flex>
-                </v-layout>
-                <h1 class="display-3 blue-grey--text text--darken-2" style="text-align: center; font-weight: 500!important;"><span class="display-1 blue-grey--text text--lighten-1">$</span>30</h1>
-                <p class="subheading blue-grey--text" style="line-height: 1.5!important; font-weight: 400!important; padding: 1em 0.5em">You know our videos are good, be kind to your wallet and save 30% by going quarterly.</p>
-                <v-btn large outline color="deep-orange darken-1" @click.native="open('quarterly')">Start learning</v-btn>
-              </v-card>
-            </v-flex>
-            <v-flex xs3>
-              <v-card style="text-align: center; padding: 2em;">
-                <h2 class="headline blue-grey--text text--lighten-1">YEARLY</h2>
-                <v-layout>
-                  <v-flex xs2 offset-xs5>
-                    <v-divider style="margin: 1em 0; padding: 2px;"></v-divider>
-                  </v-flex>
-                </v-layout>
-                <h1 class="display-3 blue-grey--text text--darken-2" style="text-align: center; font-weight: 500!important;"><span class="display-1 blue-grey--text text--lighten-1">$</span>100</h1>
-                <p class="subheading blue-grey--text" style="line-height: 1.5!important; font-weight: 400!important; padding: 1em 0.5em">This is your career we're talking about. Go all in, and save 40% off the monthly rate.</p>
-                <v-btn large outline color="deep-orange darken-1" @click.native="open('yearly')">Start learning</v-btn>
-              </v-card>
+            <v-flex xs6 offset-xs3>
+                <v-card flat style="padding: 2em;">
+                <h2 class="headline">Add a card to your account</h2>
+                <form action="/charge/" method="post" style="margin: 1em 0;" id="payment-form">
+                    <div class="form-row">
+                    <div id="card-element"></div>
+                    <div id="card-errors" role="alert"></div>
+                    </div>
+                    <v-btn style="margin: 1em 0 -1em;" large block dark color="green" :disabled="disabled" :loading="loading"  @click="add_card($event)">Add card</v-btn>
+                </form>
+                </v-card>
             </v-flex>
           </v-layout>
         </div>
       </v-flex>
     </v-layout>
   </v-container>
-  <v-dialog v-model="dialog" max-width="750px">
-    <v-card style="padding: 2em;">
-      <h2 class="headline">Start a ${ period } subscription!</h2>
-      <form :action="'/charge/' + period" method="post" style="margin: 1em 0;" id="payment-form">
-        <div class="form-row">
-          <div id="card-element"></div>
-          <div id="card-errors" role="alert"></div>
-        </div>
-        <v-btn style="margin: 1em 0 -1em;" large block dark color="green" :disabled="disabled" :loading="loading"  @click="become_member(period, $event)">Become a ${ period } member!</v-btn>
-      </form>
-    </v-card>
-  </v-dialog>
 {% endblock content %}
 {% block script %}
-  <script src="https://unpkg.com/axios@0.18.0/dist/axios.min.js"></script>
   <script>
     new Vue({
       el: '#app',
@@ -148,12 +108,6 @@
       data: {
         loading: false,
         disabled: false,
-        dialog: false,
-        period: "",
-        show_success: false,
-        success: "",
-        show_error: false,
-        error: "",
         card: null,
         stripe: null
       },
@@ -202,17 +156,7 @@
         });
       },
       methods: {
-        open(period) {
-          this.dialog = true;
-          this.period = period;
-        },
-        close() {
-          this.dialog = false;
-          setTimeout(() => {
-            this.period = "";
-          }, 500);
-        },
-        become_member(message, event) {
+        add_card(event) {
           this.loading = true;
           event.preventDefault();
           this.stripe.createToken(this.card).then(result => {

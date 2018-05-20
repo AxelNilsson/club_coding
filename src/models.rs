@@ -26,8 +26,10 @@ pub struct Series {
     pub title: String,
     pub slug: String,
     pub description: String,
+    pub price: i32,
     pub published: bool,
     pub archived: bool,
+    pub in_development: bool,
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
 }
@@ -39,6 +41,7 @@ pub struct NewSerie {
     pub title: String,
     pub slug: String,
     pub description: String,
+    pub price: i32,
     pub published: bool,
     pub archived: bool,
 }
@@ -76,6 +79,24 @@ pub struct NewUserGroup {
     pub group_id: i64,
 }
 
+#[derive(Queryable, Clone)]
+pub struct UsersSeriesAccess {
+    pub id: i64,
+    pub user_id: i64,
+    pub series_id: i64,
+    pub bought: bool,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name = "users_series_access"]
+pub struct NewUserSeriesAccess {
+    pub user_id: i64,
+    pub series_id: i64,
+    pub bought: bool,
+}
+
 #[derive(Queryable)]
 pub struct UsersStripeCard {
     pub id: i64,
@@ -105,7 +126,7 @@ pub struct UsersStripeCard {
 
 #[derive(Insertable)]
 #[table_name = "users_stripe_card"]
-pub struct NewUsersStripeCard {
+pub struct NewUserStripeCard {
     pub user_id: i64,
     pub address_city: Option<String>,
     pub address_country: Option<String>,
@@ -149,9 +170,9 @@ pub struct UsersStripeCustomer {
 
 #[derive(Insertable)]
 #[table_name = "users_stripe_customer"]
-pub struct NewUsersStripeCustomer {
+pub struct NewUserStripeCustomer<'a> {
     pub user_id: i64,
-    pub uuid: String,
+    pub uuid: &'a String,
     pub account_balance: i64,
     pub business_vat_id: Option<String>,
     pub created_at_stripe: i64,
@@ -160,52 +181,6 @@ pub struct NewUsersStripeCustomer {
     pub desc: Option<String>,
     pub email: Option<String>,
     pub livemode: bool,
-}
-
-#[derive(Queryable)]
-pub struct UsersStripeSubscriptions {
-    pub id: i64,
-    pub user_id: i64,
-    pub uuid: String,
-    pub application_fee_percent: Option<f32>,
-    pub cancel_at_period_end: bool,
-    pub canceled_at: Option<i64>,
-    pub created_at: Option<i64>,
-    pub current_period_start: i64,
-    pub current_period_end: i64,
-    pub customer: String,
-    pub ended_at: Option<i64>,
-    pub livemode: bool,
-    pub quantity: i64,
-    pub start: i64,
-    pub status: String,
-    pub tax_percent: Option<f32>,
-    pub trial_start: Option<i64>,
-    pub trial_end: Option<i64>,
-    pub created: NaiveDateTime,
-    pub updated: NaiveDateTime,
-}
-
-#[derive(Insertable)]
-#[table_name = "users_stripe_subscriptions"]
-pub struct NewUsersStripeSubscription {
-    pub user_id: i64,
-    pub uuid: String,
-    pub application_fee_percent: Option<f32>,
-    pub cancel_at_period_end: bool,
-    pub canceled_at: Option<i64>,
-    pub created_at: Option<i64>,
-    pub current_period_start: i64,
-    pub current_period_end: i64,
-    pub customer: String,
-    pub ended_at: Option<i64>,
-    pub livemode: bool,
-    pub quantity: i64,
-    pub start: i64,
-    pub status: String,
-    pub tax_percent: Option<f32>,
-    pub trial_start: Option<i64>,
-    pub trial_end: Option<i64>,
 }
 
 #[derive(Queryable)]
@@ -225,7 +200,7 @@ pub struct UsersStripeToken {
 
 #[derive(Insertable)]
 #[table_name = "users_stripe_token"]
-pub struct NewUsersStripeToken {
+pub struct NewUserStripeToken {
     pub user_id: i64,
     pub client_ip: String,
     pub created_at_stripe: i64,
@@ -264,7 +239,7 @@ pub struct UsersVerifyEmail {
 
 #[derive(Insertable)]
 #[table_name = "users_verify_email"]
-pub struct NewUsersVerifyEmail {
+pub struct NewUserVerifyEmail {
     pub user_id: i64,
     pub token: String,
 }

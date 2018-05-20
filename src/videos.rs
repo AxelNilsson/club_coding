@@ -1,10 +1,9 @@
 use rocket::Route;
 use rocket_contrib::Template;
-use rocket::response::{NamedFile, Redirect};
+use rocket::response::{Flash, NamedFile, Redirect};
 use club_coding::{create_new_user_view, establish_connection};
-use club_coding::models::{Series, UsersViews, Videos};
+use club_coding::models::{Series, UsersSeriesAccess, UsersStripeCustomer, UsersViews, Videos};
 use diesel::prelude::*;
-use member::Member;
 use users::User;
 use std;
 use series::{get_video_watched, PublicVideo};
@@ -19,7 +18,7 @@ pub fn get_videos() -> Vec<Videos> {
         .expect("Error loading videos")
 }
 
-fn get_video_data_from_uuid(uid: String) -> Result<Videos, std::io::Error> {
+fn get_video_data_from_uuid(uid: &String) -> Result<Videos, std::io::Error> {
     use club_coding::schema::videos::dsl::*;
 
     let connection = establish_connection();
@@ -112,33 +111,23 @@ fn create_new_view(vid: i64, uid: i64) {
     }
 }
 
-#[get("/watch/<uuid>")]
-fn watch_as_member(_member: Member, user: User, uuid: String) -> Result<Template, Redirect> {
-    match get_video_data_from_uuid(uuid) {
-        Ok(video) => {
-            let videos: Vec<PublicVideo> = match video.series {
-                Some(series_id) => get_videos_of_series(user.id, series_id),
-                None => vec![],
-            };
-            let context = WatchContext {
-                uuid: video.uuid,
-                series_title: get_series_title(video.series),
-                title: video.title,
-                description: video.description,
-                user: &user,
-                vimeo_id: video.vimeo_id,
-                videos: videos,
-            };
-            create_new_view(video.id, user.id);
-            Ok(Template::render("watch_member", &context))
-        }
-        Err(_video_not_found) => Err(Redirect::to("/")),
-    }
+fn user_has_bought(sid: i64, uid: i64) -> bool {
+    use club_coding::schema::users_series_access::dsl::*;
+    let connection = establish_connection();
+
+    let series = users_series_access
+        .filter(user_id.eq(uid))
+        .filter(series_id.eq(sid))
+        .limit(1)
+        .load::<UsersSeriesAccess>(&connection)
+        .expect("Error loading user series");
+
+    return series.len() == 1;
 }
 
-#[get("/watch/<uuid>", rank = 2)]
+#[get("/watch/<uuid>")]
 fn watch_as_user(user: User, uuid: String) -> Result<Template, Redirect> {
-    match get_video_data_from_uuid(uuid) {
+    match get_video_data_from_uuid(&uuid) {
         Ok(video) => {
             let videos: Vec<PublicVideo> = match video.series {
                 Some(series_id) => get_videos_of_series(user.id, series_id),
@@ -154,7 +143,17 @@ fn watch_as_user(user: User, uuid: String) -> Result<Template, Redirect> {
                 videos: videos,
             };
             if video.membership_only {
-                Ok(Template::render("watch_member", &context))
+                match video.series {
+                    Some(series_id) => {
+                        if user_has_bought(series_id, user.id) {
+                            create_new_view(video.id, user.id);
+                            Ok(Template::render("watch_member", &context))
+                        } else {
+                            Ok(Template::render("watch_nomember", &context))
+                        }
+                    }
+                    None => Ok(Template::render("watch_nomember", &context)),
+                }
             } else {
                 Ok(Template::render("watch_nomember", &context))
             }
@@ -186,7 +185,6 @@ fn get_videos_of_series_nologin(sid: i64) -> Vec<PublicVideo> {
     to_return
 }
 
-
 #[derive(Serialize)]
 struct WatchNoUser {
     uuid: String,
@@ -196,9 +194,9 @@ struct WatchNoUser {
     videos: Vec<PublicVideo>,
 }
 
-#[get("/watch/<uuid>", rank = 3)]
+#[get("/watch/<uuid>", rank = 2)]
 fn watch_nouser(uuid: String) -> Result<Template, Redirect> {
-    match get_video_data_from_uuid(uuid) {
+    match get_video_data_from_uuid(&uuid) {
         Ok(video) => {
             let videos: Vec<PublicVideo> = match video.series {
                 Some(series_id) => get_videos_of_series_nologin(series_id),
@@ -225,6 +223,79 @@ fn thumbnail(uuid: String) -> Option<NamedFile> {
     }
 }
 
+fn get_customer(uid: i64) -> UsersStripeCustomer {
+    use club_coding::schema::users_stripe_customer::dsl::*;
+
+    let connection = establish_connection();
+    users_stripe_customer
+        .filter(user_id.eq(uid))
+        .first(&connection)
+        .expect("Error loading customer")
+}
+
+fn get_serie(sid: i64) -> Series {
+    use club_coding::schema::series::dsl::*;
+
+    let connection = establish_connection();
+    series
+        .filter(id.eq(sid))
+        .first(&connection)
+        .expect("Error loading serie")
+}
+
+#[get("/watch/<uuid>/buy")]
+fn buy_serie(user: User, uuid: String) -> Result<Flash<Redirect>, Redirect> {
+    match get_video_data_from_uuid(&uuid) {
+        Ok(video) => {
+            match video.series {
+                Some(series_id) => {
+                    let serie = get_serie(series_id);
+                    let stripe_customer = get_customer(user.id);
+
+                    match stripe_customer.default_source {
+                        Some(customer_source) => {
+                            // Create the customer
+                            let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
+
+                            let charge = stripe::Charge::create(
+                                &client,
+                                stripe::ChargeParams {
+                                    amount: Some(serie.price as u64),
+                                    currency: Some(stripe::Currency::USD),
+                                    application_fee: None,
+                                    capture: None,
+                                    description: None,
+                                    destination: None,
+                                    fraud_details: None,
+                                    transfer_group: None,
+                                    on_behalf_of: None,
+                                    metadata: None,
+                                    receipt_email: None,
+                                    shipping: None,
+                                    customer: Some(stripe_customer.uuid),
+                                    source: Some(stripe::CustomerSource::Token(&customer_source)),
+                                    statement_descriptor: None,
+                                },
+                            ).unwrap();
+                            println!("{:?}", charge);
+                            Ok(Flash::error(
+                                Redirect::to(&format!("/watch/{}", uuid)),
+                                "Series unlocked! Congratulations!",
+                            ))
+                        }
+                        None => Ok(Flash::error(
+                            Redirect::to(&format!("/watch/{}", uuid)),
+                            "An error occured, please try again later.",
+                        )),
+                    }
+                }
+                None => Err(Redirect::to("/")),
+            }
+        }
+        Err(_video_not_found) => Err(Redirect::to("/")),
+    }
+}
+
 pub fn endpoints() -> Vec<Route> {
-    routes![thumbnail, watch_as_member, watch_as_user, watch_nouser]
+    routes![thumbnail, watch_as_user, watch_nouser, buy_serie]
 }

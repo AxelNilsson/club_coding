@@ -37,7 +37,9 @@
               <v-card style="padding: 0 8px">
                 <v-layout wrap row>
                   <v-flex xs10>
-                    <v-text-field style="height: 100%;" prepend-icon="search" solo flat label="WHAT ARE YOU INTERESTED IN?"></v-text-field>
+                    <v-form method="GET" action="/search">
+                      <v-text-field style="height: 100%;" name="search_query" prepend-icon="search" solo flat label="WHAT ARE YOU INTERESTED IN?"></v-text-field>
+                    </v-form>
                   </v-flex>
                   <v-flex xs2>
                     <v-btn large block style="color: white; background-color: #00b1b3;">SEARCH</v-btn>
@@ -75,14 +77,16 @@
  
   <script src="https://unpkg.com/vue/dist/vue.js"></script>
   <script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
+  {% block script %}
   <script>
     new Vue({
       el: '#app',
       delimiters: ["${","}"],
       data: {
+        {% block data %}{% endblock data %}
       }
     })
   </script>
-  {% block script %}{% endblock script %}
+  {% endblock script %}
 </body>
 </html>

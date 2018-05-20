@@ -10,11 +10,9 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
-use self::models::{Groups, NewGroup, NewSerie, NewUser, NewUserGroup, NewUserSession, NewUserView,
-                   NewUsersStripeCard, NewUsersStripeCustomer, NewUsersStripeSubscription,
-                   NewUsersStripeToken, NewUsersVerifyEmail, NewVideo, Series, Users, UsersGroup,
-                   UsersSessions, UsersStripeCard, UsersStripeCustomer, UsersStripeSubscriptions,
-                   UsersStripeToken, UsersVerifyEmail, UsersViews, Videos};
+use self::models::{NewGroup, NewSerie, NewUser, NewUserGroup, NewUserSeriesAccess, NewUserSession,
+                   NewUserStripeCard, NewUserStripeCustomer, NewUserStripeToken,
+                   NewUserVerifyEmail, NewUserView, NewVideo, Users};
 
 pub fn establish_connection() -> MysqlConnection {
     dotenv().ok();
@@ -24,7 +22,7 @@ pub fn establish_connection() -> MysqlConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
-pub fn create_new_group(conn: &MysqlConnection, uuid: String, name: String) -> Groups {
+pub fn create_new_group(conn: &MysqlConnection, uuid: String, name: String) {
     use schema::groups;
 
     let new_group = NewGroup {
@@ -36,8 +34,6 @@ pub fn create_new_group(conn: &MysqlConnection, uuid: String, name: String) -> G
         .values(&new_group)
         .execute(conn)
         .expect("Error saving new group");
-
-    groups::table.order(groups::id.desc()).first(conn).unwrap()
 }
 
 pub fn create_new_series(
@@ -46,9 +42,10 @@ pub fn create_new_series(
     title: String,
     slug: String,
     description: String,
+    price: i32,
     published: bool,
     archived: bool,
-) -> Series {
+) {
     use schema::series;
 
     let new_video = NewSerie {
@@ -56,6 +53,7 @@ pub fn create_new_series(
         title: title,
         slug: slug,
         description: description,
+        price: price,
         published: published,
         archived: archived,
     };
@@ -64,15 +62,9 @@ pub fn create_new_series(
         .values(&new_video)
         .execute(conn)
         .expect("Error saving new user");
-
-    series::table.order(series::id.desc()).first(conn).unwrap()
 }
 
-pub fn create_new_user_session(
-    conn: &MysqlConnection,
-    user_id: i64,
-    token: String,
-) -> UsersSessions {
+pub fn create_new_user_session(conn: &MysqlConnection, user_id: i64, token: String) {
     use schema::users_sessions;
 
     let new_user_session = NewUserSession {
@@ -84,11 +76,6 @@ pub fn create_new_user_session(
         .values(&new_user_session)
         .execute(conn)
         .expect("Error saving new session");
-
-    users_sessions::table
-        .order(users_sessions::id.desc())
-        .first(conn)
-        .unwrap()
 }
 
 pub fn create_new_user(conn: &MysqlConnection, username: String, password: String) -> Users {
@@ -107,7 +94,7 @@ pub fn create_new_user(conn: &MysqlConnection, username: String, password: Strin
     users::table.order(users::id.desc()).first(conn).unwrap()
 }
 
-pub fn create_new_user_group(conn: &MysqlConnection, user_id: i64, group_id: i64) -> UsersGroup {
+pub fn create_new_user_group(conn: &MysqlConnection, user_id: i64, group_id: i64) {
     use schema::users_group;
 
     let new_user_group = NewUserGroup {
@@ -119,11 +106,26 @@ pub fn create_new_user_group(conn: &MysqlConnection, user_id: i64, group_id: i64
         .values(&new_user_group)
         .execute(conn)
         .expect("Error saving new user group");
+}
 
-    users_group::table
-        .order(users_group::id.desc())
-        .first(conn)
-        .unwrap()
+pub fn create_new_user_series_access(
+    conn: &MysqlConnection,
+    user_id: i64,
+    series_id: i64,
+    bought: bool,
+) {
+    use schema::users_series_access;
+
+    let new_user_series_access = NewUserSeriesAccess {
+        user_id: user_id,
+        series_id: series_id,
+        bought: bought,
+    };
+
+    diesel::insert_into(users_series_access::table)
+        .values(&new_user_series_access)
+        .execute(conn)
+        .expect("Error saving new user series access");
 }
 
 pub fn insert_new_card(
@@ -150,10 +152,10 @@ pub fn insert_new_card(
     name: Option<String>,
     object: Option<String>,
     tokenization_method: Option<String>,
-) -> UsersStripeCard {
+) {
     use schema::users_stripe_card;
 
-    let new_card = NewUsersStripeCard {
+    let new_card = NewUserStripeCard {
         user_id: user_id,
         address_city: address_city,
         address_country: address_country,
@@ -182,11 +184,6 @@ pub fn insert_new_card(
         .values(&new_card)
         .execute(conn)
         .expect("Error saving new card");
-
-    users_stripe_card::table
-        .order(users_stripe_card::id.desc())
-        .first(conn)
-        .unwrap()
 }
 
 pub fn insert_new_users_stripe_token(
@@ -199,10 +196,10 @@ pub fn insert_new_users_stripe_token(
     object: Option<String>,
     type_: Option<String>,
     used: bool,
-) -> UsersStripeToken {
+) {
     use schema::users_stripe_token;
 
-    let new_stripe = NewUsersStripeToken {
+    let new_stripe = NewUserStripeToken {
         user_id: user_id,
         client_ip: client_ip,
         created_at_stripe: created_at_stripe,
@@ -217,17 +214,12 @@ pub fn insert_new_users_stripe_token(
         .values(&new_stripe)
         .execute(conn)
         .expect("Error saving new stripe");
-
-    users_stripe_token::table
-        .order(users_stripe_token::id.desc())
-        .first(conn)
-        .unwrap()
 }
 
 pub fn insert_new_users_stripe_customer(
     conn: &MysqlConnection,
     user_id: i64,
-    uuid: String,
+    uuid: &String,
     account_balance: i64,
     business_vat_id: Option<String>,
     created_at_stripe: i64,
@@ -236,10 +228,10 @@ pub fn insert_new_users_stripe_customer(
     desc: Option<String>,
     email: Option<String>,
     livemode: bool,
-) -> UsersStripeCustomer {
+) {
     use schema::users_stripe_customer;
 
-    let new_stripe = NewUsersStripeCustomer {
+    let new_stripe = NewUserStripeCustomer {
         user_id: user_id,
         uuid: uuid,
         account_balance: account_balance,
@@ -256,84 +248,12 @@ pub fn insert_new_users_stripe_customer(
         .values(&new_stripe)
         .execute(conn)
         .expect("Error saving new stripe");
-
-    users_stripe_customer::table
-        .order(users_stripe_customer::id.desc())
-        .first(conn)
-        .unwrap()
 }
 
-pub fn insert_new_subscription(
-    conn: &MysqlConnection,
-    user_id: i64,
-    uuid: String,
-    application_fee_percent: Option<f64>,
-    cancel_at_period_end: bool,
-    canceled_at: Option<i64>,
-    created_at: Option<i64>,
-    current_period_start: i64,
-    current_period_end: i64,
-    customer: String,
-    ended_at: Option<i64>,
-    livemode: bool,
-    quantity: i64,
-    start: i64,
-    status: String,
-    tax_percent: Option<f64>,
-    trial_start: Option<i64>,
-    trial_end: Option<i64>,
-) -> UsersStripeSubscriptions {
-    use schema::users_stripe_subscriptions;
-
-    let tax: Option<f32> = match tax_percent {
-        Some(tax) => Some(tax as f32),
-        None => None,
-    };
-
-    let fee: Option<f32> = match application_fee_percent {
-        Some(fee) => Some(fee as f32),
-        None => None,
-    };
-
-    let new_subscription = NewUsersStripeSubscription {
-        user_id: user_id,
-        uuid: uuid,
-        application_fee_percent: fee,
-        cancel_at_period_end: cancel_at_period_end,
-        canceled_at: canceled_at,
-        created_at: created_at,
-        current_period_start: current_period_start,
-        current_period_end: current_period_end,
-        customer: customer,
-        ended_at: ended_at,
-        livemode: livemode,
-        quantity: quantity,
-        start: start,
-        status: status,
-        tax_percent: tax,
-        trial_start: trial_start,
-        trial_end: trial_end,
-    };
-
-    diesel::insert_into(users_stripe_subscriptions::table)
-        .values(&new_subscription)
-        .execute(conn)
-        .expect("Error saving new subscription");
-
-    users_stripe_subscriptions::table
-        .order(users_stripe_subscriptions::id.desc())
-        .first(conn)
-        .unwrap()
-}
-
-pub fn create_new_users_verify_email(
-    conn: &MysqlConnection,
-    user_id: i64,
-    token: String,
-) -> UsersVerifyEmail {
+pub fn create_new_users_verify_email(conn: &MysqlConnection, user_id: i64, token: String) {
     use schema::users_verify_email;
 
-    let new_user_verify_email = NewUsersVerifyEmail {
+    let new_user_verify_email = NewUserVerifyEmail {
         user_id: user_id,
         token: token,
     };
@@ -342,14 +262,9 @@ pub fn create_new_users_verify_email(
         .values(&new_user_verify_email)
         .execute(conn)
         .expect("Error saving new user verify email");
-
-    users_verify_email::table
-        .order(users_verify_email::id.desc())
-        .first(conn)
-        .unwrap()
 }
 
-pub fn create_new_user_view(conn: &MysqlConnection, user_id: i64, video_id: i64) -> UsersViews {
+pub fn create_new_user_view(conn: &MysqlConnection, user_id: i64, video_id: i64) {
     use schema::users_views;
 
     let new_user_view = NewUserView {
@@ -361,11 +276,6 @@ pub fn create_new_user_view(conn: &MysqlConnection, user_id: i64, video_id: i64)
         .values(&new_user_view)
         .execute(conn)
         .expect("Error saving new user view");
-
-    users_views::table
-        .order(users_views::id.desc())
-        .first(conn)
-        .unwrap()
 }
 
 pub fn create_new_video(
@@ -380,7 +290,7 @@ pub fn create_new_video(
     episode_number: Option<i32>,
     archived: bool,
     vimeo_id: String,
-) -> Videos {
+) {
     use schema::videos;
 
     let new_video = NewVideo {
@@ -400,6 +310,4 @@ pub fn create_new_video(
         .values(&new_video)
         .execute(conn)
         .expect("Error saving new user");
-
-    videos::table.order(videos::id.desc()).first(conn).unwrap()
 }

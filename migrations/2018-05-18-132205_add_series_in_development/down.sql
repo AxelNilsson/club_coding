@@ -1,0 +1,1 @@
+ALTER TABLE `series` DROP COLUMN `in_development`;

@@ -1,5 +1,5 @@
 use rocket_contrib::Template;
-use admin::structs::{LoggedInContext, Administrator};
+use admin::structs::{Administrator, LoggedInContext};
 use rocket::response::Redirect;
 use club_coding::models::Series;
 use club_coding::{create_new_series, establish_connection};
@@ -78,6 +78,7 @@ pub fn new_series(user: Administrator) -> Template {
 pub struct NewSerie {
     title: String,
     description: String,
+    price: i32,
 }
 
 #[post("/series/new", data = "<serie>")]
@@ -96,6 +97,7 @@ pub fn insert_new_series(
                 new_serie.title,
                 slug,
                 new_serie.description,
+                new_serie.price,
                 false,
                 false,
             );
@@ -161,7 +163,11 @@ pub struct UpdateSerie {
 }
 
 #[post("/series/edit/<uid>", format = "application/json", data = "<data>")]
-pub fn update_serie(uid: String, _user: Administrator, data: Json<UpdateSerie>) -> Json<UpdateSerie> {
+pub fn update_serie(
+    uid: String,
+    _user: Administrator,
+    data: Json<UpdateSerie>,
+) -> Json<UpdateSerie> {
     use club_coding::schema::series::dsl::*;
 
     let connection = establish_connection();

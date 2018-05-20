@@ -49,7 +49,7 @@ pub fn get_last_10_series() -> Vec<PublicSeries> {
     to_return
 }
 
-fn get_serie(uid: String) -> Series {
+fn get_serie(uid: &String) -> Series {
     use club_coding::schema::series::dsl::*;
 
     let connection = establish_connection();
@@ -107,36 +107,39 @@ fn get_videos(uid: i64, sid: i64) -> Vec<PublicVideo> {
 
 #[derive(Serialize)]
 struct SerieStruct<'a> {
-    header: String,
+    header: &'a String,
     user: &'a User,
     uuid: String,
-    title: String,
+    title: &'a String,
     description: String,
+    in_development: bool,
     videos: Vec<PublicVideo>,
 }
 
 #[get("/<uuid>")]
 fn serie(user: User, uuid: String) -> Template {
-    let serie = get_serie(uuid.clone());
+    let serie = get_serie(&uuid);
     let mut description = serie.description;
     description.retain(|c| c != '\\');
     let context = SerieStruct {
-        header: serie.title.clone(),
+        header: &serie.title,
         user: &user,
         uuid: uuid,
-        title: serie.title,
+        title: &serie.title,
         description: description,
+        in_development: serie.in_development,
         videos: get_videos(user.id, serie.id),
     };
     Template::render("series", &context)
 }
 
 #[derive(Serialize)]
-struct SerieNoLogin {
-    header: String,
+struct SerieNoLogin<'a> {
+    header: &'a String,
     uuid: String,
-    title: String,
+    title: &'a String,
     description: String,
+    in_development: bool,
     videos: Vec<PublicVideo>,
 }
 
@@ -165,12 +168,13 @@ fn get_videos_nologin(sid: i64) -> Vec<PublicVideo> {
 
 #[get("/<uuid>", rank = 2)]
 fn serie_nologin(uuid: String) -> Template {
-    let serie = get_serie(uuid.clone());
+    let serie = get_serie(&uuid);
     let context = SerieNoLogin {
-        header: serie.title.clone(),
+        header: &serie.title,
         uuid: uuid,
-        title: serie.title,
+        title: &serie.title,
         description: serie.description,
+        in_development: serie.in_development,
         videos: get_videos_nologin(serie.id),
     };
     Template::render("series_nologin", &context)

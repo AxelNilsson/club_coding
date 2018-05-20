@@ -15,8 +15,10 @@ table! {
         title -> Varchar,
         slug -> Varchar,
         description -> Text,
+        price -> Integer,
         published -> Bool,
         archived -> Bool,
+        in_development -> Bool,
         created -> Timestamp,
         updated -> Timestamp,
     }
@@ -38,6 +40,17 @@ table! {
         id -> Bigint,
         user_id -> Bigint,
         group_id -> Bigint,
+        created -> Timestamp,
+        updated -> Timestamp,
+    }
+}
+
+table! {
+    users_series_access (id) {
+        id -> Bigint,
+        user_id -> Bigint,
+        series_id -> Bigint,
+        bought -> Bool,
         created -> Timestamp,
         updated -> Timestamp,
     }
@@ -94,31 +107,6 @@ table! {
         desc -> Nullable<Text>,
         email -> Nullable<Varchar>,
         livemode -> Bool,
-        created -> Timestamp,
-        updated -> Timestamp,
-    }
-}
-
-table! {
-    users_stripe_subscriptions (id) {
-        id -> Bigint,
-        user_id -> Bigint,
-        uuid -> Varchar,
-        application_fee_percent -> Nullable<Float>,
-        cancel_at_period_end -> Bool,
-        canceled_at -> Nullable<Bigint>,
-        created_at -> Nullable<Bigint>,
-        current_period_start -> Bigint,
-        current_period_end -> Bigint,
-        customer -> Varchar,
-        ended_at -> Nullable<Bigint>,
-        livemode -> Bool,
-        quantity -> Bigint,
-        start -> Bigint,
-        status -> Varchar,
-        tax_percent -> Nullable<Float>,
-        trial_start -> Nullable<Bigint>,
-        trial_end -> Nullable<Bigint>,
         created -> Timestamp,
         updated -> Timestamp,
     }
@@ -185,10 +173,10 @@ allow_tables_to_appear_in_same_query!(
     series,
     users,
     users_group,
+    users_series_access,
     users_sessions,
     users_stripe_card,
     users_stripe_customer,
-    users_stripe_subscriptions,
     users_stripe_token,
     users_verify_email,
     users_views,

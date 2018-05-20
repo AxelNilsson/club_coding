@@ -1,17 +1,129 @@
 use rocket::Route;
 use rocket_contrib::Template;
-use structs::LoggedInContext;
 use users::User;
+use club_coding::models::{UsersViews, Videos};
+use rocket::response::{Flash, Redirect};
 
-#[get("/search/<_query>")]
-fn search(user: User, _query: String) -> Template {
-    let context = LoggedInContext {
-        header: "Club Coding".to_string(),
-        user: user,
-    };
-    Template::render("home", &context)
+use club_coding::establish_connection;
+use diesel::prelude::*;
+
+#[derive(Serialize)]
+pub struct PublicVideo {
+    pub episode_number: i32,
+    pub uuid: String,
+    pub title: String,
+    pub description: String,
+    pub watched: bool,
+}
+
+pub fn get_video_watched(uid: i64, vid: i64) -> bool {
+    use club_coding::schema::users_views::dsl::*;
+
+    let connection = establish_connection();
+
+    let results = users_views
+        .filter(user_id.eq(uid))
+        .filter(video_id.eq(vid))
+        .load::<UsersViews>(&connection)
+        .expect("Error loading users views");
+
+    return results.len() == 1;
+}
+
+fn get_videos(query: String, uid: Option<i64>) -> Vec<PublicVideo> {
+    use club_coding::schema::videos::dsl::*;
+
+    let connection = establish_connection();
+    let v_ideos = videos
+        .filter(description.like(query))
+        .load::<Videos>(&connection)
+        .expect("Error loading users");
+
+    let mut to_return: Vec<PublicVideo> = vec![];
+    let mut number = 1;
+    for video in v_ideos {
+        let w_atched = match uid {
+            Some(uid) => get_video_watched(uid, video.id),
+            None => false,
+        };
+        to_return.push(PublicVideo {
+            episode_number: number,
+            uuid: video.uuid,
+            title: video.title,
+            description: video.description,
+            watched: w_atched,
+        });
+        number = number + 1;
+    }
+    to_return
+}
+
+#[derive(FromForm)]
+struct Query {
+    search_query: String,
+}
+
+#[derive(Serialize)]
+struct SearchContext<'a> {
+    header: String,
+    videos: &'a Vec<PublicVideo>,
+    user: User,
+    search_query: &'a String,
+}
+
+#[get("/search?<query>")]
+fn search(user: User, query: Query) -> Result<Template, Flash<Redirect>> {
+    if query.search_query.len() > 3 {
+        let videos: Vec<PublicVideo> =
+            get_videos(format!("%{}%", query.search_query), Some(user.id));
+        if videos.len() > 0 {
+            let context = SearchContext {
+                header: "Club Coding".to_string(),
+                videos: &videos,
+                user: user,
+                search_query: &query.search_query,
+            };
+            Ok(Template::render("search", &context))
+        } else {
+            Err(Flash::error(Redirect::to("/"), "No results found"))
+        }
+    } else {
+        Err(Flash::error(
+            Redirect::to("/"),
+            "Please enter more than 3 characters",
+        ))
+    }
+}
+
+#[derive(Serialize)]
+struct SearchContextNoLogin<'a> {
+    header: String,
+    videos: &'a Vec<PublicVideo>,
+    search_query: &'a String,
+}
+
+#[get("/search?<query>", rank = 2)]
+fn search_nologin(query: Query) -> Result<Template, Flash<Redirect>> {
+    if query.search_query.len() > 3 {
+        let videos: Vec<PublicVideo> = get_videos(format!("%{}%", query.search_query), None);
+        if videos.len() > 0 {
+            let context = SearchContextNoLogin {
+                header: "Club Coding".to_string(),
+                videos: &videos,
+                search_query: &query.search_query,
+            };
+            Ok(Template::render("search_nologin", &context))
+        } else {
+            Err(Flash::error(Redirect::to("/"), "No results found"))
+        }
+    } else {
+        Err(Flash::error(
+            Redirect::to("/"),
+            "Please enter more than 3 characters",
+        ))
+    }
 }
 
 pub fn endpoints() -> Vec<Route> {
-    routes![search]
+    routes![search, search_nologin]
 }

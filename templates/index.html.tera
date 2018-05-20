@@ -68,3 +68,6 @@
     </v-layout>
   </v-container>
 {% endblock content %}
+{% block script %}
+  {{ super() }}
+{% endblock script %}

@@ -1,0 +1,1 @@
+ALTER TABLE `series` ADD `price` int(10) unsigned NOT NULL;

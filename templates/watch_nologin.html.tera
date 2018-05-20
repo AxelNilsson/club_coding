@@ -103,10 +103,5 @@
   </v-layout>
 {% endblock content %}
 {% block script %}
-  <script>
-    new Vue({
-      el: '#app',
-      delimiters: ["${","}"]
-    });
-  </script>
+  {{ super() }}
 {% endblock script %}

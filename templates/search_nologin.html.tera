@@ -37,10 +37,6 @@
     border: 1px solid #007f80;
   }
 
-  .green--circle {
-    background: #4caf50!important;
-  }
-
   div.circle > span.display-1 {
     color: #FFF;
     margin: auto;
@@ -57,29 +53,49 @@
   </style>
 {% endblock head %}
 {% block content %}
-  {{ super() }}
-  <div id="main">
-    <v-layout wrap>
-      <v-flex lg5 offset-lg1 xl3 offset-xl3 style="margin-top: auto; margin-bottom: auto;">
-        <h1 class="display-2">{{ title }}</h1>
-        <p class="subheading">{{ description | safe }}</p>
-      </v-flex>
-      <v-flex lg5 xl2 offset-xl1>
-        <div style="display: block; height: 400px; width: 400px; border-radius: 100%; border: 5px solid rgba(255, 255, 255, 0.2); background-image: url(/thumbnail/9C2D35BB3D02B96AA0D5F994FBDA32B4C4349988A5A531A5); background-position: 0 90px; background-repeat: no-repeat; background-size: 400px; text-align: center; background-color: white;"></div>
-      </v-flex>
-    </v-layout>
-  </div>
+    <v-card color="grey darken-2">
+    <v-container>
+        <v-layout wrap row>
+        <v-flex xs3 xl2>
+            <h1 class="headline" style="font-weight: 800; color: white; line-height: 56px!important;"><a style="text-decoration: none; color: white;" href="/">CLUB CODING</a></h1>
+        </v-flex>
+        <v-flex xs0 xl1></v-flex>
+        <v-flex xs6 xl6>
+            <v-card style="padding: 0 8px">
+            <v-layout wrap row>
+                <v-flex xs10>
+                <v-form method="GET" action="/search">
+                    <v-text-field style="height: 100%;" v-model="search_query" name="search_query" prepend-icon="search" solo flat label="WHAT ARE YOU INTERESTED IN?"></v-text-field>
+                </v-form>
+                </v-flex>
+                <v-flex xs2>
+                <v-btn large block style="color: white; background-color: #00b1b3;">SEARCH</v-btn>
+                </v-flex>
+            </v-layout>
+            </v-card>
+        </v-flex>
+        <v-flex xs0 xl1></v-flex>
+        <v-flex xs3 xl2>
+            <v-layout wrap row>
+            <v-flex xs4></v-flex>
+            <v-flex xs4>
+                <a href="/login" class="title" style="color: #FAFAFA; line-height: 56px!important; text-decoration: none;">SIGN IN</a>
+            </v-flex>
+            <v-flex xs4>
+                <a href="/signup" class="title" style="color: #00b1b3!important; line-height: 56px!important; text-decoration: none; font-weight: 800;">SIGN UP</a>
+            </v-flex>
+            </v-layout>
+        </v-flex>
+        </v-layout>
+    </v-container>
+    </v-card>
   <v-layout wrap style="padding: 4em 0 2em;">
     <v-flex lg10 offset-lg1 xl6 offset-xl3>
      {% for video in videos %}
       <v-card>
         <v-layout wrap row>
           <v-flex xs2>
-            {% if video.watched %}
-            <div class="green--circle circle">
-            {% else %}
             <div class="circle">
-            {% endif %}
               <span class="display-1">
                 {% if video.episode_number > 9 %}
                   {{ video.episode_number }}
@@ -96,12 +112,17 @@
         </v-layout>
       </v-card>
      {% endfor %}
-     {% if in_development %}
-     <p style="text-align: center; color: #919499; margin-top: 2em!important; font-weight: 400; font-size: 16px;">*Series still in development. Check back often for updates.</p>
-     {% endif %}
     </v-flex>
   </v-layout>
 {% endblock content %}
 {% block script %}
-  {{ super() }}
+  <script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"],
+      data: {
+        search_query: "{{ search_query }}"
+      }
+    });
+  </script>
 {% endblock script %}
