@@ -151,7 +151,7 @@ pub struct NewUserStripeCard {
     pub tokenization_method: Option<String>,
 }
 
-#[derive(Queryable)]
+#[derive(Queryable, Clone)]
 pub struct UsersStripeCustomer {
     pub id: i64,
     pub user_id: i64,

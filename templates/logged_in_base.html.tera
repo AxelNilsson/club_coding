@@ -63,8 +63,8 @@
                     <v-list-tile-title>All Series</v-list-tile-title>
                   </v-list-tile>
                   {% endif %}
-                  <v-list-tile href="/settings/subscription">
-                    <v-list-tile-title>Subcription</v-list-tile-title>
+                  <v-list-tile href="/settings/payment">
+                    <v-list-tile-title>Payment</v-list-tile-title>
                   </v-list-tile>
                   <v-list-tile href="/settings/password">
                     <v-list-tile-title>Password</v-list-tile-title>

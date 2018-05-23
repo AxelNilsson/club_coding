@@ -37,6 +37,7 @@ mod series;
 mod email;
 mod custom_csrf;
 mod charge;
+mod payment;
 
 fn main() {
     rocket::ignite()
@@ -46,6 +47,7 @@ fn main() {
         .mount("/", search::endpoints())
         .mount("/", videos::endpoints())
         .mount("/", charge::endpoints())
+        .mount("/settings/payment", payment::endpoints())
         .mount("/series", series::endpoints())
         .mount("/admin", admin::endpoints())
         .attach(rocket_contrib::Template::fairing())

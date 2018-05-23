@@ -1,12 +1,13 @@
 use rocket::Route;
 use rocket_contrib::Template;
 use rocket::response::{Flash, NamedFile, Redirect};
-use club_coding::{create_new_user_view, establish_connection};
+use club_coding::{create_new_user_series_access, create_new_user_view, establish_connection};
 use club_coding::models::{Series, UsersSeriesAccess, UsersStripeCustomer, UsersViews, Videos};
 use diesel::prelude::*;
 use users::User;
 use std;
 use series::{get_video_watched, PublicVideo};
+use rocket::request::FlashMessage;
 
 pub fn get_videos() -> Vec<Videos> {
     use club_coding::schema::videos::dsl::*;
@@ -94,6 +95,8 @@ struct WatchContext<'a> {
     user: &'a User,
     vimeo_id: String,
     videos: Vec<PublicVideo>,
+    flash_name: String,
+    flash_msg: String,
 }
 
 fn create_new_view(vid: i64, uid: i64) {
@@ -126,12 +129,20 @@ fn user_has_bought(sid: i64, uid: i64) -> bool {
 }
 
 #[get("/watch/<uuid>")]
-fn watch_as_user(user: User, uuid: String) -> Result<Template, Redirect> {
+fn watch_as_user(
+    user: User,
+    flash: Option<FlashMessage>,
+    uuid: String,
+) -> Result<Template, Redirect> {
     match get_video_data_from_uuid(&uuid) {
         Ok(video) => {
             let videos: Vec<PublicVideo> = match video.series {
                 Some(series_id) => get_videos_of_series(user.id, series_id),
                 None => vec![],
+            };
+            let (name, msg) = match flash {
+                Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
+                None => ("".to_string(), "".to_string()),
             };
             let context = WatchContext {
                 uuid: video.uuid,
@@ -141,6 +152,8 @@ fn watch_as_user(user: User, uuid: String) -> Result<Template, Redirect> {
                 user: &user,
                 vimeo_id: video.vimeo_id,
                 videos: videos,
+                flash_name: name,
+                flash_msg: msg,
             };
             if video.membership_only {
                 match video.series {
@@ -155,7 +168,7 @@ fn watch_as_user(user: User, uuid: String) -> Result<Template, Redirect> {
                     None => Ok(Template::render("watch_nomember", &context)),
                 }
             } else {
-                Ok(Template::render("watch_nomember", &context))
+                Ok(Template::render("watch_member", &context))
             }
         }
         Err(_video_not_found) => Err(Redirect::to("/")),
@@ -192,12 +205,18 @@ struct WatchNoUser {
     title: String,
     description: String,
     videos: Vec<PublicVideo>,
+    flash_name: String,
+    flash_msg: String,
 }
 
 #[get("/watch/<uuid>", rank = 2)]
-fn watch_nouser(uuid: String) -> Result<Template, Redirect> {
+fn watch_nouser(flash: Option<FlashMessage>, uuid: String) -> Result<Template, Redirect> {
     match get_video_data_from_uuid(&uuid) {
         Ok(video) => {
+            let (name, msg) = match flash {
+                Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
+                None => ("".to_string(), "".to_string()),
+            };
             let videos: Vec<PublicVideo> = match video.series {
                 Some(series_id) => get_videos_of_series_nologin(series_id),
                 None => vec![],
@@ -208,6 +227,8 @@ fn watch_nouser(uuid: String) -> Result<Template, Redirect> {
                 title: video.title,
                 description: video.description,
                 videos: videos,
+                flash_name: name,
+                flash_msg: msg,
             };
             Ok(Template::render("watch_nologin", &context))
         }
@@ -223,14 +244,22 @@ fn thumbnail(uuid: String) -> Option<NamedFile> {
     }
 }
 
-fn get_customer(uid: i64) -> UsersStripeCustomer {
+fn get_customer(uid: i64) -> Option<UsersStripeCustomer> {
     use club_coding::schema::users_stripe_customer::dsl::*;
 
     let connection = establish_connection();
-    users_stripe_customer
+
+    let user: Vec<UsersStripeCustomer> = users_stripe_customer
         .filter(user_id.eq(uid))
-        .first(&connection)
-        .expect("Error loading customer")
+        .limit(1)
+        .load::<UsersStripeCustomer>(&connection)
+        .expect("Error loading users");
+
+    if user.len() == 1 {
+        Some(user[0].clone())
+    } else {
+        None
+    }
 }
 
 fn get_serie(sid: i64) -> Series {
@@ -249,44 +278,58 @@ fn buy_serie(user: User, uuid: String) -> Result<Flash<Redirect>, Redirect> {
         Ok(video) => {
             match video.series {
                 Some(series_id) => {
-                    let serie = get_serie(series_id);
-                    let stripe_customer = get_customer(user.id);
+                    match get_customer(user.id) {
+                        Some(stripe_customer) => {
+                            let serie = get_serie(series_id);
 
-                    match stripe_customer.default_source {
-                        Some(customer_source) => {
-                            // Create the customer
-                            let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
+                            match stripe_customer.default_source {
+                                Some(customer_source) => {
+                                    // Create the customer
+                                    let client =
+                                        stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
 
-                            let charge = stripe::Charge::create(
-                                &client,
-                                stripe::ChargeParams {
-                                    amount: Some(serie.price as u64),
-                                    currency: Some(stripe::Currency::USD),
-                                    application_fee: None,
-                                    capture: None,
-                                    description: None,
-                                    destination: None,
-                                    fraud_details: None,
-                                    transfer_group: None,
-                                    on_behalf_of: None,
-                                    metadata: None,
-                                    receipt_email: None,
-                                    shipping: None,
-                                    customer: Some(stripe_customer.uuid),
-                                    source: Some(stripe::CustomerSource::Token(&customer_source)),
-                                    statement_descriptor: None,
-                                },
-                            ).unwrap();
-                            println!("{:?}", charge);
-                            Ok(Flash::error(
-                                Redirect::to(&format!("/watch/{}", uuid)),
-                                "Series unlocked! Congratulations!",
-                            ))
+                                    let charge = stripe::Charge::create(
+                                        &client,
+                                        stripe::ChargeParams {
+                                            amount: Some(serie.price as u64),
+                                            currency: Some(stripe::Currency::USD),
+                                            application_fee: None,
+                                            capture: None,
+                                            description: None,
+                                            destination: None,
+                                            fraud_details: None,
+                                            transfer_group: None,
+                                            on_behalf_of: None,
+                                            metadata: None,
+                                            receipt_email: None,
+                                            shipping: None,
+                                            customer: Some(stripe_customer.uuid),
+                                            source: Some(stripe::CustomerSource::Token(
+                                                &customer_source,
+                                            )),
+                                            statement_descriptor: None,
+                                        },
+                                    ).unwrap();
+                                    println!("{:?}", charge);
+                                    let connection = establish_connection();
+                                    create_new_user_series_access(
+                                        &connection,
+                                        user.id,
+                                        series_id,
+                                        true,
+                                    );
+                                    Ok(Flash::success(
+                                        Redirect::to(&format!("/watch/{}", uuid)),
+                                        "Series unlocked! Congratulations!",
+                                    ))
+                                }
+                                None => Ok(Flash::error(
+                                    Redirect::to(&format!("/watch/{}", uuid)),
+                                    "An error occured, please try again later.",
+                                )),
+                            }
                         }
-                        None => Ok(Flash::error(
-                            Redirect::to(&format!("/watch/{}", uuid)),
-                            "An error occured, please try again later.",
-                        )),
+                        None => Err(Redirect::to(&format!("/card/add/{}", uuid))),
                     }
                 }
                 None => Err(Redirect::to("/")),

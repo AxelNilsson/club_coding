@@ -1,0 +1,200 @@
+{% extends "logged_in_base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+<style>
+    #main {
+      margin-top: 5vh;
+    }
+    /**
+    * The CSS shown here will not be introduced in the Quickstart guide, but shows
+    * how you can use CSS to style your Element's container.
+    */
+    .StripeElement {
+      background-color: white;
+      height: 40px;
+      padding: 10px 12px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      box-shadow: 0 1px 3px 0 #e6ebf1;
+      -webkit-transition: box-shadow 150ms ease;
+      transition: box-shadow 150ms ease;
+    }
+
+    .StripeElement--focus {
+      box-shadow: 0 1px 3px 0 #cfd7df;
+    }
+
+    .StripeElement--invalid {
+      border-color: #fa755a;
+    }
+
+    .StripeElement--webkit-autofill {
+      background-color: #fefde5 !important;
+    }
+    #button {
+        border: none;
+        border-radius: 4px;
+        outline: none;
+        text-decoration: none;
+        color: #fff;
+        background: #32325d;
+        white-space: nowrap;
+        display: inline-block;
+        height: 40px;
+        line-height: 40px;
+        padding: 0 14px;
+        box-shadow: 0 4px 6px rgba(50, 50, 93, .11), 0 1px 3px rgba(0, 0, 0, .08);
+        border-radius: 4px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.025em;
+        text-decoration: none;
+        -webkit-transition: all 150ms ease;
+        transition: all 150ms ease;
+        float: left;
+        margin-left: 12px;
+        margin-top: 28px;
+    }
+</style>
+<script src="https://js.stripe.com/v3/"></script>
+{% endblock head %}
+{% block content %}
+  {% if flash_name == "error" %}
+    <v-alert style="margin: 0; text-align: center; font-size: 16px;" color="error" :value="true">{{ flash_msg }}</v-alert>
+  {% endif %}
+  {% if flash_name == "success" %}
+    <v-alert style="margin: 0; text-align: center; font-size: 16px;" color="success" :value="true">{{ flash_msg }}</v-alert>
+  {% endif %}
+  {{ super() }}
+  <v-container>
+    <v-layout wrap row>
+      <v-flex xs8 offset-xs2>
+        <div id="main">
+          <v-layout>
+            <v-flex xs10 offset-xs1 style="text-align: center;">
+              <img src="https://laracasts.com/svg-loaders/hearts.svg" style="margin-bottom: 2em;">
+              <h1 class="display-2 blue-grey--text text--darken-2" style="text-align: center; font-weight: 400!important;">You're almost there.</h1>
+              <v-layout>
+                <v-flex xs8 offset-xs2>
+                  <p class="subheading blue-grey--text text--lighten-1" style="letter-spacing: 0.5px!important; margin-top: 1em; line-height: 1.4!important; font-size: 18px!important; font-weight: 400; text-align: center">Joining takes less than a minute, and, if your peers are correct, is a pretty dang good decision. If you're still on the fence, we have a plan called “monthly” - and it’s not like the gym. Seriously - you can cancel in five seconds, if this isn't for you.</p>
+                </v-flex>
+              </v-layout>
+            </v-flex>
+          </v-layout>
+          <v-layout style="margin-top: 4em;">
+            <v-flex xs6 offset-xs3>
+                <v-card flat style="padding: 2em;">
+                <h2 class="headline">Add a card to your account</h2>
+                <form method="POST" style="margin: 1em 0;" id="payment-form">
+                    <div class="form-row">
+                    <div id="card-element"></div>
+                    <div id="card-errors" role="alert"></div>
+                    </div>
+                    <v-btn style="margin: 1em 0 -1em;" large block dark color="green" :disabled="disabled" :loading="loading"  @click="add_card($event)">Add card</v-btn>
+                </form>
+                </v-card>
+            </v-flex>
+          </v-layout>
+        </div>
+      </v-flex>
+    </v-layout>
+  </v-container>
+{% endblock content %}
+{% block script %}
+  <script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"],
+      data: {
+        loading: false,
+        disabled: false,
+        card: null,
+        stripe: null
+      },
+      mounted() {
+        // Create a Stripe client.
+        this.stripe = Stripe('pk_test_HCH7T02JK4oEgsBP1NohbMFX');
+
+        // Create an instance of Elements.
+        var elements = this.stripe.elements();
+
+        // Custom styling can be passed to options when creating an Element.
+        // (Note that this demo uses a wider set of styles than the guide below.)
+        var style = {
+          base: {
+            color: '#32325d',
+            lineHeight: '18px',
+            fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+            fontSmoothing: 'antialiased',
+            fontSize: '16px',
+            '::placeholder': {
+              color: '#aab7c4'
+            }
+          },
+          invalid: {
+            color: '#fa755a',
+            iconColor: '#fa755a'
+          }
+        };
+
+        // Create an instance of the card Element.
+        this.card = elements.create('card', {style: style});
+
+        // Add an instance of the card Element into the `card-element` <div>.
+        this.card.mount('#card-element');
+
+        // Handle real-time validation errors from the card Element.
+        this.card.addEventListener('change', event => {
+          var displayError = document.getElementById('card-errors');
+          if (event.error) {
+            this.disabled = true;
+            displayError.textContent = event.error.message;
+          } else {
+            this.disabled = false;
+            displayError.textContent = '';
+          }
+        });
+      },
+      methods: {
+        add_card(event) {
+          this.loading = true;
+          event.preventDefault();
+          this.stripe.createToken(this.card).then(result => {
+            if (result.error) {
+              this.loading = true;
+              // Inform the user if there was an error.
+              var errorElement = document.getElementById('card-errors');
+              errorElement.textContent = result.error.message;
+            } else {
+              // Send the token to your server.
+              var form = document.getElementById("payment-form");
+              for (fields in result.token) {
+                if (fields == "card") {
+                  for (field in result.token.card) {
+                    if (result.token.card[field] != null && typeof result.token.card[field] !== 'object') {
+                      var input = document.createElement("input");
+                      input.setAttribute("type", "hidden");
+                      input.setAttribute("name", 'card_' + field);
+                      input.setAttribute("value", result.token.card[field]);
+                      form.appendChild(input);
+                    }
+                  }
+                } else {
+                  if (result.token[fields] != null && typeof result.token[fields] !== 'object') {
+                    var input = document.createElement("input");
+                    input.setAttribute("type", "hidden");
+                    input.setAttribute("name", fields);
+                    input.setAttribute("value", result.token[fields]);
+                    form.appendChild(input);
+                  }
+                }
+              }
+
+              form.submit();
+            }
+          });
+        }
+      }
+    })
+  </script>
+{% endblock script %}

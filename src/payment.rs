@@ -2,12 +2,13 @@ use rocket::Route;
 use rocket::request::Form;
 use rocket_contrib::Template;
 use rocket::response::{Flash, Redirect};
-use club_coding::{establish_connection, insert_new_card, insert_new_users_stripe_customer,
-                  insert_new_users_stripe_token};
+use club_coding::{establish_connection, insert_new_card, insert_new_users_stripe_token};
 use users::User;
 use stripe;
 use std;
 use rocket::request::FlashMessage;
+use club_coding::models::{UsersStripeCard, UsersStripeCustomer};
+use diesel::prelude::*;
 
 #[derive(Serialize)]
 struct ChargeContext {
@@ -17,23 +18,46 @@ struct ChargeContext {
     flash_msg: String,
 }
 
-#[get("/card/add")]
-fn add_card_page(user: User, flash: Option<FlashMessage>) -> Template {
-    let (name, msg) = match flash {
-        Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
-        None => ("".to_string(), "".to_string()),
-    };
-    let context = ChargeContext {
-        header: "Club Coding".to_string(),
-        user: user,
-        flash_name: name,
-        flash_msg: msg,
-    };
-    Template::render("add_card", &context)
+fn customer_exists(uid: i64) -> Option<UsersStripeCustomer> {
+    use club_coding::schema::users_stripe_customer::dsl::*;
+
+    let connection = establish_connection();
+
+    let user: Vec<UsersStripeCustomer> = users_stripe_customer
+        .filter(user_id.eq(uid))
+        .limit(1)
+        .load::<UsersStripeCustomer>(&connection)
+        .expect("Error loading users");
+
+    if user.len() == 1 {
+        Some(user[0].clone())
+    } else {
+        None
+    }
 }
 
-#[get("/card/add/<_uuid>")]
-fn add_card_uuid_page(user: User, flash: Option<FlashMessage>, _uuid: String) -> Template {
+#[get("/")]
+fn payments_page(user: User, flash: Option<FlashMessage>) -> Result<Template, Redirect> {
+    match customer_exists(user.id) {
+        Some(_) => {
+            let (name, msg) = match flash {
+                Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
+                None => ("".to_string(), "".to_string()),
+            };
+            let context = ChargeContext {
+                header: "Club Coding".to_string(),
+                user: user,
+                flash_name: name,
+                flash_msg: msg,
+            };
+            Ok(Template::render("payment", &context))
+        }
+        None => Err(Redirect::to("/card/add")),
+    }
+}
+
+#[get("/card/update")]
+fn update_card_page(user: User, flash: Option<FlashMessage>) -> Template {
     let (name, msg) = match flash {
         Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
         None => ("".to_string(), "".to_string()),
@@ -44,7 +68,7 @@ fn add_card_uuid_page(user: User, flash: Option<FlashMessage>, _uuid: String) ->
         flash_name: name,
         flash_msg: msg,
     };
-    Template::render("add_card", &context)
+    Template::render("update_card", &context)
 }
 
 #[derive(Debug, FromForm)]
@@ -80,13 +104,27 @@ struct Stripe {
     used: bool,
 }
 
-fn create_customer(client: &stripe::Client, email: &str, token: &str) -> stripe::Customer {
+fn get_customer(connection: &MysqlConnection, uid: i64) -> UsersStripeCustomer {
+    use club_coding::schema::users_stripe_customer::dsl::*;
+
+    users_stripe_customer
+        .filter(user_id.eq(uid))
+        .first(connection)
+        .expect("Error loading user")
+}
+
+fn update_customer(
+    client: &stripe::Client,
+    customer_id: &str,
+    token: &str,
+) -> Result<stripe::Customer, stripe::Error> {
     // Create the customer
-    stripe::Customer::create(
+    stripe::Customer::update(
         &client,
+        customer_id,
         stripe::CustomerParams {
-            email: Some(email),
             source: Some(stripe::CustomerSource::Token(token)),
+            email: None,
             account_balance: None,
             business_vat_id: None,
             coupon: None,
@@ -94,12 +132,12 @@ fn create_customer(client: &stripe::Client, email: &str, token: &str) -> stripe:
             metadata: None,
             shipping: None,
         },
-    ).unwrap()
+    )
 }
 
-fn charge(data: &Stripe, username: &str, user_id: i64) -> Result<(), std::io::Error> {
-    let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
+fn charge(data: &Stripe, user_id: i64) -> Result<(), std::io::Error> {
     let connection = establish_connection();
+    let customer = get_customer(&connection, user_id);
     insert_new_card(
         &connection,
         user_id,
@@ -136,54 +174,58 @@ fn charge(data: &Stripe, username: &str, user_id: i64) -> Result<(), std::io::Er
         data.type_of_payment.clone(),
         data.used,
     );
-    let customer = create_customer(&client, username, &(data.id.clone()));
-    insert_new_users_stripe_customer(
-        &connection,
-        user_id,
-        &customer.id,
-        customer.account_balance,
-        customer.business_vat_id,
-        customer.created as i64,
-        customer.default_source,
-        customer.delinquent,
-        customer.desc,
-        customer.email,
-        customer.livemode,
-    );
+    let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
+    update_customer(&client, &customer.uuid, &(data.id.clone())).unwrap();
     Ok(())
 }
 
-#[post("/card/add", data = "<form_data>")]
-fn add_card(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>, Flash<Redirect>> {
+#[post("/card/update", data = "<form_data>")]
+fn update_card(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let data = form_data.into_inner();
-    match charge(&data, &user.username, user.id) {
+    match charge(&data, user.id) {
         Ok(()) => Ok(Flash::success(
             Redirect::to("/"),
-            "Card added. Welcome to the club!",
+            "Card updated. Great choice!",
         )),
         _ => Err(Flash::error(
-            Redirect::to("/card/add"),
+            Redirect::to("/settings/payment/card/update"),
             "An error occured, please try again later.",
         )),
     }
 }
 
-#[post("/card/add/<uuid>", data = "<form_data>")]
-fn add_card_uuid(
-    user: User,
-    form_data: Form<Stripe>,
-    uuid: String,
-) -> Result<Redirect, Flash<Redirect>> {
-    let data = form_data.into_inner();
-    match charge(&data, &user.username, user.id) {
-        Ok(()) => Ok(Redirect::to(&format!("/watch/{}/buy", uuid))),
+fn delete_and_get_card(connection: &MysqlConnection, uid: i64) -> Option<String> {
+    use club_coding::schema::users_stripe_card::dsl::*;
+
+    let card: UsersStripeCard = users_stripe_card
+        .filter(user_id.eq(uid))
+        .first(connection)
+        .expect("Error loading user");
+
+    diesel::delete(users_stripe_card.find(card.id))
+        .execute(connection)
+        .unwrap();
+
+    return card.card_id;
+}
+
+fn delete(user_id: i64) -> Result<(), std::io::Error> {
+    let connection = establish_connection();
+    let _card = delete_and_get_card(&connection, user_id);
+    Ok(())
+}
+
+#[post("/card/delete")]
+fn delete_card(user: User) -> Result<Flash<Redirect>, Flash<Redirect>> {
+    match delete(user.id) {
+        Ok(()) => Ok(Flash::success(Redirect::to("/"), "Oh no! Card deleted.")),
         _ => Err(Flash::error(
-            Redirect::to("/card/add"),
+            Redirect::to("/settings/payment"),
             "An error occured, please try again later.",
         )),
     }
 }
 
 pub fn endpoints() -> Vec<Route> {
-    routes![add_card_page, add_card, add_card_uuid_page, add_card_uuid]
+    routes![payments_page, update_card_page, update_card, delete_card]
 }
