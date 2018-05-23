@@ -95,6 +95,34 @@ table! {
 }
 
 table! {
+    users_stripe_charge (id) {
+        id -> Bigint,
+        user_id -> Bigint,
+        series_id -> Bigint,
+        uuid -> Varchar,
+        amount -> Integer,
+        amount_refunded -> Integer,
+        balance_transaction -> Nullable<Varchar>,
+        captured -> Bool,
+        created_at_stripe -> Bigint,
+        description -> Nullable<Text>,
+        destination -> Nullable<Varchar>,
+        dispute -> Nullable<Varchar>,
+        failure_code -> Nullable<Varchar>,
+        failure_message -> Nullable<Varchar>,
+        livemode -> Bool,
+        on_behalf_of -> Nullable<Varchar>,
+        order -> Nullable<Varchar>,
+        paid -> Bool,
+        refunded -> Bool,
+        source_id -> Varchar,
+        source_transfer -> Nullable<Varchar>,
+        statement_descriptor -> Nullable<Varchar>,
+        status -> Varchar,
+    }
+}
+
+table! {
     users_stripe_customer (id) {
         id -> Bigint,
         user_id -> Bigint,
@@ -176,6 +204,7 @@ allow_tables_to_appear_in_same_query!(
     users_series_access,
     users_sessions,
     users_stripe_card,
+    users_stripe_charge,
     users_stripe_customer,
     users_stripe_token,
     users_verify_email,

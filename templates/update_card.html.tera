@@ -3,7 +3,7 @@
 {% block head %}
 <style>
     #main {
-      margin-top: 5vh;
+      margin-top: 2.5vh;
     }
     /**
     * The CSS shown here will not be introduced in the Quickstart guide, but shows
@@ -67,26 +67,44 @@
   {% endif %}
   {{ super() }}
   <v-container>
-    <v-layout wrap row>
-      <v-flex xs8 offset-xs2>
-        <div id="main">
-          <v-layout style="margin-top: 10vh;">
-            <v-flex xs6 offset-xs3>
-                <v-card flat style="padding: 2em;">
-                <h2 class="headline">Update the card on your account</h2>
-                <form action="/settings/payment/card/update" method="post" style="margin: 1em 0;" id="payment-form">
-                    <div class="form-row">
-                        <div id="card-element"></div>
-                        <div id="card-errors" role="alert"></div>
-                    </div>
-                    <v-btn style="margin: 1em 0 -1em;" large block dark color="green" :disabled="disabled" :loading="loading"  @click="add_card($event)">Update card</v-btn>
-                </form>
-                </v-card>
-            </v-flex>
+    <div id="main">
+      <v-layout wrap row>
+        <v-flex xs2>
+          <v-btn href="/settings/payment" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Payments</span></v-btn>
+          <v-btn large depressed block dark color="grey lighten-1" style="font-weight: 700;"><span class="title">Update Card</span></v-btn>
+          <v-btn @click.stop="cancel_subscription = true" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Remove Card</span></v-btn>
+        </v-flex>
+        <v-flex xs6 offset-xs1>
+          <v-card flat style="padding: 2em;">
+            <h2 class="headline">Update the card on your account</h2>
+            <form method="post" style="margin: 1em 0;" id="payment-form">
+              <div class="form-row">
+                  <div id="card-element"></div>
+                  <div id="card-errors" role="alert"></div>
+              </div>
+              <v-btn style="margin: 1em 0 -1em;" large block dark color="green" :disabled="disabled" :loading="loading"  @click="add_card($event)">Update card</v-btn>
+            </form>
+          </v-card>
+        </v-flex>
+      </v-layout>
+    </div>
+    <v-dialog v-model="cancel_subscription" max-width="500px">
+      <v-card>
+        <v-card-title><span class="display-1" style="width: 100%; text-align: center;">Are you sure?</span></v-card-title>
+        <v-card-actions>
+          <v-layout wrap row>
+          <v-flex xs5>
+            <v-btn color="primary" large block @click.stop="cancel_subscription = false">Close</v-btn>
+          </v-flex>
+          <v-flex xs6 offset-xs1>
+            <v-form method="POST" action="/settings/payment/card/delete">
+              <v-btn color="green" large block dark type="submit">Yes I'm sure!</v-btn>
+            <v-form>
+          </v-flex>
           </v-layout>
-        </div>
-      </v-flex>
-    </v-layout>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 {% endblock content %}
 {% block script %}
@@ -95,6 +113,7 @@
       el: '#app',
       delimiters: ["${","}"],
       data: {
+        cancel_subscription: false,
         loading: false,
         disabled: false,
         card: null,

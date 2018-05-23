@@ -1,13 +1,16 @@
 use rocket::Route;
 use rocket_contrib::Template;
 use rocket::response::{Flash, NamedFile, Redirect};
-use club_coding::{create_new_user_series_access, create_new_user_view, establish_connection};
+use club_coding::{create_new_user_series_access, create_new_user_view, establish_connection,
+                  insert_new_users_stripe_charge};
 use club_coding::models::{Series, UsersSeriesAccess, UsersStripeCustomer, UsersViews, Videos};
-use diesel::prelude::*;
 use users::User;
 use std;
 use series::{get_video_watched, PublicVideo};
 use rocket::request::FlashMessage;
+use stripe::Source::Card;
+
+use diesel::prelude::*;
 
 pub fn get_videos() -> Vec<Videos> {
     use club_coding::schema::videos::dsl::*;
@@ -63,6 +66,24 @@ fn get_series_title(uid: Option<i64>) -> String {
     }
 }
 
+fn get_option_series(uid: Option<i64>) -> Option<Series> {
+    match uid {
+        Some(sid) => {
+            use club_coding::schema::series::dsl::*;
+
+            let connection = establish_connection();
+
+            Some(
+                series
+                    .filter(id.eq(sid))
+                    .first(&connection)
+                    .expect("Error loading serie"),
+            )
+        }
+        None => None,
+    }
+}
+
 fn get_videos_of_series(uid: i64, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
@@ -90,6 +111,7 @@ fn get_videos_of_series(uid: i64, sid: i64) -> Vec<PublicVideo> {
 struct WatchContext<'a> {
     uuid: String,
     series_title: String,
+    price: i32,
     title: String,
     description: String,
     user: &'a User,
@@ -144,9 +166,10 @@ fn watch_as_user(
                 Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
                 None => ("".to_string(), "".to_string()),
             };
-            let context = WatchContext {
+            let mut context = WatchContext {
                 uuid: video.uuid,
-                series_title: get_series_title(video.series),
+                series_title: "".to_string(),
+                price: 0,
                 title: video.title,
                 description: video.description,
                 user: &user,
@@ -155,6 +178,13 @@ fn watch_as_user(
                 flash_name: name,
                 flash_msg: msg,
             };
+            match get_option_series(video.series) {
+                Some(serie) => {
+                    context.series_title = serie.title.clone();
+                    context.price = serie.price;
+                }
+                None => {}
+            }
             if video.membership_only {
                 match video.series {
                     Some(series_id) => {
@@ -310,8 +340,41 @@ fn buy_serie(user: User, uuid: String) -> Result<Flash<Redirect>, Redirect> {
                                             statement_descriptor: None,
                                         },
                                     ).unwrap();
-                                    println!("{:?}", charge);
+                                    let failure_code: Option<
+                                        String,
+                                    > = match charge.failure_code {
+                                        Some(code) => Some(code.to_string()),
+                                        None => None,
+                                    };
+                                    let source_id = match charge.source {
+                                        Card(card) => card.id,
+                                    };
                                     let connection = establish_connection();
+                                    insert_new_users_stripe_charge(
+                                        &connection,
+                                        user.id,
+                                        series_id,
+                                        charge.id,
+                                        charge.amount as i32,
+                                        charge.amount_refunded as i32,
+                                        charge.balance_transaction,
+                                        charge.captured,
+                                        charge.created,
+                                        charge.description,
+                                        charge.destination,
+                                        charge.dispute,
+                                        failure_code,
+                                        charge.failure_message,
+                                        charge.livemode,
+                                        charge.on_behalf_of,
+                                        charge.order,
+                                        charge.paid,
+                                        charge.refunded,
+                                        source_id,
+                                        charge.source_transfer,
+                                        charge.statement_descriptor,
+                                        charge.status,
+                                    );
                                     create_new_user_series_access(
                                         &connection,
                                         user.id,

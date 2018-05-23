@@ -11,8 +11,8 @@ use dotenv::dotenv;
 use std::env;
 
 use self::models::{NewGroup, NewSerie, NewUser, NewUserGroup, NewUserSeriesAccess, NewUserSession,
-                   NewUserStripeCard, NewUserStripeCustomer, NewUserStripeToken,
-                   NewUserVerifyEmail, NewUserView, NewVideo, Users};
+                   NewUserStripeCard, NewUserStripeCharge, NewUserStripeCustomer,
+                   NewUserStripeToken, NewUserVerifyEmail, NewUserView, NewVideo, Users};
 
 pub fn establish_connection() -> MysqlConnection {
     dotenv().ok();
@@ -184,6 +184,64 @@ pub fn insert_new_card(
         .values(&new_card)
         .execute(conn)
         .expect("Error saving new card");
+}
+
+pub fn insert_new_users_stripe_charge(
+    conn: &MysqlConnection,
+    user_id: i64,
+    series_id: i64,
+    uuid: String,
+    amount: i32,
+    amount_refunded: i32,
+    balance_transaction: Option<String>,
+    captured: bool,
+    created_at_stripe: i64,
+    description: Option<String>,
+    destination: Option<String>,
+    dispute: Option<String>,
+    failure_code: Option<String>,
+    failure_message: Option<String>,
+    livemode: bool,
+    on_behalf_of: Option<String>,
+    order: Option<String>,
+    paid: bool,
+    refunded: bool,
+    source_id: String,
+    source_transfer: Option<String>,
+    statement_descriptor: Option<String>,
+    status: String,
+) {
+    use schema::users_stripe_charge;
+
+    let new_charge = NewUserStripeCharge {
+        user_id: user_id,
+        series_id: series_id,
+        uuid: uuid,
+        amount: amount,
+        amount_refunded: amount_refunded,
+        balance_transaction: balance_transaction,
+        captured: captured,
+        created_at_stripe: created_at_stripe,
+        description: description,
+        destination: destination,
+        dispute: dispute,
+        failure_code: failure_code,
+        failure_message: failure_message,
+        livemode: livemode,
+        on_behalf_of: on_behalf_of,
+        order: order,
+        paid: paid,
+        refunded: refunded,
+        source_id: source_id,
+        source_transfer: source_transfer,
+        statement_descriptor: statement_descriptor,
+        status: status,
+    };
+
+    diesel::insert_into(users_stripe_charge::table)
+        .values(&new_charge)
+        .execute(conn)
+        .expect("Error saving new charge");
 }
 
 pub fn insert_new_users_stripe_token(

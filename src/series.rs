@@ -23,6 +23,7 @@ pub struct PublicSeries {
     title: String,
     slug: String,
     description: String,
+    price: i32,
 }
 
 pub fn get_last_10_series() -> Vec<PublicSeries> {
@@ -44,6 +45,7 @@ pub fn get_last_10_series() -> Vec<PublicSeries> {
             title: serie.title,
             slug: serie.slug,
             description: serie.description,
+            price: serie.price,
         });
     }
     to_return
@@ -113,6 +115,7 @@ struct SerieStruct<'a> {
     title: &'a String,
     description: String,
     in_development: bool,
+    price: i32,
     videos: Vec<PublicVideo>,
 }
 
@@ -128,6 +131,7 @@ fn serie(user: User, uuid: String) -> Template {
         title: &serie.title,
         description: description,
         in_development: serie.in_development,
+        price: serie.price,
         videos: get_videos(user.id, serie.id),
     };
     Template::render("series", &context)

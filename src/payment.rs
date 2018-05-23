@@ -7,7 +7,8 @@ use users::User;
 use stripe;
 use std;
 use rocket::request::FlashMessage;
-use club_coding::models::{UsersStripeCard, UsersStripeCustomer};
+use club_coding::models::{Series, UsersStripeCard, UsersStripeCharge, UsersStripeCustomer};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
 #[derive(Serialize)]
@@ -36,19 +37,65 @@ fn customer_exists(uid: i64) -> Option<UsersStripeCustomer> {
     }
 }
 
+#[derive(Serialize)]
+struct Charge {
+    amount: i32,
+    date: String,
+    series: String,
+}
+
+#[derive(Serialize)]
+struct PaymentsContext {
+    header: String,
+    user: User,
+    flash_name: String,
+    flash_msg: String,
+    charges: Vec<Charge>,
+}
+
+fn get_charges(uid: i64) -> Vec<Charge> {
+    use club_coding::schema::users_stripe_charge::dsl::*;
+
+    let connection = establish_connection();
+    let charges = users_stripe_charge
+        .filter(user_id.eq(uid))
+        .order(id.desc())
+        .load::<UsersStripeCharge>(&connection)
+        .expect("Error loading charges");
+
+    let mut to_return: Vec<Charge> = vec![];
+    for charge in charges {
+        use club_coding::schema::series::dsl::*;
+
+        let serie: Series = series
+            .filter(id.eq(charge.series_id))
+            .first(&connection)
+            .expect("Error loading series");
+
+        to_return.push(Charge {
+            amount: charge.amount,
+            date: NaiveDateTime::from_timestamp(charge.created_at_stripe, 0).to_string(),
+            series: serie.title,
+        });
+    }
+    to_return
+}
+
 #[get("/")]
 fn payments_page(user: User, flash: Option<FlashMessage>) -> Result<Template, Redirect> {
     match customer_exists(user.id) {
         Some(_) => {
+            let charges = get_charges(user.id);
             let (name, msg) = match flash {
                 Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
                 None => ("".to_string(), "".to_string()),
             };
-            let context = ChargeContext {
+            let context = PaymentsContext {
                 header: "Club Coding".to_string(),
                 user: user,
                 flash_name: name,
                 flash_msg: msg,
+                charges: charges,
             };
             Ok(Template::render("payment", &context))
         }

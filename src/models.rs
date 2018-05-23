@@ -151,6 +151,60 @@ pub struct NewUserStripeCard {
     pub tokenization_method: Option<String>,
 }
 
+#[derive(Queryable)]
+pub struct UsersStripeCharge {
+    pub id: i64,
+    pub user_id: i64,
+    pub series_id: i64,
+    pub uuid: String,
+    pub amount: i32,
+    pub amount_refunded: i32,
+    pub balance_transaction: Option<String>,
+    pub captured: bool,
+    pub created_at_stripe: i64,
+    pub description: Option<String>,
+    pub destination: Option<String>,
+    pub dispute: Option<String>,
+    pub failure_code: Option<String>,
+    pub failure_message: Option<String>,
+    pub livemode: bool,
+    pub on_behalf_of: Option<String>,
+    pub order: Option<String>,
+    pub paid: bool,
+    pub refunded: bool,
+    pub source_id: String,
+    pub source_transfer: Option<String>,
+    pub statement_descriptor: Option<String>,
+    pub status: String,
+}
+
+#[derive(Insertable)]
+#[table_name = "users_stripe_charge"]
+pub struct NewUserStripeCharge {
+    pub user_id: i64,
+    pub series_id: i64,
+    pub uuid: String,
+    pub amount: i32,
+    pub amount_refunded: i32,
+    pub balance_transaction: Option<String>,
+    pub captured: bool,
+    pub created_at_stripe: i64,
+    pub description: Option<String>,
+    pub destination: Option<String>,
+    pub dispute: Option<String>,
+    pub failure_code: Option<String>,
+    pub failure_message: Option<String>,
+    pub livemode: bool,
+    pub on_behalf_of: Option<String>,
+    pub order: Option<String>,
+    pub paid: bool,
+    pub refunded: bool,
+    pub source_id: String,
+    pub source_transfer: Option<String>,
+    pub statement_descriptor: Option<String>,
+    pub status: String,
+}
+
 #[derive(Queryable, Clone)]
 pub struct UsersStripeCustomer {
     pub id: i64,

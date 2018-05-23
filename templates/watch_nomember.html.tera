@@ -12,7 +12,7 @@
       <div style="text-align: center; padding: 15vh 0;">
         <h2 class="display-3" style="color: #4d545d;">Back to the Learning!</h2>
         <p class="subheading" style="margin: 1em 0; color: rgb(77, 84, 93);">It looks like you don't have access to this series at Club Coding.<br />Don't worry, it's an easy fix!</p>
-        <v-btn large style="background-color: #ef6733; color: #FFF" href="/watch/{{ uuid }}/buy">Buy this series!</v-btn>
+        <v-btn large style="background-color: #ef6733; color: #FFF" href="/watch/{{ uuid }}/buy">Buy this series for ${{ price/100 }}!</v-btn>
       </div>
       <v-divider style="margin-bottom: 2em;"/>
     </v-flex>
