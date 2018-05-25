@@ -40,44 +40,46 @@ pub fn get_all_seriesc() -> Vec<SerieC> {
     use club_coding::schema::series::dsl::*;
 
     let connection = establish_connection();
-    let result = series
-        .load::<Series>(&connection)
-        .expect("Error loading series");
+    match series.load::<Series>(&connection) {
+        Ok(result) => {
+            let mut ret: Vec<SerieC> = vec![];
 
-    let mut ret: Vec<SerieC> = vec![];
-
-    for serie in result {
-        ret.push(SerieC {
-            id: serie.id,
-            name: serie.title,
-        })
+            for serie in result {
+                ret.push(SerieC {
+                    id: serie.id,
+                    name: serie.title,
+                })
+            }
+            ret
+        }
+        Err(_) => vec![],
     }
-    ret
 }
 
 pub fn get_all_series() -> Vec<Serie> {
     use club_coding::schema::series::dsl::*;
 
     let connection = establish_connection();
-    let result = series
-        .load::<Series>(&connection)
-        .expect("Error loading series");
+    match series.load::<Series>(&connection) {
+        Ok(result) => {
+            let mut ret: Vec<Serie> = vec![];
 
-    let mut ret: Vec<Serie> = vec![];
-
-    for serie in result {
-        ret.push(Serie {
-            uuid: serie.uuid,
-            title: serie.title,
-            views: 0,
-            comments: 0,
-            published: serie.published,
-            archived: serie.archived,
-            created: serie.created,
-            updated: serie.updated,
-        })
+            for serie in result {
+                ret.push(Serie {
+                    uuid: serie.uuid,
+                    title: serie.title,
+                    views: 0,
+                    comments: 0,
+                    published: serie.published,
+                    archived: serie.archived,
+                    created: serie.created,
+                    updated: serie.updated,
+                })
+            }
+            ret
+        }
+        Err(_) => vec![],
     }
-    ret
 }
 
 #[get("/series")]
@@ -136,16 +138,19 @@ fn get_serie(uid: String) -> Option<Series> {
     use club_coding::schema::series::dsl::*;
 
     let connection = establish_connection();
-    let result = series
+    match series
         .filter(uuid.eq(uid))
         .limit(1)
         .load::<Series>(&connection)
-        .expect("Error loading series");
-
-    if result.len() == 1 {
-        return Some(result[0].clone());
-    } else {
-        return None;
+    {
+        Ok(result) => {
+            if result.len() == 1 {
+                Some(result[0].clone())
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
     }
 }
 

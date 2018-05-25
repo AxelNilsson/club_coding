@@ -61,28 +61,38 @@ fn get_charges(uid: i64) -> Vec<Charge> {
     use club_coding::schema::users_stripe_charge::dsl::*;
 
     let connection = establish_connection();
-    let charges = users_stripe_charge
+    match users_stripe_charge
         .filter(user_id.eq(uid))
         .order(id.desc())
         .load::<UsersStripeCharge>(&connection)
-        .expect("Error loading charges");
+    {
+        Ok(charges) => {
+            let mut to_return: Vec<Charge> = vec![];
+            for charge in charges {
+                use club_coding::schema::series::dsl::*;
 
-    let mut to_return: Vec<Charge> = vec![];
-    for charge in charges {
-        use club_coding::schema::series::dsl::*;
+                let serie: Option<Series> =
+                    match series.filter(id.eq(charge.series_id)).first(&connection) {
+                        Ok(serie) => Some(serie),
+                        Err(_) => None,
+                    };
 
-        let serie: Series = series
-            .filter(id.eq(charge.series_id))
-            .first(&connection)
-            .expect("Error loading series");
-
-        to_return.push(Charge {
-            amount: charge.amount,
-            date: NaiveDateTime::from_timestamp(charge.created_at_stripe, 0).to_string(),
-            series: serie.title,
-        });
+                match serie {
+                    Some(serie) => {
+                        to_return.push(Charge {
+                            amount: charge.amount,
+                            date: NaiveDateTime::from_timestamp(charge.created_at_stripe, 0)
+                                .to_string(),
+                            series: serie.title,
+                        });
+                    }
+                    None => {}
+                }
+            }
+            to_return
+        }
+        Err(_) => vec![],
     }
-    to_return
 }
 
 #[get("/")]
@@ -155,13 +165,16 @@ struct Stripe {
     used: bool,
 }
 
-fn get_customer(connection: &MysqlConnection, uid: i64) -> UsersStripeCustomer {
+fn get_customer(connection: &MysqlConnection, uid: i64) -> Option<UsersStripeCustomer> {
     use club_coding::schema::users_stripe_customer::dsl::*;
 
-    users_stripe_customer
+    match users_stripe_customer
         .filter(user_id.eq(uid))
         .first(connection)
-        .expect("Error loading user")
+    {
+        Ok(user) => Some(user),
+        Err(_) => None,
+    }
 }
 
 fn update_customer(
@@ -248,12 +261,15 @@ fn charge(data: &Stripe, user_id: i64, email: String) -> Result<(), Error> {
         data.used,
     );
     let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
-    match update_customer(&client, &customer.uuid, &(data.id.clone())) {
-        Ok(_) => {
-            send_card_updated_mail(email)?;
-            Ok(())
-        }
-        Err(_) => Err(Error::new(ErrorKind::Other, "Could not update customer")),
+    match customer {
+        Some(customer) => match update_customer(&client, &customer.uuid, &(data.id.clone())) {
+            Ok(_) => {
+                send_card_updated_mail(email)?;
+                Ok(())
+            }
+            Err(_) => Err(Error::new(ErrorKind::Other, "Could not update customer")),
+        },
+        None => Err(Error::new(ErrorKind::Other, "Could not get customer")),
     }
 }
 
@@ -275,14 +291,18 @@ fn update_card(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>, F
 fn delete_and_get_card(connection: &MysqlConnection, uid: i64) -> Option<String> {
     use club_coding::schema::users_stripe_card::dsl::*;
 
-    let card: UsersStripeCard = users_stripe_card
-        .filter(user_id.eq(uid))
-        .first(connection)
-        .expect("Error loading user");
+    let card: Option<UsersStripeCard> =
+        match users_stripe_card.filter(user_id.eq(uid)).first(connection) {
+            Ok(card) => Some(card),
+            Err(_) => None,
+        };
 
-    match diesel::delete(users_stripe_card.find(card.id)).execute(connection) {
-        Ok(_) => card.card_id,
-        Err(_) => None,
+    match card {
+        Some(card) => match diesel::delete(users_stripe_card.find(card.id)).execute(connection) {
+            Ok(_) => card.card_id,
+            Err(_) => None,
+        },
+        None => None,
     }
 }
 

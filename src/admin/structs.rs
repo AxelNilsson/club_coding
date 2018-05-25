@@ -30,47 +30,56 @@ impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
 
                 let connection = establish_connection();
 
-                let results = users_sessions
+                match users_sessions
                     .filter(token.eq(cookie.value().to_string()))
                     .limit(1)
                     .load::<UsersSessions>(&connection)
-                    .expect("Error loading sessions");
+                {
+                    Ok(results) => {
+                        if results.len() == 1 {
+                            use club_coding::schema::users::dsl::*;
 
-                if results.len() == 1 {
-                    use club_coding::schema::users::dsl::*;
+                            let connection = establish_connection();
+                            match users
+                                .filter(id.eq(results[0].user_id))
+                                .limit(1)
+                                .load::<Users>(&connection)
+                            {
+                                Ok(results) => {
+                                    if results.len() == 1 {
+                                        use club_coding::schema::users_group::dsl::*;
 
-                    let connection = establish_connection();
-                    let results = users
-                        .filter(id.eq(results[0].user_id))
-                        .limit(1)
-                        .load::<Users>(&connection)
-                        .expect("Error loading sessions");
-
-                    if results.len() == 1 {
-                        use club_coding::schema::users_group::dsl::*;
-
-                        let connection = establish_connection();
-                        let admin = users_group
-                            .filter(user_id.eq(results[0].id))
-                            .filter(group_id.eq(1))
-                            .limit(1)
-                            .load::<UsersGroup>(&connection)
-                            .expect("Error loading user groups");
-
-                        if admin.len() == 1 {
-                            return Some(Administrator {
-                                id: results[0].id,
-                                username: results[0].username.clone(),
-                                admin: true,
-                            });
+                                        let connection = establish_connection();
+                                        match users_group
+                                            .filter(user_id.eq(results[0].id))
+                                            .filter(group_id.eq(1))
+                                            .limit(1)
+                                            .load::<UsersGroup>(&connection)
+                                        {
+                                            Ok(admin) => {
+                                                if admin.len() == 1 {
+                                                    return Some(Administrator {
+                                                        id: results[0].id,
+                                                        username: results[0].username.clone(),
+                                                        admin: true,
+                                                    });
+                                                } else {
+                                                    return None;
+                                                }
+                                            }
+                                            Err(_) => None,
+                                        }
+                                    } else {
+                                        return None;
+                                    }
+                                }
+                                Err(_) => None,
+                            }
                         } else {
                             return None;
                         }
-                    } else {
-                        return None;
                     }
-                } else {
-                    return None;
+                    Err(_) => None,
                 }
             });
         match username {

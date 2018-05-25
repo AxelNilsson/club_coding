@@ -26,22 +26,23 @@ fn get_all_users() -> Vec<UsersC> {
     use club_coding::schema::users::dsl::*;
 
     let connection = establish_connection();
-    let result = users
-        .load::<Users>(&connection)
-        .expect("Error loading users");
+    match users.load::<Users>(&connection) {
+        Ok(result) => {
+            let mut ret: Vec<UsersC> = vec![];
 
-    let mut ret: Vec<UsersC> = vec![];
-
-    for user in result {
-        ret.push(UsersC {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            created: user.created,
-            updated: user.updated,
-        })
+            for user in result {
+                ret.push(UsersC {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email,
+                    created: user.created,
+                    updated: user.updated,
+                })
+            }
+            ret
+        }
+        Err(_) => vec![],
     }
-    ret
 }
 
 #[derive(Serialize)]
@@ -66,15 +67,16 @@ pub fn get_all_groups_for_user(uid: i64) -> Vec<i64> {
 
     let connection = establish_connection();
 
-    let matching_groups = users_group
-        .filter(user_id.eq(uid))
-        .load::<UsersGroup>(&connection)
-        .expect("Unable to find users group");
-
     let mut returning_groups = vec![];
 
-    for group in matching_groups {
-        returning_groups.push(group.group_id);
+    match users_group
+        .filter(user_id.eq(uid))
+        .load::<UsersGroup>(&connection)
+    {
+        Ok(matching_groups) => for group in matching_groups {
+            returning_groups.push(group.group_id);
+        },
+        Err(_) => {}
     }
     returning_groups
 }
@@ -84,17 +86,20 @@ pub fn get_all_series_for_user(uid: i64) -> Vec<i64> {
 
     let connection = establish_connection();
 
-    let matching_series = users_series_access
+    match users_series_access
         .filter(user_id.eq(uid))
         .load::<UsersSeriesAccess>(&connection)
-        .expect("Unable to find users group");
+    {
+        Ok(matching_series) => {
+            let mut returning_series = vec![];
 
-    let mut returning_series = vec![];
-
-    for serie in matching_series {
-        returning_series.push(serie.series_id);
+            for serie in matching_series {
+                returning_series.push(serie.series_id);
+            }
+            returning_series
+        }
+        Err(_) => vec![],
     }
-    returning_series
 }
 
 #[derive(Deserialize, Serialize)]
@@ -120,21 +125,21 @@ fn get_user(uid: i64) -> Option<UsersC> {
     use club_coding::schema::users::dsl::*;
 
     let connection = establish_connection();
-    let result = users
-        .filter(id.eq(uid))
-        .load::<Users>(&connection)
-        .expect("Error loading users");
-
-    if result.len() == 1 {
-        Some(UsersC {
-            id: result[0].id,
-            username: result[0].username.clone(),
-            email: result[0].email.clone(),
-            created: result[0].created,
-            updated: result[0].updated,
-        })
-    } else {
-        None
+    match users.filter(id.eq(uid)).load::<Users>(&connection) {
+        Ok(result) => {
+            if result.len() == 1 {
+                Some(UsersC {
+                    id: result[0].id,
+                    username: result[0].username.clone(),
+                    email: result[0].email.clone(),
+                    created: result[0].created,
+                    updated: result[0].updated,
+                })
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
     }
 }
 

@@ -21,41 +21,45 @@ pub fn get_video_watched(uid: i64, vid: i64) -> bool {
 
     let connection = establish_connection();
 
-    let results = users_views
+    match users_views
         .filter(user_id.eq(uid))
         .filter(video_id.eq(vid))
         .load::<UsersViews>(&connection)
-        .expect("Error loading users views");
-
-    return results.len() == 1;
+    {
+        Ok(results) => results.len() == 1,
+        Err(_) => false,
+    }
 }
 
 fn get_videos(query: String, uid: Option<i64>) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
     let connection = establish_connection();
-    let v_ideos = videos
+    match videos
         .filter(description.like(query))
         .load::<Videos>(&connection)
-        .expect("Error loading users");
-
-    let mut to_return: Vec<PublicVideo> = vec![];
-    let mut number = 1;
-    for video in v_ideos {
-        let w_atched = match uid {
-            Some(uid) => get_video_watched(uid, video.id),
-            None => false,
-        };
-        to_return.push(PublicVideo {
-            episode_number: number,
-            uuid: video.uuid,
-            title: video.title,
-            description: video.description,
-            watched: w_atched,
-        });
-        number = number + 1;
+    {
+        Ok(vec_of_videos) => {
+            let mut to_return: Vec<PublicVideo> = vec![];
+            let mut number = 1;
+            for video in vec_of_videos {
+                let w_atched = match uid {
+                    Some(uid) => get_video_watched(uid, video.id),
+                    None => false,
+                };
+                to_return.push(PublicVideo {
+                    episode_number: number,
+                    uuid: video.uuid,
+                    title: video.title,
+                    description: video.description,
+                    watched: w_atched,
+                });
+                number = number + 1;
+            }
+            to_return
+        }
+        Err(_) => vec![],
     }
-    to_return
 }
 
 #[derive(FromForm)]

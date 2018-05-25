@@ -20,19 +20,20 @@ pub fn get_all_groupsc() -> Vec<GroupC> {
     use club_coding::schema::groups::dsl::*;
 
     let connection = establish_connection();
-    let result = groups
-        .load::<Groups>(&connection)
-        .expect("Error loading groups");
+    match groups.load::<Groups>(&connection) {
+        Ok(result) => {
+            let mut ret: Vec<GroupC> = vec![];
 
-    let mut ret: Vec<GroupC> = vec![];
-
-    for group in result {
-        ret.push(GroupC {
-            id: group.id,
-            name: group.name,
-        })
+            for group in result {
+                ret.push(GroupC {
+                    id: group.id,
+                    name: group.name,
+                })
+            }
+            ret
+        }
+        Err(_) => vec![],
     }
-    ret
 }
 
 #[derive(Deserialize, Serialize)]
@@ -47,21 +48,22 @@ pub fn get_all_groups() -> Vec<GroupContext> {
     use club_coding::schema::groups::dsl::*;
 
     let connection = establish_connection();
-    let result = groups
-        .load::<Groups>(&connection)
-        .expect("Error loading groups");
+    match groups.load::<Groups>(&connection) {
+        Ok(result) => {
+            let mut ret: Vec<GroupContext> = vec![];
 
-    let mut ret: Vec<GroupContext> = vec![];
-
-    for group in result {
-        ret.push(GroupContext {
-            uuid: group.uuid,
-            name: group.name,
-            created: group.created,
-            updated: group.updated,
-        })
+            for group in result {
+                ret.push(GroupContext {
+                    uuid: group.uuid,
+                    name: group.name,
+                    created: group.created,
+                    updated: group.updated,
+                })
+            }
+            ret
+        }
+        Err(_) => vec![],
     }
-    ret
 }
 
 #[derive(Serialize)]
@@ -126,15 +128,15 @@ fn get_group_by_uuid(uid: String) -> Option<Groups> {
 
     let connection = establish_connection();
 
-    let group = groups
-        .filter(uuid.eq(uid))
-        .load::<Groups>(&connection)
-        .expect("Unable to find groups");
-
-    if group.len() == 1 {
-        Some(group[0].clone())
-    } else {
-        None
+    match groups.filter(uuid.eq(uid)).load::<Groups>(&connection) {
+        Ok(group) => {
+            if group.len() == 1 {
+                Some(group[0].clone())
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
     }
 }
 

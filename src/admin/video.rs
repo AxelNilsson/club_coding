@@ -38,39 +38,44 @@ fn get_all_videos() -> Vec<Video> {
     use club_coding::schema::videos::dsl::*;
 
     let connection = establish_connection();
-    let result = videos
-        .load::<Videos>(&connection)
-        .expect("Error loading videos");
+    match videos.load::<Videos>(&connection) {
+        Ok(result) => {
+            let mut ret: Vec<Video> = vec![];
 
-    let mut ret: Vec<Video> = vec![];
+            for video in result {
+                let series_name: Option<String> = match video.series {
+                    Some(serie_id) => {
+                        use club_coding::schema::series::dsl::*;
 
-    for video in result {
-        let series_name: Option<String> = match video.series {
-            Some(serie_id) => {
-                use club_coding::schema::series::dsl::*;
+                        let serie: Option<Series> = match series.find(serie_id).first(&connection) {
+                            Ok(serie) => Some(serie),
+                            Err(_) => None,
+                        };
 
-                let serie: Series = series
-                    .find(serie_id)
-                    .first(&connection)
-                    .expect("Unable to find series");
-                Some(serie.title)
+                        match serie {
+                            Some(serie) => Some(serie.title),
+                            None => None,
+                        }
+                    }
+                    None => None,
+                };
+
+                ret.push(Video {
+                    uuid: video.uuid,
+                    name: video.title,
+                    views: 0,
+                    comments: 0,
+                    serie: series_name,
+                    membership: video.membership_only,
+                    published: video.published,
+                    created: video.created,
+                    updated: video.updated,
+                })
             }
-            None => None,
-        };
-
-        ret.push(Video {
-            uuid: video.uuid,
-            name: video.title,
-            views: 0,
-            comments: 0,
-            serie: series_name,
-            membership: video.membership_only,
-            published: video.published,
-            created: video.created,
-            updated: video.updated,
-        })
+            ret
+        }
+        Err(_) => vec![],
     }
-    ret
 }
 
 #[get("/videos")]
@@ -108,12 +113,15 @@ fn get_series_from_uuid(uid: Option<String>) -> Option<i64> {
             use club_coding::schema::series::dsl::*;
             let connection = establish_connection();
 
-            let serie: Series = series
-                .filter(uuid.eq(uid))
-                .first(&connection)
-                .expect("Unable to find series");
+            let serie: Option<Series> = match series.filter(uuid.eq(uid)).first(&connection) {
+                Ok(serie) => Some(serie),
+                Err(_) => None,
+            };
 
-            Some(serie.id)
+            match serie {
+                Some(serie) => Some(serie.id),
+                None => None,
+            }
         }
         None => None,
     }
@@ -125,14 +133,20 @@ fn get_highest_episode_from_series(series_id: Option<i64>) -> Option<i32> {
             use club_coding::schema::videos::dsl::*;
             let connection = establish_connection();
 
-            let video: Videos = videos
+            let video: Option<Videos> = match videos
                 .filter(series.eq(series_id))
                 .order(episode_number.desc())
                 .first(&connection)
-                .expect("Unable to find videos");
+            {
+                Ok(video) => Some(video),
+                Err(_) => None,
+            };
 
-            match video.episode_number {
-                Some(episode) => Some(episode + 1),
+            match video {
+                Some(video) => match video.episode_number {
+                    Some(episode) => Some(episode + 1),
+                    None => None,
+                },
                 None => None,
             }
         }
@@ -181,56 +195,65 @@ fn get_video(uid: String) -> Option<Videos> {
     use club_coding::schema::videos::dsl::*;
 
     let connection = establish_connection();
-    let result = videos
+    match videos
         .filter(uuid.eq(uid))
         .limit(1)
         .load::<Videos>(&connection)
-        .expect("Error loading users");
-
-    if result.len() == 1 {
-        return Some(result[0].clone());
-    } else {
-        return None;
+    {
+        Ok(result) => {
+            if result.len() == 1 {
+                return Some(result[0].clone());
+            } else {
+                return None;
+            }
+        }
+        Err(_) => None,
     }
 }
 
-fn get_serie_from_video(series_id: Option<i64>) -> String {
+fn get_serie_from_video(series_id: Option<i64>) -> Option<String> {
     match series_id {
         Some(sid) => {
             use club_coding::schema::series::dsl::*;
 
             let connection = establish_connection();
-            let serie: Series = series
-                .find(sid)
-                .first(&connection)
-                .expect("Unable to find series");
+            let serie: Option<Series> = match series.find(sid).first(&connection) {
+                Ok(serie) => Some(serie),
+                Err(_) => None,
+            };
 
-            serie.uuid
+            match serie {
+                Some(serie) => Some(serie.uuid),
+                None => None,
+            }
         }
-        None => "".to_string(),
+        None => None,
     }
 }
 
 #[get("/videos/edit/<uuid>")]
 pub fn edit_video(uuid: String, user: Administrator) -> Option<Template> {
     match get_video(uuid.clone()) {
-        Some(video) => {
-            let context = EditVideo {
-                header: "Club Coding".to_string(),
-                user: user,
-                uuid: uuid,
-                series: get_all_series(),
-                video: UpdateVideo {
-                    title: video.title,
-                    description: video.description,
-                    vimeo_id: video.vimeo_id,
-                    membership: video.membership_only,
-                    published: video.published,
-                    serie: get_serie_from_video(video.series),
-                },
-            };
-            Some(Template::render("admin/edit_video", &context))
-        }
+        Some(video) => match get_serie_from_video(video.series) {
+            Some(serie_title) => {
+                let context = EditVideo {
+                    header: "Club Coding".to_string(),
+                    user: user,
+                    uuid: uuid,
+                    series: get_all_series(),
+                    video: UpdateVideo {
+                        title: video.title,
+                        description: video.description,
+                        vimeo_id: video.vimeo_id,
+                        membership: video.membership_only,
+                        published: video.published,
+                        serie: serie_title,
+                    },
+                };
+                Some(Template::render("admin/edit_video", &context))
+            }
+            None => None,
+        },
         None => None,
     }
 }

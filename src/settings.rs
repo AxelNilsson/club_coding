@@ -10,7 +10,7 @@ use structs::LoggedInContext;
 use users::User;
 use diesel;
 use diesel::prelude::*;
-use std;
+use std::io::{Error, ErrorKind};
 
 #[get("/settings/password")]
 fn password_page(user: User) -> Template {
@@ -38,7 +38,7 @@ struct Message {
     text: String,
 }
 
-fn get_password_hash_from_userid(user_id: i64) -> Result<String, std::io::Error> {
+fn get_password_hash_from_userid(user_id: i64) -> Result<String, Error> {
     use club_coding::schema::users::dsl::*;
 
     let connection = establish_connection();
@@ -51,16 +51,10 @@ fn get_password_hash_from_userid(user_id: i64) -> Result<String, std::io::Error>
             if results.len() == 1 {
                 Ok(results[0].password.to_string())
             } else {
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "No user found",
-                ))
+                Err(Error::new(ErrorKind::Other, "No user found"))
             }
         }
-        Err(_) => Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "No user found",
-        )),
+        Err(_) => Err(Error::new(ErrorKind::Other, "No user found")),
     }
 }
 
