@@ -224,7 +224,7 @@ fn send_card_updated_mail(email: String) -> Result<(), Error> {
 fn charge(data: &Stripe, user_id: i64, email: String) -> Result<(), Error> {
     let connection = establish_connection();
     let customer = get_customer(&connection, user_id);
-    insert_new_card(
+    let _ = insert_new_card(
         &connection,
         user_id,
         data.card_address_city.clone(),
@@ -248,8 +248,8 @@ fn charge(data: &Stripe, user_id: i64, email: String) -> Result<(), Error> {
         data.card_name.clone(),
         data.card_object.clone(),
         data.card_tokenization_method.clone(),
-    );
-    insert_new_users_stripe_token(
+    )?;
+    let _ = insert_new_users_stripe_token(
         &connection,
         user_id,
         data.client_ip.clone(),
@@ -259,7 +259,7 @@ fn charge(data: &Stripe, user_id: i64, email: String) -> Result<(), Error> {
         data.object.clone(),
         data.type_of_payment.clone(),
         data.used,
-    );
+    )?;
     let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
     match customer {
         Some(customer) => match update_customer(&client, &customer.uuid, &(data.id.clone())) {

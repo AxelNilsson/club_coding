@@ -102,10 +102,10 @@ pub fn insert_new_group(_user: Administrator, group: Form<NewGroup>) -> Result<R
     let new_group: NewGroup = group.into_inner();
     let connection = establish_connection();
     match generate_token(24) {
-        Ok(uuid) => {
-            create_new_group(&connection, uuid.clone(), new_group.name);
-            Ok(Redirect::to(&format!("/admin/groups/edit/{}", uuid)))
-        }
+        Ok(uuid) => match create_new_group(&connection, uuid.clone(), new_group.name) {
+            Ok(_) => Ok(Redirect::to(&format!("/admin/groups/edit/{}", uuid))),
+            Err(_) => Ok(Redirect::to(&format!("/admin/groups/edit/{}", uuid))),
+        },
         Err(_) => Err(Redirect::to("/admin/groups/new")),
     }
 }

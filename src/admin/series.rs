@@ -117,19 +117,19 @@ pub fn insert_new_series(
     let slug = create_slug(&new_serie.title);
     let connection = establish_connection();
     match generate_token(24) {
-        Ok(uuid) => {
-            create_new_series(
-                &connection,
-                uuid.clone(),
-                new_serie.title,
-                slug,
-                new_serie.description,
-                new_serie.price,
-                false,
-                false,
-            );
-            Ok(Redirect::to(&format!("/admin/series/edit/{}", uuid)))
-        }
+        Ok(uuid) => match create_new_series(
+            &connection,
+            uuid.clone(),
+            new_serie.title,
+            slug,
+            new_serie.description,
+            new_serie.price,
+            false,
+            false,
+        ) {
+            Ok(_) => Ok(Redirect::to(&format!("/admin/series/edit/{}", uuid))),
+            Err(_) => Ok(Redirect::to(&format!("/admin/series/edit/{}", uuid))),
+        },
         Err(_) => Err(Redirect::to("/admin/series/new")),
     }
 }

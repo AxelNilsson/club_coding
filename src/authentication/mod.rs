@@ -133,17 +133,22 @@ fn login(
                         let session_token = generate_token(64);
                         let connection = establish_connection();
                         match get_user_id_from_username(input_data.username) {
-                            Ok(user_id) => {
-                                create_new_user_session(
-                                    &connection,
-                                    user_id,
-                                    session_token.clone(),
-                                );
-                                let mut c = Cookie::new("session_token", session_token);
-                                c.set_max_age(Duration::hours(24));
-                                cookies.add_private(c);
-                                Ok(Flash::success(Redirect::to("/"), "You're now logged in."))
-                            }
+                            Ok(user_id) => match create_new_user_session(
+                                &connection,
+                                user_id,
+                                session_token.clone(),
+                            ) {
+                                Ok(_) => {
+                                    let mut c = Cookie::new("session_token", session_token);
+                                    c.set_max_age(Duration::hours(24));
+                                    cookies.add_private(c);
+                                    Ok(Flash::success(Redirect::to("/"), "You're now logged in."))
+                                }
+                                Err(_) => Err(Flash::error(
+                                    Redirect::to("/login"),
+                                    "An error occured, please try again later.",
+                                )),
+                            },
                             Err(_) => {
                                 Err(Flash::error(Redirect::to("/login"), "User not verified"))
                             }
@@ -176,7 +181,7 @@ pub fn send_verify_email(
     email: String,
 ) -> Result<(), Error> {
     let token = generate_token(30);
-    create_new_users_verify_email(connection, user_id, token.clone());
+    create_new_users_verify_email(connection, user_id, token.clone())?;
     let body = EmailBody {
         from: "axel@clubcoding.com".to_string(),
         to: email,
@@ -387,13 +392,16 @@ fn send_recover_email(
             Some(user_id) => {
                 let token = generate_token(30);
                 match send_recover_mail(token.clone(), input.email) {
-                    Ok(_) => {
-                        create_new_users_recover_email(&connection, user_id, token);
-                        Ok(Flash::success(
+                    Ok(_) => match create_new_users_recover_email(&connection, user_id, token) {
+                        Ok(_) => Ok(Flash::success(
                             Redirect::to("/"),
                             "Email sent. Please check your inbox.",
-                        ))
-                    }
+                        )),
+                        Err(_) => Err(Flash::error(
+                            Redirect::to("/recover/email"),
+                            "An error occured, please try again later.",
+                        )),
+                    },
                     Err(_) => Err(Flash::error(
                         Redirect::to("/recover/email"),
                         "An error occured, please try again later.",

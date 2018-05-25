@@ -235,7 +235,10 @@ pub fn update_user(uid: i64, _user: Administrator, data: Json<EditUser>) -> Resu
                     }
                 }
                 if should_create {
-                    create_new_user_group(&connection, uid, *data_group);
+                    match create_new_user_group(&connection, uid, *data_group) {
+                        Ok(_) => {}
+                        Err(_) => return Err(()),
+                    }
                 }
             }
 
@@ -271,7 +274,10 @@ pub fn update_user(uid: i64, _user: Administrator, data: Json<EditUser>) -> Resu
                     }
                 }
                 if should_create {
-                    create_new_user_series_access(&connection, uid, *data_serie, false);
+                    match create_new_user_series_access(&connection, uid, *data_serie, false) {
+                        Ok(_) => {}
+                        Err(_) => return Err(()),
+                    }
                 }
             }
 

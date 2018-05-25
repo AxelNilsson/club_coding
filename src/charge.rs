@@ -130,7 +130,7 @@ fn send_card_added_mail(email: String) -> Result<(), Error> {
 fn charge(data: &Stripe, email: &str, user_id: i64) -> Result<(), Error> {
     let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
     let connection = establish_connection();
-    insert_new_card(
+    let _ = insert_new_card(
         &connection,
         user_id,
         data.card_address_city.clone(),
@@ -154,8 +154,8 @@ fn charge(data: &Stripe, email: &str, user_id: i64) -> Result<(), Error> {
         data.card_name.clone(),
         data.card_object.clone(),
         data.card_tokenization_method.clone(),
-    );
-    insert_new_users_stripe_token(
+    )?;
+    let _ = insert_new_users_stripe_token(
         &connection,
         user_id,
         data.client_ip.clone(),
@@ -165,10 +165,10 @@ fn charge(data: &Stripe, email: &str, user_id: i64) -> Result<(), Error> {
         data.object.clone(),
         data.type_of_payment.clone(),
         data.used,
-    );
+    )?;
     match create_customer(&client, email, &(data.id.clone())) {
         Ok(customer) => {
-            insert_new_users_stripe_customer(
+            let _ = insert_new_users_stripe_customer(
                 &connection,
                 user_id,
                 &customer.id,
@@ -180,7 +180,7 @@ fn charge(data: &Stripe, email: &str, user_id: i64) -> Result<(), Error> {
                 customer.desc,
                 customer.email,
                 customer.livemode,
-            );
+            )?;
             match send_card_added_mail(email.to_string()) {
                 Ok(_) => Ok(()),
                 Err(_) => Err(Error::new(ErrorKind::Other, "Could not send email")),

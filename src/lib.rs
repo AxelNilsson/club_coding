@@ -24,7 +24,7 @@ pub fn establish_connection() -> MysqlConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
-pub fn create_new_group(conn: &MysqlConnection, uuid: String, name: String) {
+pub fn create_new_group(conn: &MysqlConnection, uuid: String, name: String) -> Result<(), Error> {
     use schema::groups;
 
     let new_group = NewGroup {
@@ -32,10 +32,13 @@ pub fn create_new_group(conn: &MysqlConnection, uuid: String, name: String) {
         name: name,
     };
 
-    diesel::insert_into(groups::table)
+    match diesel::insert_into(groups::table)
         .values(&new_group)
         .execute(conn)
-        .expect("Error saving new group");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(ErrorKind::Other, "No group table found")),
+    }
 }
 
 pub fn create_new_series(
@@ -47,7 +50,7 @@ pub fn create_new_series(
     price: i32,
     published: bool,
     archived: bool,
-) {
+) -> Result<(), Error> {
     use schema::series;
 
     let new_video = NewSerie {
@@ -60,13 +63,20 @@ pub fn create_new_series(
         archived: archived,
     };
 
-    diesel::insert_into(series::table)
+    match diesel::insert_into(series::table)
         .values(&new_video)
         .execute(conn)
-        .expect("Error saving new user");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(ErrorKind::Other, "No series table found")),
+    }
 }
 
-pub fn create_new_user_session(conn: &MysqlConnection, user_id: i64, token: String) {
+pub fn create_new_user_session(
+    conn: &MysqlConnection,
+    user_id: i64,
+    token: String,
+) -> Result<(), Error> {
     use schema::users_sessions;
 
     let new_user_session = NewUserSession {
@@ -74,10 +84,16 @@ pub fn create_new_user_session(conn: &MysqlConnection, user_id: i64, token: Stri
         token: token,
     };
 
-    diesel::insert_into(users_sessions::table)
+    match diesel::insert_into(users_sessions::table)
         .values(&new_user_session)
         .execute(conn)
-        .expect("Error saving new session");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "No users sessions table found",
+        )),
+    }
 }
 
 pub fn create_new_user(
@@ -105,7 +121,11 @@ pub fn create_new_user(
     }
 }
 
-pub fn create_new_user_group(conn: &MysqlConnection, user_id: i64, group_id: i64) {
+pub fn create_new_user_group(
+    conn: &MysqlConnection,
+    user_id: i64,
+    group_id: i64,
+) -> Result<(), Error> {
     use schema::users_group;
 
     let new_user_group = NewUserGroup {
@@ -113,10 +133,13 @@ pub fn create_new_user_group(conn: &MysqlConnection, user_id: i64, group_id: i64
         group_id: group_id,
     };
 
-    diesel::insert_into(users_group::table)
+    match diesel::insert_into(users_group::table)
         .values(&new_user_group)
         .execute(conn)
-        .expect("Error saving new user group");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(ErrorKind::Other, "No users group table found")),
+    }
 }
 
 pub fn create_new_user_series_access(
@@ -124,7 +147,7 @@ pub fn create_new_user_series_access(
     user_id: i64,
     series_id: i64,
     bought: bool,
-) {
+) -> Result<(), Error> {
     use schema::users_series_access;
 
     let new_user_series_access = NewUserSeriesAccess {
@@ -133,13 +156,23 @@ pub fn create_new_user_series_access(
         bought: bought,
     };
 
-    diesel::insert_into(users_series_access::table)
+    match diesel::insert_into(users_series_access::table)
         .values(&new_user_series_access)
         .execute(conn)
-        .expect("Error saving new user series access");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "No users series access table found",
+        )),
+    }
 }
 
-pub fn create_new_users_recover_email(conn: &MysqlConnection, user_id: i64, token: String) {
+pub fn create_new_users_recover_email(
+    conn: &MysqlConnection,
+    user_id: i64,
+    token: String,
+) -> Result<(), Error> {
     use schema::users_recover_email;
 
     let new_user_recover_email = NewUserRecoverEmail {
@@ -147,10 +180,16 @@ pub fn create_new_users_recover_email(conn: &MysqlConnection, user_id: i64, toke
         token: token,
     };
 
-    diesel::insert_into(users_recover_email::table)
+    match diesel::insert_into(users_recover_email::table)
         .values(&new_user_recover_email)
         .execute(conn)
-        .expect("Error saving new user verify email");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "No users recover email table found",
+        )),
+    }
 }
 
 pub fn insert_new_card(
@@ -177,7 +216,7 @@ pub fn insert_new_card(
     name: Option<String>,
     object: Option<String>,
     tokenization_method: Option<String>,
-) {
+) -> Result<(), Error> {
     use schema::users_stripe_card;
 
     let new_card = NewUserStripeCard {
@@ -205,10 +244,16 @@ pub fn insert_new_card(
         tokenization_method: tokenization_method,
     };
 
-    diesel::insert_into(users_stripe_card::table)
+    match diesel::insert_into(users_stripe_card::table)
         .values(&new_card)
         .execute(conn)
-        .expect("Error saving new card");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "No users stripe card table found",
+        )),
+    }
 }
 
 pub fn insert_new_users_stripe_charge(
@@ -235,7 +280,7 @@ pub fn insert_new_users_stripe_charge(
     source_transfer: Option<String>,
     statement_descriptor: Option<String>,
     status: String,
-) {
+) -> Result<(), Error> {
     use schema::users_stripe_charge;
 
     let new_charge = NewUserStripeCharge {
@@ -263,10 +308,16 @@ pub fn insert_new_users_stripe_charge(
         status: status,
     };
 
-    diesel::insert_into(users_stripe_charge::table)
+    match diesel::insert_into(users_stripe_charge::table)
         .values(&new_charge)
         .execute(conn)
-        .expect("Error saving new charge");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "No users stripe charge table found",
+        )),
+    }
 }
 
 pub fn insert_new_users_stripe_token(
@@ -279,7 +330,7 @@ pub fn insert_new_users_stripe_token(
     object: Option<String>,
     type_: Option<String>,
     used: bool,
-) {
+) -> Result<(), Error> {
     use schema::users_stripe_token;
 
     let new_stripe = NewUserStripeToken {
@@ -293,10 +344,16 @@ pub fn insert_new_users_stripe_token(
         used: used,
     };
 
-    diesel::insert_into(users_stripe_token::table)
+    match diesel::insert_into(users_stripe_token::table)
         .values(&new_stripe)
         .execute(conn)
-        .expect("Error saving new stripe");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "No users stripe token table found",
+        )),
+    }
 }
 
 pub fn insert_new_users_stripe_customer(
@@ -311,7 +368,7 @@ pub fn insert_new_users_stripe_customer(
     desc: Option<String>,
     email: Option<String>,
     livemode: bool,
-) {
+) -> Result<(), Error> {
     use schema::users_stripe_customer;
 
     let new_stripe = NewUserStripeCustomer {
@@ -327,13 +384,23 @@ pub fn insert_new_users_stripe_customer(
         livemode: livemode,
     };
 
-    diesel::insert_into(users_stripe_customer::table)
+    match diesel::insert_into(users_stripe_customer::table)
         .values(&new_stripe)
         .execute(conn)
-        .expect("Error saving new stripe");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "No users stripe customer table found",
+        )),
+    }
 }
 
-pub fn create_new_users_verify_email(conn: &MysqlConnection, user_id: i64, token: String) {
+pub fn create_new_users_verify_email(
+    conn: &MysqlConnection,
+    user_id: i64,
+    token: String,
+) -> Result<(), Error> {
     use schema::users_verify_email;
 
     let new_user_verify_email = NewUserVerifyEmail {
@@ -341,13 +408,23 @@ pub fn create_new_users_verify_email(conn: &MysqlConnection, user_id: i64, token
         token: token,
     };
 
-    diesel::insert_into(users_verify_email::table)
+    match diesel::insert_into(users_verify_email::table)
         .values(&new_user_verify_email)
         .execute(conn)
-        .expect("Error saving new user verify email");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "No users verify email table found",
+        )),
+    }
 }
 
-pub fn create_new_user_view(conn: &MysqlConnection, user_id: i64, video_id: i64) {
+pub fn create_new_user_view(
+    conn: &MysqlConnection,
+    user_id: i64,
+    video_id: i64,
+) -> Result<(), Error> {
     use schema::users_views;
 
     let new_user_view = NewUserView {
@@ -355,10 +432,13 @@ pub fn create_new_user_view(conn: &MysqlConnection, user_id: i64, video_id: i64)
         video_id: video_id,
     };
 
-    diesel::insert_into(users_views::table)
+    match diesel::insert_into(users_views::table)
         .values(&new_user_view)
         .execute(conn)
-        .expect("Error saving new user view");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(ErrorKind::Other, "No users view table found")),
+    }
 }
 
 pub fn create_new_video(
@@ -373,7 +453,7 @@ pub fn create_new_video(
     episode_number: Option<i32>,
     archived: bool,
     vimeo_id: String,
-) {
+) -> Result<(), Error> {
     use schema::videos;
 
     let new_video = NewVideo {
@@ -389,8 +469,11 @@ pub fn create_new_video(
         vimeo_id: vimeo_id,
     };
 
-    diesel::insert_into(videos::table)
+    match diesel::insert_into(videos::table)
         .values(&new_video)
         .execute(conn)
-        .expect("Error saving new user");
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(ErrorKind::Other, "No videos table found")),
+    }
 }

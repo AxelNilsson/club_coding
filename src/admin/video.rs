@@ -162,22 +162,22 @@ pub fn insert_new_video(_user: Administrator, video: Form<NewVideo>) -> Result<R
     let series: Option<i64> = get_series_from_uuid(new_video.serie);
     let episode_number: Option<i32> = get_highest_episode_from_series(series);
     match generate_token(24) {
-        Ok(uuid) => {
-            create_new_video(
-                &connection,
-                uuid.clone(),
-                new_video.title,
-                slug,
-                new_video.description,
-                false,
-                new_video.membership_only,
-                series,
-                episode_number,
-                false,
-                new_video.vimeo_id,
-            );
-            Ok(Redirect::to(&format!("/admin/videos/edit/{}", uuid)))
-        }
+        Ok(uuid) => match create_new_video(
+            &connection,
+            uuid.clone(),
+            new_video.title,
+            slug,
+            new_video.description,
+            false,
+            new_video.membership_only,
+            series,
+            episode_number,
+            false,
+            new_video.vimeo_id,
+        ) {
+            Ok(_) => Ok(Redirect::to(&format!("/admin/videos/edit/{}", uuid))),
+            Err(_) => Ok(Redirect::to(&format!("/admin/videos/edit/{}", uuid))),
+        },
         Err(_) => Err(Redirect::to("/admin/videos/new")),
     }
 }
