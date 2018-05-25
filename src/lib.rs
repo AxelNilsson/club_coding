@@ -9,6 +9,7 @@ pub mod schema;
 use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
+use std::io::{Error, ErrorKind};
 
 use self::models::{NewGroup, NewSerie, NewUser, NewUserGroup, NewUserRecoverEmail,
                    NewUserSeriesAccess, NewUserSession, NewUserStripeCard, NewUserStripeCharge,
@@ -84,7 +85,7 @@ pub fn create_new_user(
     username: String,
     password: String,
     email: String,
-) -> Users {
+) -> Result<Users, Error> {
     use schema::users;
 
     let new_user = NewUser {
@@ -98,7 +99,10 @@ pub fn create_new_user(
         .execute(conn)
         .expect("Error saving new user");
 
-    users::table.order(users::id.desc()).first(conn).unwrap()
+    match users::table.order(users::id.desc()).first(conn) {
+        Ok(user) => Ok(user),
+        Err(_) => Err(Error::new(ErrorKind::Other, "No user found")),
+    }
 }
 
 pub fn create_new_user_group(conn: &MysqlConnection, user_id: i64, group_id: i64) {

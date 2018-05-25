@@ -155,16 +155,18 @@ pub fn edit_group(uuid: String, user: Administrator) -> Option<Template> {
 }
 
 #[post("/groups/edit/<uid>", format = "application/json", data = "<data>")]
-pub fn update_group(uid: String, _user: Administrator, data: Json<EditGroup>) -> Json<EditGroup> {
+pub fn update_group(uid: String, _user: Administrator, data: Json<EditGroup>) -> Result<(), ()> {
     use club_coding::schema::groups::dsl::*;
 
     let connection = establish_connection();
 
-    diesel::update(groups.filter(uuid.eq(uid)))
+    match diesel::update(groups.filter(uuid.eq(uid)))
         .set(name.eq(data.0.name.clone()))
         .execute(&connection)
-        .unwrap();
-    data
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(()),
+    }
 }
 
 pub fn endpoints() -> Vec<Route> {

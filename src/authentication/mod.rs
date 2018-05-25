@@ -166,7 +166,11 @@ struct UserRegistration {
     csrf: String,
 }
 
-pub fn send_verify_email(connection: &MysqlConnection, user_id: i64, email: String) {
+pub fn send_verify_email(
+    connection: &MysqlConnection,
+    user_id: i64,
+    email: String,
+) -> Result<(), std::io::Error> {
     let token = generate_token(30);
     create_new_users_verify_email(connection, user_id, token.clone());
     let body = EmailBody {
@@ -184,7 +188,8 @@ pub fn send_verify_email(connection: &MysqlConnection, user_id: i64, email: Stri
         track_links: None,
     };
     let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
-    postmark_client.send_email(&body).unwrap();
+    postmark_client.send_email(&body)?;
+    Ok(())
 }
 
 #[post("/signup", data = "<user>")]
@@ -198,17 +203,29 @@ fn register_user(
             match hash(&input.password, DEFAULT_COST) {
                 Ok(hashed_password) => {
                     let connection = establish_connection();
-                    let new_user = create_new_user(
+                    match create_new_user(
                         &connection,
                         input.username.clone(),
                         hashed_password,
                         input.email.clone(),
-                    );
-                    send_verify_email(&connection, new_user.id, input.email);
-                    Ok(Flash::success(
-                        Redirect::to("/"),
-                        "Registration successful! Please check your email.",
-                    ))
+                    ) {
+                        Ok(new_user) => {
+                            match send_verify_email(&connection, new_user.id, input.email) {
+                                Ok(_) => Ok(Flash::success(
+                                    Redirect::to("/"),
+                                    "Registration successful! Please check your email.",
+                                )),
+                                Err(_) => Err(Flash::error(
+                                    Redirect::to("/signup"),
+                                    "An error occured, please try again later.",
+                                )),
+                            }
+                        }
+                        Err(_) => Err(Flash::error(
+                            Redirect::to("/signup"),
+                            "An error occured, please try again later.",
+                        )),
+                    }
                 }
                 Err(_) => Err(Flash::error(
                     Redirect::to("/signup"),
@@ -266,21 +283,31 @@ fn verify_email(uuid: String) -> Result<Flash<Redirect>, Flash<Redirect>> {
         if results[0].used {
             Err(Flash::error(Redirect::to("/"), "Link already used."))
         } else {
-            diesel::update(users_verify_email.find(results[0].id))
+            match diesel::update(users_verify_email.find(results[0].id))
                 .set(used.eq(true))
                 .execute(&connection)
-                .unwrap();
-
-            use club_coding::schema::users::dsl::*;
-            diesel::update(users.find(results[0].user_id))
-                .set(verified.eq(true))
-                .execute(&connection)
-                .unwrap();
-
-            Ok(Flash::success(
-                Redirect::to("/"),
-                "Email verified, please sign in.",
-            ))
+            {
+                Ok(_) => {
+                    use club_coding::schema::users::dsl::*;
+                    match diesel::update(users.find(results[0].user_id))
+                        .set(verified.eq(true))
+                        .execute(&connection)
+                    {
+                        Ok(_) => Ok(Flash::success(
+                            Redirect::to("/"),
+                            "Email verified, please sign in.",
+                        )),
+                        Err(_) => Err(Flash::error(
+                            Redirect::to("/"),
+                            "An error occured, please try again later.",
+                        )),
+                    }
+                }
+                Err(_) => Err(Flash::error(
+                    Redirect::to("/"),
+                    "An error occured, please try again later.",
+                )),
+            }
         }
     } else {
         Err(Flash::error(Redirect::to("/"), "Link incorrect."))
@@ -307,7 +334,7 @@ fn send_recover_email_page(csrf_token: CsrfToken, flash: Option<FlashMessage>) -
     Template::render("send_recover", &context)
 }
 
-fn send_recover_mail(token: String, email: String) {
+fn send_recover_mail(token: String, email: String) -> Result<(), std::io::Error> {
     let body = EmailBody {
         from: "axel@clubcoding.com".to_string(),
         to: email,
@@ -323,7 +350,8 @@ fn send_recover_mail(token: String, email: String) {
         track_links: None,
     };
     let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
-    postmark_client.send_email(&body).unwrap();
+    postmark_client.send_email(&body)?;
+    Ok(())
 }
 
 #[post("/recover/email")]
@@ -348,12 +376,19 @@ fn send_recover_email(
         match get_user_id_from_email(input.email.clone()) {
             Some(user_id) => {
                 let token = generate_token(30);
-                send_recover_mail(token.clone(), input.email);
-                create_new_users_recover_email(&connection, user_id, token);
-                Ok(Flash::success(
-                    Redirect::to("/"),
-                    "Email sent. Please check your inbox.",
-                ))
+                match send_recover_mail(token.clone(), input.email) {
+                    Ok(_) => {
+                        create_new_users_recover_email(&connection, user_id, token);
+                        Ok(Flash::success(
+                            Redirect::to("/"),
+                            "Email sent. Please check your inbox.",
+                        ))
+                    }
+                    Err(_) => Err(Flash::error(
+                        Redirect::to("/recover/email"),
+                        "An error occured, please try again later.",
+                    )),
+                }
             }
             None => Err(Flash::error(
                 Redirect::to("/recover/email"),
@@ -444,23 +479,32 @@ fn recover_email(
             } else {
                 if csrf_matches(input.csrf, csrf_cookie.value()) {
                     match hash(&input.password, DEFAULT_COST) {
-                        Ok(hashed_password) => {
-                            diesel::update(users_recover_email.find(results[0].id))
-                                .set(used.eq(true))
-                                .execute(&connection)
-                                .unwrap();
-
-                            use club_coding::schema::users::dsl::*;
-                            diesel::update(users.find(results[0].user_id))
-                                .set(password.eq(hashed_password))
-                                .execute(&connection)
-                                .unwrap();
-
-                            Ok(Flash::success(
-                                Redirect::to("/"),
-                                "Password updated, please sign in.",
-                            ))
-                        }
+                        Ok(hashed_password) => match diesel::update(
+                            users_recover_email.find(results[0].id),
+                        ).set(used.eq(true))
+                            .execute(&connection)
+                        {
+                            Ok(_) => {
+                                use club_coding::schema::users::dsl::*;
+                                match diesel::update(users.find(results[0].user_id))
+                                    .set(password.eq(hashed_password))
+                                    .execute(&connection)
+                                {
+                                    Ok(_) => Ok(Flash::success(
+                                        Redirect::to("/"),
+                                        "Password updated, please sign in.",
+                                    )),
+                                    Err(_) => Err(Flash::error(
+                                        Redirect::to(&format!("/email/recover/{}", uuid)),
+                                        "An error occured, please try again later.",
+                                    )),
+                                }
+                            }
+                            Err(_) => Err(Flash::error(
+                                Redirect::to(&format!("/email/recover/{}", uuid)),
+                                "An error occured, please try again later.",
+                            )),
+                        },
                         Err(_) => Err(Flash::error(
                             Redirect::to(&format!("/email/recover/{}", uuid)),
                             "An error occured, please try again later.",

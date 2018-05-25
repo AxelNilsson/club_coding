@@ -42,19 +42,25 @@ fn get_password_hash_from_userid(user_id: i64) -> Result<String, std::io::Error>
     use club_coding::schema::users::dsl::*;
 
     let connection = establish_connection();
-    let results = users
+    match users
         .filter(id.eq(user_id))
         .limit(1)
         .load::<Users>(&connection)
-        .expect("Error loading users");
-
-    if results.len() == 1 {
-        return Ok(results[0].password.to_string());
-    } else {
-        return Err(std::io::Error::new(
+    {
+        Ok(results) => {
+            if results.len() == 1 {
+                Ok(results[0].password.to_string())
+            } else {
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "No user found",
+                ))
+            }
+        }
+        Err(_) => Err(std::io::Error::new(
             std::io::ErrorKind::Other,
             "No user found",
-        ));
+        )),
     }
 }
 
@@ -70,14 +76,17 @@ fn update_password(user: User, json_data: Json<UpdatePasswordStruct>) -> Json<Me
                                 use club_coding::schema::users::dsl::*;
 
                                 let connection = establish_connection();
-                                diesel::update(users.filter(id.eq(user.id)))
+                                match diesel::update(users.filter(id.eq(user.id)))
                                     .set(password.eq(hashed_password))
                                     .execute(&connection)
-                                    .unwrap();
-
-                                Json(Message {
-                                    text: "updated".to_string(),
-                                })
+                                {
+                                    Ok(_) => Json(Message {
+                                        text: "Password updated".to_string(),
+                                    }),
+                                    Err(_) => Json(Message {
+                                        text: "An error occured".to_string(),
+                                    }),
+                                }
                             }
                             Err(_) => Json(Message {
                                 text: "An error occured".to_string(),

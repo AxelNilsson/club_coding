@@ -6,9 +6,9 @@ use club_coding::{establish_connection, insert_new_card, insert_new_users_stripe
                   insert_new_users_stripe_token};
 use users::User;
 use stripe;
-use std;
 use rocket::request::FlashMessage;
 use email::{EmailBody, PostmarkClient};
+use std::io::{Error, ErrorKind};
 
 #[derive(Serialize)]
 struct ChargeContext {
@@ -81,9 +81,13 @@ struct Stripe {
     used: bool,
 }
 
-fn create_customer(client: &stripe::Client, email: &str, token: &str) -> stripe::Customer {
+fn create_customer(
+    client: &stripe::Client,
+    email: &str,
+    token: &str,
+) -> Result<stripe::Customer, Error> {
     // Create the customer
-    stripe::Customer::create(
+    match stripe::Customer::create(
         &client,
         stripe::CustomerParams {
             email: Some(email),
@@ -95,10 +99,13 @@ fn create_customer(client: &stripe::Client, email: &str, token: &str) -> stripe:
             metadata: None,
             shipping: None,
         },
-    ).unwrap()
+    ) {
+        Ok(customer) => Ok(customer),
+        Err(_) => Err(Error::new(ErrorKind::Other, "Could not create customer")),
+    }
 }
 
-fn send_card_added_mail(email: String) {
+fn send_card_added_mail(email: String) -> Result<(), Error> {
     let body = EmailBody {
         from: "axel@clubcoding.com".to_string(),
         to: email,
@@ -116,10 +123,11 @@ fn send_card_added_mail(email: String) {
         track_links: None,
     };
     let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
-    postmark_client.send_email(&body).unwrap();
+    postmark_client.send_email(&body)?;
+    Ok(())
 }
 
-fn charge(data: &Stripe, email: &str, user_id: i64) -> Result<(), std::io::Error> {
+fn charge(data: &Stripe, email: &str, user_id: i64) -> Result<(), Error> {
     let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
     let connection = establish_connection();
     insert_new_card(
@@ -158,22 +166,28 @@ fn charge(data: &Stripe, email: &str, user_id: i64) -> Result<(), std::io::Error
         data.type_of_payment.clone(),
         data.used,
     );
-    let customer = create_customer(&client, email, &(data.id.clone()));
-    insert_new_users_stripe_customer(
-        &connection,
-        user_id,
-        &customer.id,
-        customer.account_balance,
-        customer.business_vat_id,
-        customer.created as i64,
-        customer.default_source,
-        customer.delinquent,
-        customer.desc,
-        customer.email,
-        customer.livemode,
-    );
-    send_card_added_mail(email.to_string());
-    Ok(())
+    match create_customer(&client, email, &(data.id.clone())) {
+        Ok(customer) => {
+            insert_new_users_stripe_customer(
+                &connection,
+                user_id,
+                &customer.id,
+                customer.account_balance,
+                customer.business_vat_id,
+                customer.created as i64,
+                customer.default_source,
+                customer.delinquent,
+                customer.desc,
+                customer.email,
+                customer.livemode,
+            );
+            match send_card_added_mail(email.to_string()) {
+                Ok(_) => Ok(()),
+                Err(_) => Err(Error::new(ErrorKind::Other, "Could not send email")),
+            }
+        }
+        Err(err) => Err(err),
+    }
 }
 
 #[post("/card/add", data = "<form_data>")]

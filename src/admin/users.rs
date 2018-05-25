@@ -11,6 +11,7 @@ use admin::series::SerieC;
 use admin::group::GroupC;
 use authentication::send_verify_email;
 use rocket::Route;
+use std::io::{Error, ErrorKind};
 
 #[derive(Serialize)]
 struct UsersC {
@@ -161,20 +162,27 @@ pub fn edit_users(uuid: i64, admin: Administrator) -> Option<Template> {
     }
 }
 
-fn resend_confirmation_email(uid: i64) {
+fn resend_confirmation_email(uid: i64) -> Result<(), Error> {
     match get_user(uid) {
         Some(user) => {
             use club_coding::schema::users::dsl::*;
             let connection = establish_connection();
 
-            diesel::update(users.find(uid))
+            match diesel::update(users.find(uid))
                 .set(verified.eq(false))
                 .execute(&connection)
-                .unwrap();
-
-            send_verify_email(&connection, user.id, user.email);
+            {
+                Ok(_) => {
+                    send_verify_email(&connection, user.id, user.email)?;
+                    Ok(())
+                }
+                Err(_) => Err(Error::new(
+                    ErrorKind::Other,
+                    "Could not set verified to false",
+                )),
+            }
         }
-        None => {}
+        None => Err(Error::new(ErrorKind::Other, "No user found")),
     }
 }
 
@@ -183,84 +191,95 @@ pub fn update_user(uid: i64, _user: Administrator, data: Json<EditUser>) -> Resu
     use club_coding::schema::users::dsl::*;
     let connection = establish_connection();
 
-    diesel::update(users.find(uid))
+    match diesel::update(users.find(uid))
         .set((
             username.eq(data.0.username.clone()),
             email.eq(data.0.email.clone()),
         ))
         .execute(&connection)
-        .unwrap();
+    {
+        Ok(_) => {
+            let groups = get_all_groups_for_user(uid);
+            for group in &groups {
+                let mut should_delete = true;
+                for data_group in &data.0.groups {
+                    if *group == *data_group {
+                        should_delete = false;
+                    }
+                }
+                if should_delete {
+                    use club_coding::schema::users_group::dsl::*;
 
-    let groups = get_all_groups_for_user(uid);
-    for group in &groups {
-        let mut should_delete = true;
-        for data_group in &data.0.groups {
-            if *group == *data_group {
-                should_delete = false;
+                    match diesel::delete(
+                        users_group
+                            .filter(user_id.eq(uid))
+                            .filter(group_id.eq(*group)),
+                    ).execute(&connection)
+                    {
+                        Ok(_) => {}
+                        Err(_) => return Err(()),
+                    }
+                }
+            }
+
+            for data_group in &data.0.groups {
+                let mut should_create = true;
+                for group in &groups {
+                    if *group == *data_group {
+                        should_create = false;
+                    }
+                }
+                if should_create {
+                    create_new_user_group(&connection, uid, *data_group);
+                }
+            }
+
+            let series = get_all_series_for_user(uid);
+            for serie in &series {
+                let mut should_delete = true;
+                for data_serie in &data.0.series {
+                    if *serie == *data_serie {
+                        should_delete = false;
+                    }
+                }
+                if should_delete {
+                    use club_coding::schema::users_series_access::dsl::*;
+
+                    match diesel::delete(
+                        users_series_access
+                            .filter(user_id.eq(uid))
+                            .filter(bought.eq(false))
+                            .filter(series_id.eq(*serie)),
+                    ).execute(&connection)
+                    {
+                        Ok(_) => {}
+                        Err(_) => return Err(()),
+                    }
+                }
+            }
+
+            for data_serie in &data.0.series {
+                let mut should_create = true;
+                for serie in &series {
+                    if *serie == *data_serie {
+                        should_create = false;
+                    }
+                }
+                if should_create {
+                    create_new_user_series_access(&connection, uid, *data_serie, false);
+                }
+            }
+
+            match data.0.force_resend_email {
+                true => match resend_confirmation_email(uid) {
+                    Ok(_) => Ok(()),
+                    Err(_) => Err(()),
+                },
+                false => Ok(()),
             }
         }
-        if should_delete {
-            use club_coding::schema::users_group::dsl::*;
-
-            diesel::delete(
-                users_group
-                    .filter(user_id.eq(uid))
-                    .filter(group_id.eq(*group)),
-            ).execute(&connection)
-                .unwrap();
-        }
+        Err(_) => return Err(()),
     }
-
-    for data_group in &data.0.groups {
-        let mut should_create = true;
-        for group in &groups {
-            if *group == *data_group {
-                should_create = false;
-            }
-        }
-        if should_create {
-            create_new_user_group(&connection, uid, *data_group);
-        }
-    }
-
-    let series = get_all_series_for_user(uid);
-    for serie in &series {
-        let mut should_delete = true;
-        for data_serie in &data.0.series {
-            if *serie == *data_serie {
-                should_delete = false;
-            }
-        }
-        if should_delete {
-            use club_coding::schema::users_series_access::dsl::*;
-
-            diesel::delete(
-                users_series_access
-                    .filter(user_id.eq(uid))
-                    .filter(bought.eq(false))
-                    .filter(series_id.eq(*serie)),
-            ).execute(&connection)
-                .unwrap();
-        }
-    }
-
-    for data_serie in &data.0.series {
-        let mut should_create = true;
-        for serie in &series {
-            if *serie == *data_serie {
-                should_create = false;
-            }
-        }
-        if should_create {
-            create_new_user_series_access(&connection, uid, *data_serie, false);
-        }
-    }
-
-    if data.0.force_resend_email {
-        resend_confirmation_email(uid);
-    }
-
-    Ok(())
 }
 
 pub fn endpoints() -> Vec<Route> {

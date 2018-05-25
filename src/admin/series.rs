@@ -194,16 +194,12 @@ pub struct UpdateSerie {
 }
 
 #[post("/series/edit/<uid>", format = "application/json", data = "<data>")]
-pub fn update_serie(
-    uid: String,
-    _user: Administrator,
-    data: Json<UpdateSerie>,
-) -> Json<UpdateSerie> {
+pub fn update_serie(uid: String, _user: Administrator, data: Json<UpdateSerie>) -> Result<(), ()> {
     use club_coding::schema::series::dsl::*;
 
     let connection = establish_connection();
 
-    diesel::update(series.filter(uuid.eq(uid)))
+    match diesel::update(series.filter(uuid.eq(uid)))
         .set((
             title.eq(data.0.title.clone()),
             description.eq(data.description.clone()),
@@ -213,8 +209,10 @@ pub fn update_serie(
             in_development.eq(data.0.in_development),
         ))
         .execute(&connection)
-        .unwrap();
-    data
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(()),
+    }
 }
 
 pub fn endpoints() -> Vec<Route> {

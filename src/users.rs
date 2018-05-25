@@ -9,10 +9,10 @@ pub fn get_users() -> Vec<Users> {
     use club_coding::schema::users::dsl::*;
 
     let connection = establish_connection();
-    users
-        .order(created.asc())
-        .load::<Users>(&connection)
-        .expect("Error loading users")
+    match users.order(created.asc()).load::<Users>(&connection) {
+        Ok(vec_of_users) => vec_of_users,
+        Err(_) => vec![],
+    }
 }
 
 #[derive(Serialize)]
@@ -35,47 +35,56 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
 
                 let connection = establish_connection();
 
-                let results = users_sessions
+                match users_sessions
                     .filter(token.eq(cookie.value().to_string()))
                     .limit(1)
                     .load::<UsersSessions>(&connection)
-                    .expect("Error loading sessions");
+                {
+                    Ok(results) => {
+                        if results.len() == 1 {
+                            use club_coding::schema::users::dsl::*;
 
-                if results.len() == 1 {
-                    use club_coding::schema::users::dsl::*;
+                            let connection = establish_connection();
+                            match users
+                                .filter(id.eq(results[0].user_id))
+                                .filter(verified.eq(true))
+                                .limit(1)
+                                .load::<Users>(&connection)
+                            {
+                                Ok(results) => {
+                                    if results.len() == 1 {
+                                        use club_coding::schema::users_group::dsl::*;
 
-                    let connection = establish_connection();
-                    let results = users
-                        .filter(id.eq(results[0].user_id))
-                        .filter(verified.eq(true))
-                        .limit(1)
-                        .load::<Users>(&connection)
-                        .expect("Error loading sessions");
+                                        let connection = establish_connection();
+                                        match users_group
+                                            .filter(user_id.eq(results[0].id))
+                                            .filter(group_id.eq(1))
+                                            .limit(1)
+                                            .load::<UsersGroup>(&connection)
+                                        {
+                                            Ok(admin) => {
+                                                let is_admin = admin.len() == 1;
 
-                    if results.len() == 1 {
-                        use club_coding::schema::users_group::dsl::*;
-
-                        let connection = establish_connection();
-                        let admin = users_group
-                            .filter(user_id.eq(results[0].id))
-                            .filter(group_id.eq(1))
-                            .limit(1)
-                            .load::<UsersGroup>(&connection)
-                            .expect("Error loading user groups");
-
-                        let is_admin = admin.len() == 1;
-
-                        return Some(User {
-                            id: results[0].id,
-                            username: results[0].username.clone(),
-                            email: results[0].email.clone(),
-                            admin: is_admin,
-                        });
-                    } else {
-                        return None;
+                                                Some(User {
+                                                    id: results[0].id,
+                                                    username: results[0].username.clone(),
+                                                    email: results[0].email.clone(),
+                                                    admin: is_admin,
+                                                })
+                                            }
+                                            Err(_) => None,
+                                        }
+                                    } else {
+                                        None
+                                    }
+                                }
+                                Err(_) => None,
+                            }
+                        } else {
+                            None
+                        }
                     }
-                } else {
-                    return None;
+                    Err(_) => None,
                 }
             });
         match username {

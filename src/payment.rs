@@ -5,12 +5,12 @@ use rocket::response::{Flash, Redirect};
 use club_coding::{establish_connection, insert_new_card, insert_new_users_stripe_token};
 use users::User;
 use stripe;
-use std;
 use rocket::request::FlashMessage;
 use club_coding::models::{Series, UsersStripeCard, UsersStripeCharge, UsersStripeCustomer};
 use chrono::NaiveDateTime;
 use email::{EmailBody, PostmarkClient};
 use diesel::prelude::*;
+use std::io::{Error, ErrorKind};
 
 #[derive(Serialize)]
 struct ChargeContext {
@@ -25,16 +25,19 @@ fn customer_exists(uid: i64) -> Option<UsersStripeCustomer> {
 
     let connection = establish_connection();
 
-    let user: Vec<UsersStripeCustomer> = users_stripe_customer
+    match users_stripe_customer
         .filter(user_id.eq(uid))
         .limit(1)
         .load::<UsersStripeCustomer>(&connection)
-        .expect("Error loading users");
-
-    if user.len() == 1 {
-        Some(user[0].clone())
-    } else {
-        None
+    {
+        Ok(user) => {
+            if user.len() == 1 {
+                Some(user[0].clone())
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
     }
 }
 
@@ -183,7 +186,7 @@ fn update_customer(
     )
 }
 
-fn send_card_updated_mail(email: String) {
+fn send_card_updated_mail(email: String) -> Result<(), Error> {
     let body = EmailBody {
         from: "axel@clubcoding.com".to_string(),
         to: email,
@@ -201,10 +204,11 @@ fn send_card_updated_mail(email: String) {
         track_links: None,
     };
     let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
-    postmark_client.send_email(&body).unwrap();
+    postmark_client.send_email(&body)?;
+    Ok(())
 }
 
-fn charge(data: &Stripe, user_id: i64, email: String) -> Result<(), std::io::Error> {
+fn charge(data: &Stripe, user_id: i64, email: String) -> Result<(), Error> {
     let connection = establish_connection();
     let customer = get_customer(&connection, user_id);
     insert_new_card(
@@ -244,9 +248,13 @@ fn charge(data: &Stripe, user_id: i64, email: String) -> Result<(), std::io::Err
         data.used,
     );
     let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
-    update_customer(&client, &customer.uuid, &(data.id.clone())).unwrap();
-    send_card_updated_mail(email);
-    Ok(())
+    match update_customer(&client, &customer.uuid, &(data.id.clone())) {
+        Ok(_) => {
+            send_card_updated_mail(email)?;
+            Ok(())
+        }
+        Err(_) => Err(Error::new(ErrorKind::Other, "Could not update customer")),
+    }
 }
 
 #[post("/card/update", data = "<form_data>")]
@@ -272,14 +280,13 @@ fn delete_and_get_card(connection: &MysqlConnection, uid: i64) -> Option<String>
         .first(connection)
         .expect("Error loading user");
 
-    diesel::delete(users_stripe_card.find(card.id))
-        .execute(connection)
-        .unwrap();
-
-    return card.card_id;
+    match diesel::delete(users_stripe_card.find(card.id)).execute(connection) {
+        Ok(_) => card.card_id,
+        Err(_) => None,
+    }
 }
 
-fn send_card_deleted_mail(email: String) {
+fn send_card_deleted_mail(email: String) -> Result<(), Error> {
     let body = EmailBody {
         from: "axel@clubcoding.com".to_string(),
         to: email,
@@ -297,13 +304,14 @@ fn send_card_deleted_mail(email: String) {
         track_links: None,
     };
     let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
-    postmark_client.send_email(&body).unwrap();
+    postmark_client.send_email(&body)?;
+    Ok(())
 }
 
-fn delete(user_id: i64, email: String) -> Result<(), std::io::Error> {
+fn delete(user_id: i64, email: String) -> Result<(), Error> {
     let connection = establish_connection();
     let _card = delete_and_get_card(&connection, user_id);
-    send_card_deleted_mail(email);
+    send_card_deleted_mail(email)?;
     Ok(())
 }
 
