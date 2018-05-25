@@ -51,6 +51,7 @@ pub struct Users {
     pub id: i64,
     pub username: String,
     pub password: String,
+    pub email: String,
     pub verified: bool,
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
@@ -61,6 +62,7 @@ pub struct Users {
 pub struct NewUser {
     pub username: String,
     pub password: String,
+    pub email: String,
 }
 
 #[derive(Queryable, Clone)]
@@ -77,6 +79,23 @@ pub struct UsersGroup {
 pub struct NewUserGroup {
     pub user_id: i64,
     pub group_id: i64,
+}
+
+#[derive(Queryable)]
+pub struct UsersRecoverEmail {
+    pub id: i64,
+    pub user_id: i64,
+    pub token: String,
+    pub used: bool,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name = "users_recover_email"]
+pub struct NewUserRecoverEmail {
+    pub user_id: i64,
+    pub token: String,
 }
 
 #[derive(Queryable, Clone)]

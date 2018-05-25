@@ -29,9 +29,10 @@ table! {
         id -> Bigint,
         username -> Varchar,
         password -> Varchar,
+        email -> Varchar,
         verified -> Bool,
-        created -> Timestamp,
         updated -> Timestamp,
+        created -> Timestamp,
     }
 }
 
@@ -40,6 +41,17 @@ table! {
         id -> Bigint,
         user_id -> Bigint,
         group_id -> Bigint,
+        created -> Timestamp,
+        updated -> Timestamp,
+    }
+}
+
+table! {
+    users_recover_email (id) {
+        id -> Bigint,
+        user_id -> Bigint,
+        token -> Varchar,
+        used -> Bool,
         created -> Timestamp,
         updated -> Timestamp,
     }
@@ -201,6 +213,7 @@ allow_tables_to_appear_in_same_query!(
     series,
     users,
     users_group,
+    users_recover_email,
     users_series_access,
     users_sessions,
     users_stripe_card,

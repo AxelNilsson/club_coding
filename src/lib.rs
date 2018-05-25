@@ -10,9 +10,10 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 
-use self::models::{NewGroup, NewSerie, NewUser, NewUserGroup, NewUserSeriesAccess, NewUserSession,
-                   NewUserStripeCard, NewUserStripeCharge, NewUserStripeCustomer,
-                   NewUserStripeToken, NewUserVerifyEmail, NewUserView, NewVideo, Users};
+use self::models::{NewGroup, NewSerie, NewUser, NewUserGroup, NewUserRecoverEmail,
+                   NewUserSeriesAccess, NewUserSession, NewUserStripeCard, NewUserStripeCharge,
+                   NewUserStripeCustomer, NewUserStripeToken, NewUserVerifyEmail, NewUserView,
+                   NewVideo, Users};
 
 pub fn establish_connection() -> MysqlConnection {
     dotenv().ok();
@@ -78,12 +79,18 @@ pub fn create_new_user_session(conn: &MysqlConnection, user_id: i64, token: Stri
         .expect("Error saving new session");
 }
 
-pub fn create_new_user(conn: &MysqlConnection, username: String, password: String) -> Users {
+pub fn create_new_user(
+    conn: &MysqlConnection,
+    username: String,
+    password: String,
+    email: String,
+) -> Users {
     use schema::users;
 
     let new_user = NewUser {
         username: username,
         password: password,
+        email: email,
     };
 
     diesel::insert_into(users::table)
@@ -126,6 +133,20 @@ pub fn create_new_user_series_access(
         .values(&new_user_series_access)
         .execute(conn)
         .expect("Error saving new user series access");
+}
+
+pub fn create_new_users_recover_email(conn: &MysqlConnection, user_id: i64, token: String) {
+    use schema::users_recover_email;
+
+    let new_user_recover_email = NewUserRecoverEmail {
+        user_id: user_id,
+        token: token,
+    };
+
+    diesel::insert_into(users_recover_email::table)
+        .values(&new_user_recover_email)
+        .execute(conn)
+        .expect("Error saving new user verify email");
 }
 
 pub fn insert_new_card(

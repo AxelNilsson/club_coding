@@ -19,6 +19,7 @@ pub fn get_users() -> Vec<Users> {
 pub struct User {
     pub id: i64,
     pub username: String,
+    pub email: String,
     pub admin: bool,
 }
 
@@ -46,6 +47,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                     let connection = establish_connection();
                     let results = users
                         .filter(id.eq(results[0].user_id))
+                        .filter(verified.eq(true))
                         .limit(1)
                         .load::<Users>(&connection)
                         .expect("Error loading sessions");
@@ -66,6 +68,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                         return Some(User {
                             id: results[0].id,
                             username: results[0].username.clone(),
+                            email: results[0].email.clone(),
                             admin: is_admin,
                         });
                     } else {

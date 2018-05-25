@@ -22,9 +22,11 @@
             <h1>Edit Serie</h1>
             <v-form>
               <v-text-field v-model="title" label="Title" required></v-text-field>
+              <v-text-field v-model="price" label="Price" required></v-text-field>
               <v-text-field multi-line v-model="description" label="Description" required></v-text-field>
               <v-checkbox v-model="published" label="Published"></v-checkbox>
               <v-checkbox v-model="archived" label="Archived"></v-checkbox>
+              <v-checkbox v-model="in_development" label="In Development"></v-checkbox>
               <v-layout wrap row>
                 <v-flex xs4>
                   <v-btn large block color="error" href="/admin/series">Cancel</v-btn>
@@ -51,9 +53,11 @@
         error_alert: false,
         loading: false,
         title: '{{ title }}',
+        price: {{ price/100 }},
         description: '{{ description | safe }}',
         published: {{ published }},
-        archived: {{ archived }}
+        archived: {{ archived }},
+        in_development: {{ in_development }}
       },
       mounted() {
         this.description = this.description.replace(/<br \/>/g, '\n');
@@ -65,8 +69,10 @@
           axios.post('/admin/series/edit/{{ uuid }}', {
               title: this.title.replace(/\'/g, '\\\''),
               description: this.description.replace(/\n/g,'<br />').replace(/\'/g, '\\\''),
+              price: Math.round(this.price*100),
               published: this.published,
-              archived: this.archived
+              archived: this.archived,
+              in_development: this.in_development
             })
             .then(response => {
               this.loading = false;

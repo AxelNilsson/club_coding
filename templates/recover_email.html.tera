@@ -21,14 +21,12 @@
       <v-flex xs3></v-flex>
       <v-flex xs6>
         <v-card flat id="main">
-          <h1 class="display-1">Create an account</h1>
+          <h1 class="display-1">Recover account</h1>
           <form method="POST">
             <input type="hidden" name="csrf" value="{{ csrf }}">
-            <v-text-field box type="text" name="username" label="Username" required></v-text-field>
-            <v-text-field box type="text" name="email" label="E-mail address" required></v-text-field>
             <v-text-field box type="password" name="password" label="Password" required></v-text-field>
             <v-text-field box type="password" name="confirm_password" label="Confirm Password" required></v-text-field>
-            <v-btn large block type="submit" color="primary">Sign up!</v-btn>
+            <v-btn large block type="submit" color="primary">Update password!</v-btn>
           </form>
         </v-card>
       </v-flex>

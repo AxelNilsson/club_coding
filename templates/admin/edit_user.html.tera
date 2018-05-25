@@ -21,12 +21,11 @@
           <div class="padding">
             <h1 style="text-align: center">Edit User</h1>
             <v-form>
+              <v-text-field v-model="username" label="Username" required></v-text-field>
               <v-text-field v-model="email" label="Email" :rules="emailRules" required></v-text-field>
               <v-select :items="groups" label="Groups" v-model="groups_select" multiple required></v-select>
-              <v-checkbox v-model="password" label="Force Password Change Email"></v-checkbox>
+              <v-select :items="series" label="Series" v-model="series_select" multiple required></v-select>
               <v-checkbox v-model="resend_email" label="Resend Confirmation Email"></v-checkbox>
-              <v-checkbox v-model="free" label="Free Membership"></v-checkbox>
-              <v-checkbox v-model="deactivated" label="Deactivated"></v-checkbox>
               <v-layout wrap row>
                 <v-flex xs4>
                   <v-btn large block color="error" href="/admin/users">Cancel</v-btn>
@@ -52,6 +51,7 @@
         success_alert: false,
         error_alert: false,
         loading: false,
+        username: '{{ user_data.username }}',
         emailRules: [
           v => !!v || 'E-mail is required',
           v => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v) || 'E-mail must be valid'
@@ -59,30 +59,37 @@
         email: '{{ user_data.email }}',
         groups: [
         {% for group in groups %}
-          { text: '{{ group.name }}', value: '{{ group.uuid }}' },
+          { text: '{{ group.name }}', value: {{ group.id }} },
         {% endfor %}
         ],
         groups_select: [
         {% for group in user_data.groups %}
-          '{{ group }}',
+          {{ group }},
         {% endfor %}
         ],
-        password: {{ user_data.force_change_password }},
-        resend_email: {{ user_data.force_resend_email }},
-        free: {{ user_data.free_membership }},
-        deactivated: {{ user_data.deactivated }}
+        series: [
+        {% for serie in series %}
+          { text: '{{ serie.name }}', value: {{ serie.id }} },
+        {% endfor %}
+        ],
+        series_select: [
+        {% for serie in user_data.series %}
+          {{ serie }},
+        {% endfor %}
+        ],
+        resend_email: {{ user_data.force_resend_email }}
       },
       methods: {
         save() {
           this.success_alert = this.error_alert = false;
           this.loading = true;
           axios.post('/admin/users/edit/{{ uuid }}', {
+              username: this.username,
               email: this.email,
-              force_change_password: this.password,
               force_resend_email: this.resend_email,
               free_membership: this.free,
-              deactivated: this.deactivated,
               groups: this.groups_select,
+              series: this.series_select,
             })
             .then(response => {
               this.loading = false;

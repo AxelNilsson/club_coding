@@ -9,6 +9,7 @@ use std;
 use rocket::request::FlashMessage;
 use club_coding::models::{Series, UsersStripeCard, UsersStripeCharge, UsersStripeCustomer};
 use chrono::NaiveDateTime;
+use email::{EmailBody, PostmarkClient};
 use diesel::prelude::*;
 
 #[derive(Serialize)]
@@ -182,7 +183,28 @@ fn update_customer(
     )
 }
 
-fn charge(data: &Stripe, user_id: i64) -> Result<(), std::io::Error> {
+fn send_card_updated_mail(email: String) {
+    let body = EmailBody {
+        from: "axel@clubcoding.com".to_string(),
+        to: email,
+        subject: Some("Card updated!".to_string()),
+        html_body: Some(
+            "<html><body>A card has been updated on your account.</body></html>".to_string(),
+        ),
+        cc: None,
+        bcc: None,
+        tag: None,
+        text_body: None,
+        reply_to: None,
+        headers: None,
+        track_opens: None,
+        track_links: None,
+    };
+    let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+    postmark_client.send_email(&body).unwrap();
+}
+
+fn charge(data: &Stripe, user_id: i64, email: String) -> Result<(), std::io::Error> {
     let connection = establish_connection();
     let customer = get_customer(&connection, user_id);
     insert_new_card(
@@ -223,13 +245,14 @@ fn charge(data: &Stripe, user_id: i64) -> Result<(), std::io::Error> {
     );
     let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
     update_customer(&client, &customer.uuid, &(data.id.clone())).unwrap();
+    send_card_updated_mail(email);
     Ok(())
 }
 
 #[post("/card/update", data = "<form_data>")]
 fn update_card(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let data = form_data.into_inner();
-    match charge(&data, user.id) {
+    match charge(&data, user.id, user.email.clone()) {
         Ok(()) => Ok(Flash::success(
             Redirect::to("/"),
             "Card updated. Great choice!",
@@ -256,15 +279,37 @@ fn delete_and_get_card(connection: &MysqlConnection, uid: i64) -> Option<String>
     return card.card_id;
 }
 
-fn delete(user_id: i64) -> Result<(), std::io::Error> {
+fn send_card_deleted_mail(email: String) {
+    let body = EmailBody {
+        from: "axel@clubcoding.com".to_string(),
+        to: email,
+        subject: Some("Card deleted!".to_string()),
+        html_body: Some(
+            "<html><body>A card has been deleted from your account.</body></html>".to_string(),
+        ),
+        cc: None,
+        bcc: None,
+        tag: None,
+        text_body: None,
+        reply_to: None,
+        headers: None,
+        track_opens: None,
+        track_links: None,
+    };
+    let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+    postmark_client.send_email(&body).unwrap();
+}
+
+fn delete(user_id: i64, email: String) -> Result<(), std::io::Error> {
     let connection = establish_connection();
     let _card = delete_and_get_card(&connection, user_id);
+    send_card_deleted_mail(email);
     Ok(())
 }
 
 #[post("/card/delete")]
 fn delete_card(user: User) -> Result<Flash<Redirect>, Flash<Redirect>> {
-    match delete(user.id) {
+    match delete(user.id, user.email.clone()) {
         Ok(()) => Ok(Flash::success(Redirect::to("/"), "Oh no! Card deleted.")),
         _ => Err(Flash::error(
             Redirect::to("/settings/payment"),

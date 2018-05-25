@@ -30,6 +30,31 @@ pub struct SeriesContext {
     pub series: Vec<Serie>,
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct SerieC {
+    id: i64,
+    name: String,
+}
+
+pub fn get_all_seriesc() -> Vec<SerieC> {
+    use club_coding::schema::series::dsl::*;
+
+    let connection = establish_connection();
+    let result = series
+        .load::<Series>(&connection)
+        .expect("Error loading series");
+
+    let mut ret: Vec<SerieC> = vec![];
+
+    for serie in result {
+        ret.push(SerieC {
+            id: serie.id,
+            name: serie.title,
+        })
+    }
+    ret
+}
+
 pub fn get_all_series() -> Vec<Serie> {
     use club_coding::schema::series::dsl::*;
 
@@ -131,8 +156,10 @@ pub struct EditSeries {
     uuid: String,
     title: String,
     description: String,
+    price: i32,
     published: bool,
     archived: bool,
+    in_development: bool,
 }
 
 #[get("/series/edit/<uuid>")]
@@ -145,8 +172,10 @@ pub fn edit_series(uuid: String, user: Administrator) -> Option<Template> {
                 uuid: uuid,
                 title: serie.title,
                 description: serie.description,
+                price: serie.price,
                 published: serie.published,
                 archived: serie.archived,
+                in_development: serie.in_development,
             };
             Some(Template::render("admin/edit_serie", &context))
         }
@@ -158,8 +187,10 @@ pub fn edit_series(uuid: String, user: Administrator) -> Option<Template> {
 pub struct UpdateSerie {
     title: String,
     description: String,
+    price: i32,
     published: bool,
     archived: bool,
+    in_development: bool,
 }
 
 #[post("/series/edit/<uid>", format = "application/json", data = "<data>")]
@@ -176,8 +207,10 @@ pub fn update_serie(
         .set((
             title.eq(data.0.title.clone()),
             description.eq(data.description.clone()),
+            price.eq(data.price),
             published.eq(data.0.published),
             archived.eq(data.0.archived),
+            in_development.eq(data.0.in_development),
         ))
         .execute(&connection)
         .unwrap();

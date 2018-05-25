@@ -1,5 +1,5 @@
 use rocket_contrib::Template;
-use admin::structs::{LoggedInContext, Administrator};
+use admin::structs::{Administrator, LoggedInContext};
 use rocket::response::Redirect;
 use club_coding::models::Groups;
 use club_coding::{create_new_group, establish_connection};
@@ -12,13 +12,11 @@ use rocket::Route;
 
 #[derive(Deserialize, Serialize)]
 pub struct GroupC {
-    uuid: String,
+    id: i64,
     name: String,
-    created: NaiveDateTime,
-    updated: NaiveDateTime,
 }
 
-pub fn get_all_groups() -> Vec<GroupC> {
+pub fn get_all_groupsc() -> Vec<GroupC> {
     use club_coding::schema::groups::dsl::*;
 
     let connection = establish_connection();
@@ -30,6 +28,33 @@ pub fn get_all_groups() -> Vec<GroupC> {
 
     for group in result {
         ret.push(GroupC {
+            id: group.id,
+            name: group.name,
+        })
+    }
+    ret
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct GroupContext {
+    uuid: String,
+    name: String,
+    created: NaiveDateTime,
+    updated: NaiveDateTime,
+}
+
+pub fn get_all_groups() -> Vec<GroupContext> {
+    use club_coding::schema::groups::dsl::*;
+
+    let connection = establish_connection();
+    let result = groups
+        .load::<Groups>(&connection)
+        .expect("Error loading groups");
+
+    let mut ret: Vec<GroupContext> = vec![];
+
+    for group in result {
+        ret.push(GroupContext {
             uuid: group.uuid,
             name: group.name,
             created: group.created,
@@ -43,7 +68,7 @@ pub fn get_all_groups() -> Vec<GroupC> {
 struct GroupsContext {
     header: String,
     user: Administrator,
-    groups: Vec<GroupC>,
+    groups: Vec<GroupContext>,
 }
 
 #[get("/groups")]

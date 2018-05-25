@@ -8,6 +8,7 @@ use users::User;
 use stripe;
 use std;
 use rocket::request::FlashMessage;
+use email::{EmailBody, PostmarkClient};
 
 #[derive(Serialize)]
 struct ChargeContext {
@@ -97,7 +98,28 @@ fn create_customer(client: &stripe::Client, email: &str, token: &str) -> stripe:
     ).unwrap()
 }
 
-fn charge(data: &Stripe, username: &str, user_id: i64) -> Result<(), std::io::Error> {
+fn send_card_added_mail(email: String) {
+    let body = EmailBody {
+        from: "axel@clubcoding.com".to_string(),
+        to: email,
+        subject: Some("Card added!".to_string()),
+        html_body: Some(
+            "<html><body>A card has been added to your account.</body></html>".to_string(),
+        ),
+        cc: None,
+        bcc: None,
+        tag: None,
+        text_body: None,
+        reply_to: None,
+        headers: None,
+        track_opens: None,
+        track_links: None,
+    };
+    let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+    postmark_client.send_email(&body).unwrap();
+}
+
+fn charge(data: &Stripe, email: &str, user_id: i64) -> Result<(), std::io::Error> {
     let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
     let connection = establish_connection();
     insert_new_card(
@@ -136,7 +158,7 @@ fn charge(data: &Stripe, username: &str, user_id: i64) -> Result<(), std::io::Er
         data.type_of_payment.clone(),
         data.used,
     );
-    let customer = create_customer(&client, username, &(data.id.clone()));
+    let customer = create_customer(&client, email, &(data.id.clone()));
     insert_new_users_stripe_customer(
         &connection,
         user_id,
@@ -150,13 +172,14 @@ fn charge(data: &Stripe, username: &str, user_id: i64) -> Result<(), std::io::Er
         customer.email,
         customer.livemode,
     );
+    send_card_added_mail(email.to_string());
     Ok(())
 }
 
 #[post("/card/add", data = "<form_data>")]
 fn add_card(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let data = form_data.into_inner();
-    match charge(&data, &user.username, user.id) {
+    match charge(&data, &user.email, user.id) {
         Ok(()) => Ok(Flash::success(
             Redirect::to("/"),
             "Card added. Welcome to the club!",
@@ -175,7 +198,7 @@ fn add_card_uuid(
     uuid: String,
 ) -> Result<Redirect, Flash<Redirect>> {
     let data = form_data.into_inner();
-    match charge(&data, &user.username, user.id) {
+    match charge(&data, &user.email, user.id) {
         Ok(()) => Ok(Redirect::to(&format!("/watch/{}/buy", uuid))),
         _ => Err(Flash::error(
             Redirect::to("/card/add"),

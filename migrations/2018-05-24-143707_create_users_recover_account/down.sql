@@ -1,0 +1,1 @@
+DROP TABLE `users_recover_email`;

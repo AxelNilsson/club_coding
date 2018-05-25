@@ -9,6 +9,7 @@ use std;
 use series::{get_video_watched, PublicVideo};
 use rocket::request::FlashMessage;
 use stripe::Source::Card;
+use email::{EmailBody, PostmarkClient};
 
 use diesel::prelude::*;
 
@@ -302,97 +303,120 @@ fn get_serie(sid: i64) -> Series {
         .expect("Error loading serie")
 }
 
+fn send_bought_email(email: String) {
+    let body = EmailBody {
+        from: "axel@clubcoding.com".to_string(),
+        to: email,
+        subject: Some("Series bought!".to_string()),
+        html_body: Some("<html><body>You recently bought a series.</body></html>".to_string()),
+        cc: None,
+        bcc: None,
+        tag: None,
+        text_body: None,
+        reply_to: None,
+        headers: None,
+        track_opens: None,
+        track_links: None,
+    };
+    let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+    postmark_client.send_email(&body).unwrap();
+}
+
 #[get("/watch/<uuid>/buy")]
 fn buy_serie(user: User, uuid: String) -> Result<Flash<Redirect>, Redirect> {
     match get_video_data_from_uuid(&uuid) {
         Ok(video) => {
             match video.series {
                 Some(series_id) => {
-                    match get_customer(user.id) {
-                        Some(stripe_customer) => {
-                            let serie = get_serie(series_id);
+                    if !user_has_bought(series_id, user.id) {
+                        match get_customer(user.id) {
+                            Some(stripe_customer) => {
+                                let serie = get_serie(series_id);
+                                match stripe_customer.default_source {
+                                    Some(customer_source) => {
+                                        // Create the customer
+                                        let client =
+                                            stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
 
-                            match stripe_customer.default_source {
-                                Some(customer_source) => {
-                                    // Create the customer
-                                    let client =
-                                        stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
-
-                                    let charge = stripe::Charge::create(
-                                        &client,
-                                        stripe::ChargeParams {
-                                            amount: Some(serie.price as u64),
-                                            currency: Some(stripe::Currency::USD),
-                                            application_fee: None,
-                                            capture: None,
-                                            description: None,
-                                            destination: None,
-                                            fraud_details: None,
-                                            transfer_group: None,
-                                            on_behalf_of: None,
-                                            metadata: None,
-                                            receipt_email: None,
-                                            shipping: None,
-                                            customer: Some(stripe_customer.uuid),
-                                            source: Some(stripe::CustomerSource::Token(
-                                                &customer_source,
-                                            )),
-                                            statement_descriptor: None,
-                                        },
-                                    ).unwrap();
-                                    let failure_code: Option<
+                                        let charge = stripe::Charge::create(
+                                            &client,
+                                            stripe::ChargeParams {
+                                                amount: Some(serie.price as u64),
+                                                currency: Some(stripe::Currency::USD),
+                                                application_fee: None,
+                                                capture: None,
+                                                description: None,
+                                                destination: None,
+                                                fraud_details: None,
+                                                transfer_group: None,
+                                                on_behalf_of: None,
+                                                metadata: None,
+                                                receipt_email: None,
+                                                shipping: None,
+                                                customer: Some(stripe_customer.uuid),
+                                                source: Some(stripe::CustomerSource::Token(
+                                                    &customer_source,
+                                                )),
+                                                statement_descriptor: None,
+                                            },
+                                        ).unwrap();
+                                        let failure_code: Option<
                                         String,
                                     > = match charge.failure_code {
                                         Some(code) => Some(code.to_string()),
                                         None => None,
                                     };
-                                    let source_id = match charge.source {
-                                        Card(card) => card.id,
-                                    };
-                                    let connection = establish_connection();
-                                    insert_new_users_stripe_charge(
-                                        &connection,
-                                        user.id,
-                                        series_id,
-                                        charge.id,
-                                        charge.amount as i32,
-                                        charge.amount_refunded as i32,
-                                        charge.balance_transaction,
-                                        charge.captured,
-                                        charge.created,
-                                        charge.description,
-                                        charge.destination,
-                                        charge.dispute,
-                                        failure_code,
-                                        charge.failure_message,
-                                        charge.livemode,
-                                        charge.on_behalf_of,
-                                        charge.order,
-                                        charge.paid,
-                                        charge.refunded,
-                                        source_id,
-                                        charge.source_transfer,
-                                        charge.statement_descriptor,
-                                        charge.status,
-                                    );
-                                    create_new_user_series_access(
-                                        &connection,
-                                        user.id,
-                                        series_id,
-                                        true,
-                                    );
-                                    Ok(Flash::success(
+                                        let source_id = match charge.source {
+                                            Card(card) => card.id,
+                                        };
+                                        let connection = establish_connection();
+                                        insert_new_users_stripe_charge(
+                                            &connection,
+                                            user.id,
+                                            series_id,
+                                            charge.id,
+                                            charge.amount as i32,
+                                            charge.amount_refunded as i32,
+                                            charge.balance_transaction,
+                                            charge.captured,
+                                            charge.created,
+                                            charge.description,
+                                            charge.destination,
+                                            charge.dispute,
+                                            failure_code,
+                                            charge.failure_message,
+                                            charge.livemode,
+                                            charge.on_behalf_of,
+                                            charge.order,
+                                            charge.paid,
+                                            charge.refunded,
+                                            source_id,
+                                            charge.source_transfer,
+                                            charge.statement_descriptor,
+                                            charge.status,
+                                        );
+                                        create_new_user_series_access(
+                                            &connection,
+                                            user.id,
+                                            series_id,
+                                            true,
+                                        );
+                                        send_bought_email(user.email);
+                                        Ok(Flash::success(
+                                            Redirect::to(&format!("/watch/{}", uuid)),
+                                            "Series unlocked! Congratulations!",
+                                        ))
+                                    }
+                                    None => Ok(Flash::error(
                                         Redirect::to(&format!("/watch/{}", uuid)),
-                                        "Series unlocked! Congratulations!",
-                                    ))
+                                        "An error occured, please try again later.",
+                                    )),
                                 }
-                                None => Ok(Flash::error(
-                                    Redirect::to(&format!("/watch/{}", uuid)),
-                                    "An error occured, please try again later.",
-                                )),
                             }
+                            None => Err(Redirect::to(&format!("/card/add/{}", uuid))),
                         }
-                        None => Err(Redirect::to(&format!("/card/add/{}", uuid))),
+                    } else {
+                        Err(Redirect::to(&format!("/watch/{}", uuid)))
                     }
                 }
                 None => Err(Redirect::to("/")),

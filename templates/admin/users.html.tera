@@ -20,7 +20,7 @@
           <v-data-table :headers="headers" :items="users" hide-actions class="elevation-1">
             <template slot="items" slot-scope="props">
               <td>${ props.item.name }</td>
-              <td class="text-xs-right">${ props.item.paying_user }</td>
+              <td class="text-xs-right">${ props.item.email }</td>
               <td class="text-xs-right">${ new Date(props.item.registered).toDateString() }</td>
               <td class="text-xs-right">${ new Date(props.item.updated).toDateString() }</td>
               <td class="justify-center layout px-0">
@@ -43,12 +43,12 @@
       data: {
         headers: [
           {
-            text: 'E-Mail',
+            text: 'Username',
             align: 'left',
             sortable: false,
             value: 'name'
           },
-          { text: 'Paying User', value: 'paying_user', align: 'right' },
+          { text: 'Email', value: 'email', align: 'right' },
           { text: 'Registered', value: 'registered', align: 'right' },
           { text: 'Updated', value: 'updated', align: 'right' },
           { text: 'Actions', align: 'center' }
@@ -58,11 +58,7 @@
           {
             id: {{ user.id }},
             name: '{{ user.username }}',
-            {% if user.paying %}
-            paying_user: 'Yes',
-            {% else %}
-            paying_user: 'No',
-            {% endif %}
+            email: '{{ user.email }}',
             registered: '{{ user.created }}',
             updated: '{{ user.updated }}'
           },
