@@ -8,24 +8,11 @@ pub mod schema;
 
 use diesel::prelude::*;
 use std::io::{Error, ErrorKind};
-use rocket::config::{Config, Environment};
 
 use self::models::{NewGroup, NewSerie, NewUser, NewUserGroup, NewUserRecoverEmail,
                    NewUserSeriesAccess, NewUserSession, NewUserStripeCard, NewUserStripeCharge,
                    NewUserStripeCustomer, NewUserStripeToken, NewUserVerifyEmail, NewUserView,
                    NewVideo, Users};
-
-pub fn establish_connection() -> MysqlConnection {
-    let config = Config::build(Environment::Development)
-        .extra("database_url", "mysql://axel:Testing1@localhost/youtube")
-        .unwrap();
-
-    let database_url = config
-        .get_str("database_url")
-        .expect("DATABASE_URL must be set!");
-    MysqlConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url))
-}
 
 pub fn create_new_group(conn: &MysqlConnection, uuid: String, name: String) -> Result<(), Error> {
     use schema::groups;
