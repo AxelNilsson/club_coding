@@ -1,4 +1,3 @@
-use club_coding::establish_connection;
 use club_coding::models::{Users, UsersGroup, UsersSessions};
 use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
@@ -27,18 +26,18 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
     type Error = ();
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<User, ()> {
+        let connection = request.guard::<DbConn>()?;
+
         let username = request
             .cookies()
             .get_private("session_token")
             .map(|cookie| {
                 use club_coding::schema::users_sessions::dsl::*;
 
-                let connection = establish_connection();
-
                 match users_sessions
                     .filter(token.eq(cookie.value().to_string()))
                     .limit(1)
-                    .load::<UsersSessions>(&connection)
+                    .load::<UsersSessions>(&*connection)
                 {
                     Ok(results) => {
                         if results.len() == 1 {
@@ -48,7 +47,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                                 .filter(id.eq(results[0].user_id))
                                 .filter(verified.eq(true))
                                 .limit(1)
-                                .load::<Users>(&connection)
+                                .load::<Users>(&*connection)
                             {
                                 Ok(results) => {
                                     if results.len() == 1 {
@@ -58,7 +57,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                                             .filter(user_id.eq(results[0].id))
                                             .filter(group_id.eq(1))
                                             .limit(1)
-                                            .load::<UsersGroup>(&connection)
+                                            .load::<UsersGroup>(&*connection)
                                         {
                                             Ok(admin) => {
                                                 let is_admin = admin.len() == 1;

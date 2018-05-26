@@ -1,8 +1,8 @@
 use club_coding::models::{Users, UsersGroup, UsersSessions};
 use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
-use club_coding::establish_connection;
 use diesel::prelude::*;
+use database::DbConn;
 
 #[derive(Serialize)]
 pub struct LoggedInContext {
@@ -21,7 +21,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
     type Error = ();
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Administrator, ()> {
-        let connection = establish_connection();
+        let connection = request.guard::<DbConn>()?;
         let username = request
             .cookies()
             .get_private("session_token")
@@ -31,7 +31,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
                 match users_sessions
                     .filter(token.eq(cookie.value().to_string()))
                     .limit(1)
-                    .load::<UsersSessions>(&connection)
+                    .load::<UsersSessions>(&*connection)
                 {
                     Ok(results) => {
                         if results.len() == 1 {
@@ -40,7 +40,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
                             match users
                                 .filter(id.eq(results[0].user_id))
                                 .limit(1)
-                                .load::<Users>(&connection)
+                                .load::<Users>(&*connection)
                             {
                                 Ok(results) => {
                                     if results.len() == 1 {
@@ -50,7 +50,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
                                             .filter(user_id.eq(results[0].id))
                                             .filter(group_id.eq(1))
                                             .limit(1)
-                                            .load::<UsersGroup>(&connection)
+                                            .load::<UsersGroup>(&*connection)
                                         {
                                             Ok(admin) => {
                                                 if admin.len() == 1 {
