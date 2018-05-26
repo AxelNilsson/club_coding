@@ -397,7 +397,7 @@ fn charge(
                 &*conn,
                 user.id,
                 series_id,
-                charge.id,
+                &charge.id,
                 charge.amount as i32,
                 charge.amount_refunded as i32,
                 charge.balance_transaction,
@@ -413,10 +413,10 @@ fn charge(
                 charge.order,
                 charge.paid,
                 charge.refunded,
-                source_id,
+                &source_id,
                 charge.source_transfer,
                 charge.statement_descriptor,
-                charge.status,
+                &charge.status,
             )?;
             let _ = create_new_user_series_access(&*conn, user.id, series_id, true)?;
             let _ = send_bought_email(user.email.clone())?;

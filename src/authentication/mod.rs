@@ -134,7 +134,7 @@ fn login(
                             Ok(user_id) => match create_new_user_session(
                                 &*conn,
                                 user_id,
-                                session_token.clone(),
+                                &session_token,
                             ) {
                                 Ok(_) => {
                                     let mut c = Cookie::new("session_token", session_token);
@@ -184,7 +184,7 @@ pub fn send_verify_email(
     email: String,
 ) -> Result<(), Error> {
     let token = generate_token(30);
-    create_new_users_verify_email(connection, user_id, token.clone())?;
+    create_new_users_verify_email(connection, user_id, &token)?;
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: &token };
     match tera.render("verify_account.html", &verify) {
@@ -223,27 +223,24 @@ fn register_user(
     if input.password == input.confirm_password {
         if csrf_matches(input.csrf, csrf_cookie.value()) {
             match hash(&input.password, DEFAULT_COST) {
-                Ok(hashed_password) => match create_new_user(
-                    &*conn,
-                    input.username.clone(),
-                    hashed_password,
-                    input.email.clone(),
-                ) {
-                    Ok(new_user) => match send_verify_email(&*conn, new_user.id, input.email) {
-                        Ok(_) => Ok(Flash::success(
-                            Redirect::to("/"),
-                            "Registration successful! Please check your email.",
-                        )),
+                Ok(hashed_password) => {
+                    match create_new_user(&*conn, &input.username, &hashed_password, &input.email) {
+                        Ok(new_user) => match send_verify_email(&*conn, new_user.id, input.email) {
+                            Ok(_) => Ok(Flash::success(
+                                Redirect::to("/"),
+                                "Registration successful! Please check your email.",
+                            )),
+                            Err(_) => Err(Flash::error(
+                                Redirect::to("/signup"),
+                                "An error occured, please try again later.",
+                            )),
+                        },
                         Err(_) => Err(Flash::error(
                             Redirect::to("/signup"),
                             "An error occured, please try again later.",
                         )),
-                    },
-                    Err(_) => Err(Flash::error(
-                        Redirect::to("/signup"),
-                        "An error occured, please try again later.",
-                    )),
-                },
+                    }
+                }
                 Err(_) => Err(Flash::error(
                     Redirect::to("/signup"),
                     "An error occured, please try again later.",
@@ -399,7 +396,7 @@ fn send_recover_email(
             Some(user_id) => {
                 let token = generate_token(30);
                 match send_recover_mail(token.clone(), input.email) {
-                    Ok(_) => match create_new_users_recover_email(&conn, user_id, token) {
+                    Ok(_) => match create_new_users_recover_email(&conn, user_id, &token) {
                         Ok(_) => Ok(Flash::success(
                             Redirect::to("/"),
                             "Email sent. Please check your inbox.",

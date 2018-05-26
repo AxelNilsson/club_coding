@@ -166,16 +166,16 @@ pub fn insert_new_video(
     match generate_token(24) {
         Ok(uuid) => match create_new_video(
             &conn,
-            uuid.clone(),
-            new_video.title,
-            slug,
-            new_video.description,
+            &uuid,
+            &new_video.title,
+            &slug,
+            &new_video.description,
             false,
             new_video.membership_only,
             series,
             episode_number,
             false,
-            new_video.vimeo_id,
+            &new_video.vimeo_id,
         ) {
             Ok(_) => Ok(Redirect::to(&format!("/admin/videos/edit/{}", uuid))),
             Err(_) => Ok(Redirect::to(&format!("/admin/videos/edit/{}", uuid))),

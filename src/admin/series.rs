@@ -118,10 +118,10 @@ pub fn insert_new_series(
     match generate_token(24) {
         Ok(uuid) => match create_new_series(
             &*conn,
-            uuid.clone(),
-            new_serie.title,
-            slug,
-            new_serie.description,
+            &uuid,
+            &new_serie.title,
+            &slug,
+            &new_serie.description,
             new_serie.price,
             false,
             false,

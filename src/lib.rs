@@ -14,7 +14,7 @@ use self::models::{NewGroup, NewSerie, NewUser, NewUserGroup, NewUserRecoverEmai
                    NewUserStripeCustomer, NewUserStripeToken, NewUserVerifyEmail, NewUserView,
                    NewVideo, Users};
 
-pub fn create_new_group(conn: &MysqlConnection, uuid: String, name: String) -> Result<(), Error> {
+pub fn create_new_group(conn: &MysqlConnection, uuid: &str, name: &str) -> Result<(), Error> {
     use schema::groups;
 
     let new_group = NewGroup {
@@ -33,10 +33,10 @@ pub fn create_new_group(conn: &MysqlConnection, uuid: String, name: String) -> R
 
 pub fn create_new_series(
     conn: &MysqlConnection,
-    uuid: String,
-    title: String,
-    slug: String,
-    description: String,
+    uuid: &str,
+    title: &str,
+    slug: &str,
+    description: &str,
     price: i32,
     published: bool,
     archived: bool,
@@ -65,7 +65,7 @@ pub fn create_new_series(
 pub fn create_new_user_session(
     conn: &MysqlConnection,
     user_id: i64,
-    token: String,
+    token: &str,
 ) -> Result<(), Error> {
     use schema::users_sessions;
 
@@ -88,9 +88,9 @@ pub fn create_new_user_session(
 
 pub fn create_new_user(
     conn: &MysqlConnection,
-    username: String,
-    password: String,
-    email: String,
+    username: &str,
+    password: &str,
+    email: &str,
 ) -> Result<Users, Error> {
     use schema::users;
 
@@ -162,7 +162,7 @@ pub fn create_new_user_series_access(
 pub fn create_new_users_recover_email(
     conn: &MysqlConnection,
     user_id: i64,
-    token: String,
+    token: &str,
 ) -> Result<(), Error> {
     use schema::users_recover_email;
 
@@ -194,15 +194,15 @@ pub fn insert_new_card(
     address_state: Option<String>,
     address_zip: Option<String>,
     address_zip_check: Option<String>,
-    brand: String,
-    country: String,
+    brand: &str,
+    country: &str,
     cvc_check: Option<String>,
     dynamic_last4: Option<String>,
     exp_month: i32,
     exp_year: i32,
     funding: Option<String>,
     card_id: Option<String>,
-    last4: String,
+    last4: &str,
     metadata: Option<String>,
     name: Option<String>,
     object: Option<String>,
@@ -251,7 +251,7 @@ pub fn insert_new_users_stripe_charge(
     conn: &MysqlConnection,
     user_id: i64,
     series_id: i64,
-    uuid: String,
+    uuid: &str,
     amount: i32,
     amount_refunded: i32,
     balance_transaction: Option<String>,
@@ -267,10 +267,10 @@ pub fn insert_new_users_stripe_charge(
     order: Option<String>,
     paid: bool,
     refunded: bool,
-    source_id: String,
+    source_id: &str,
     source_transfer: Option<String>,
     statement_descriptor: Option<String>,
-    status: String,
+    status: &str,
 ) -> Result<(), Error> {
     use schema::users_stripe_charge;
 
@@ -314,9 +314,9 @@ pub fn insert_new_users_stripe_charge(
 pub fn insert_new_users_stripe_token(
     conn: &MysqlConnection,
     user_id: i64,
-    client_ip: String,
+    client_ip: &str,
     created_at_stripe: i64,
-    token_id: String,
+    token_id: &str,
     livemode: bool,
     object: Option<String>,
     type_: Option<String>,
@@ -390,7 +390,7 @@ pub fn insert_new_users_stripe_customer(
 pub fn create_new_users_verify_email(
     conn: &MysqlConnection,
     user_id: i64,
-    token: String,
+    token: &str,
 ) -> Result<(), Error> {
     use schema::users_verify_email;
 
@@ -434,16 +434,16 @@ pub fn create_new_user_view(
 
 pub fn create_new_video(
     conn: &MysqlConnection,
-    uuid: String,
-    title: String,
-    slug: String,
-    description: String,
+    uuid: &str,
+    title: &str,
+    slug: &str,
+    description: &str,
     published: bool,
     membership_only: bool,
     series: Option<i64>,
     episode_number: Option<i32>,
     archived: bool,
-    vimeo_id: String,
+    vimeo_id: &str,
 ) -> Result<(), Error> {
     use schema::videos;
 

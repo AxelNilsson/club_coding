@@ -14,9 +14,9 @@ pub struct Groups {
 
 #[derive(Insertable)]
 #[table_name = "groups"]
-pub struct NewGroup {
-    pub uuid: String,
-    pub name: String,
+pub struct NewGroup<'a> {
+    pub uuid: &'a str,
+    pub name: &'a str,
 }
 
 #[derive(Queryable, Clone)]
@@ -36,11 +36,11 @@ pub struct Series {
 
 #[derive(Insertable)]
 #[table_name = "series"]
-pub struct NewSerie {
-    pub uuid: String,
-    pub title: String,
-    pub slug: String,
-    pub description: String,
+pub struct NewSerie<'a> {
+    pub uuid: &'a str,
+    pub title: &'a str,
+    pub slug: &'a str,
+    pub description: &'a str,
     pub price: i32,
     pub published: bool,
     pub archived: bool,
@@ -59,10 +59,10 @@ pub struct Users {
 
 #[derive(Insertable)]
 #[table_name = "users"]
-pub struct NewUser {
-    pub username: String,
-    pub password: String,
-    pub email: String,
+pub struct NewUser<'a> {
+    pub username: &'a str,
+    pub password: &'a str,
+    pub email: &'a str,
 }
 
 #[derive(Queryable, Clone)]
@@ -93,9 +93,9 @@ pub struct UsersRecoverEmail {
 
 #[derive(Insertable)]
 #[table_name = "users_recover_email"]
-pub struct NewUserRecoverEmail {
+pub struct NewUserRecoverEmail<'a> {
     pub user_id: i64,
-    pub token: String,
+    pub token: &'a str,
 }
 
 #[derive(Queryable, Clone)]
@@ -145,7 +145,7 @@ pub struct UsersStripeCard {
 
 #[derive(Insertable)]
 #[table_name = "users_stripe_card"]
-pub struct NewUserStripeCard {
+pub struct NewUserStripeCard<'a> {
     pub user_id: i64,
     pub address_city: Option<String>,
     pub address_country: Option<String>,
@@ -155,15 +155,15 @@ pub struct NewUserStripeCard {
     pub address_state: Option<String>,
     pub address_zip: Option<String>,
     pub address_zip_check: Option<String>,
-    pub brand: String,
-    pub country: String,
+    pub brand: &'a str,
+    pub country: &'a str,
     pub cvc_check: Option<String>,
     pub dynamic_last4: Option<String>,
     pub exp_month: i32,
     pub exp_year: i32,
     pub funding: Option<String>,
     pub card_id: Option<String>,
-    pub last4: String,
+    pub last4: &'a str,
     pub metadata: Option<String>,
     pub name: Option<String>,
     pub object: Option<String>,
@@ -199,10 +199,10 @@ pub struct UsersStripeCharge {
 
 #[derive(Insertable)]
 #[table_name = "users_stripe_charge"]
-pub struct NewUserStripeCharge {
+pub struct NewUserStripeCharge<'a> {
     pub user_id: i64,
     pub series_id: i64,
-    pub uuid: String,
+    pub uuid: &'a str,
     pub amount: i32,
     pub amount_refunded: i32,
     pub balance_transaction: Option<String>,
@@ -218,10 +218,10 @@ pub struct NewUserStripeCharge {
     pub order: Option<String>,
     pub paid: bool,
     pub refunded: bool,
-    pub source_id: String,
+    pub source_id: &'a str,
     pub source_transfer: Option<String>,
     pub statement_descriptor: Option<String>,
-    pub status: String,
+    pub status: &'a str,
 }
 
 #[derive(Queryable, Clone)]
@@ -245,7 +245,7 @@ pub struct UsersStripeCustomer {
 #[table_name = "users_stripe_customer"]
 pub struct NewUserStripeCustomer<'a> {
     pub user_id: i64,
-    pub uuid: &'a String,
+    pub uuid: &'a str,
     pub account_balance: i64,
     pub business_vat_id: Option<String>,
     pub created_at_stripe: i64,
@@ -273,11 +273,11 @@ pub struct UsersStripeToken {
 
 #[derive(Insertable)]
 #[table_name = "users_stripe_token"]
-pub struct NewUserStripeToken {
+pub struct NewUserStripeToken<'a> {
     pub user_id: i64,
-    pub client_ip: String,
+    pub client_ip: &'a str,
     pub created_at_stripe: i64,
-    pub token_id: String,
+    pub token_id: &'a str,
     pub livemode: bool,
     pub object: Option<String>,
     pub type_: Option<String>,
@@ -295,9 +295,9 @@ pub struct UsersSessions {
 
 #[derive(Insertable)]
 #[table_name = "users_sessions"]
-pub struct NewUserSession {
+pub struct NewUserSession<'a> {
     pub user_id: i64,
-    pub token: String,
+    pub token: &'a str,
 }
 
 #[derive(Queryable)]
@@ -312,9 +312,9 @@ pub struct UsersVerifyEmail {
 
 #[derive(Insertable)]
 #[table_name = "users_verify_email"]
-pub struct NewUserVerifyEmail {
+pub struct NewUserVerifyEmail<'a> {
     pub user_id: i64,
-    pub token: String,
+    pub token: &'a str,
 }
 
 #[derive(Queryable)]
@@ -352,15 +352,15 @@ pub struct Videos {
 
 #[derive(Insertable)]
 #[table_name = "videos"]
-pub struct NewVideo {
-    pub uuid: String,
-    pub title: String,
-    pub slug: String,
-    pub description: String,
+pub struct NewVideo<'a> {
+    pub uuid: &'a str,
+    pub title: &'a str,
+    pub slug: &'a str,
+    pub description: &'a str,
     pub published: bool,
     pub membership_only: bool,
     pub series: Option<i64>,
     pub episode_number: Option<i32>,
     pub archived: bool,
-    pub vimeo_id: String,
+    pub vimeo_id: &'a str,
 }

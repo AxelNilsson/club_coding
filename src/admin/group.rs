@@ -104,7 +104,7 @@ pub fn insert_new_group(
 ) -> Result<Redirect, Redirect> {
     let new_group: NewGroup = group.into_inner();
     match generate_token(24) {
-        Ok(uuid) => match create_new_group(&*conn, uuid.clone(), new_group.name) {
+        Ok(uuid) => match create_new_group(&*conn, &uuid, &new_group.name) {
             Ok(_) => Ok(Redirect::to(&format!("/admin/groups/edit/{}", uuid))),
             Err(_) => Ok(Redirect::to(&format!("/admin/groups/edit/{}", uuid))),
         },

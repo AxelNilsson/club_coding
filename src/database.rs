@@ -6,7 +6,7 @@ use rocket::request::{self, FromRequest};
 use rocket::{Outcome, Request, State};
 use rocket::config::{Config, Environment};
 
-type MySqlPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
+pub type MySqlPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
 pub fn init_pool() -> MySqlPool {
     let config = Config::build(Environment::Development)
