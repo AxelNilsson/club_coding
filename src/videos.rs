@@ -17,7 +17,12 @@ pub fn get_videos() -> Vec<Videos> {
     use club_coding::schema::videos::dsl::*;
 
     let connection = establish_connection();
-    match videos.order(created.asc()).load::<Videos>(&connection) {
+    match videos
+        .filter(published.eq(true))
+        .filter(archived.eq(false))
+        .order(created.asc())
+        .load::<Videos>(&connection)
+    {
         Ok(vec_of_vids) => vec_of_vids,
         Err(_) => vec![],
     }
@@ -30,6 +35,8 @@ fn get_video_data_from_uuid(uid: &String) -> Result<Videos, Error> {
 
     match videos
         .filter(uuid.eq(uid))
+        .filter(published.eq(true))
+        .filter(archived.eq(false))
         .limit(1)
         .load::<Videos>(&connection)
     {
@@ -53,6 +60,8 @@ fn get_series_title(uid: Option<i64>) -> Option<String> {
 
             match series
                 .filter(id.eq(uid))
+                .filter(published.eq(true))
+                .filter(archived.eq(false))
                 .limit(1)
                 .load::<Series>(&connection)
             {
@@ -92,6 +101,8 @@ fn get_videos_of_series(uid: i64, sid: i64) -> Vec<PublicVideo> {
     let connection = establish_connection();
     match videos
         .filter(series.eq(sid))
+        .filter(published.eq(true))
+        .filter(archived.eq(false))
         .order(episode_number.asc())
         .load::<Videos>(&connection)
     {
@@ -223,6 +234,8 @@ fn get_videos_of_series_nologin(sid: i64) -> Vec<PublicVideo> {
     let connection = establish_connection();
     match videos
         .filter(series.eq(sid))
+        .filter(published.eq(true))
+        .filter(archived.eq(false))
         .order(episode_number.asc())
         .load::<Videos>(&connection)
     {

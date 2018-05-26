@@ -61,7 +61,12 @@ fn get_serie(uid: &String) -> Option<Series> {
     use club_coding::schema::series::dsl::*;
 
     let connection = establish_connection();
-    match series.filter(uuid.eq(uid)).first(&connection) {
+    match series
+        .filter(uuid.eq(uid))
+        .filter(published.eq(true))
+        .filter(archived.eq(false))
+        .first(&connection)
+    {
         Ok(serie) => Some(serie),
         Err(_) => None,
     }
@@ -167,6 +172,8 @@ fn get_videos_nologin(sid: i64) -> Vec<PublicVideo> {
     let connection = establish_connection();
     match videos
         .filter(series.eq(sid))
+        .filter(published.eq(true))
+        .filter(archived.eq(false))
         .order(episode_number.asc())
         .load::<Videos>(&connection)
     {
