@@ -187,10 +187,8 @@ pub fn send_verify_email(
     create_new_users_verify_email(connection, user_id, &token)?;
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: &token };
-    match tera.render("verify_account.html", &verify) {
+    match tera.render("verify_account.html.tera", &verify) {
         Ok(html_body) => {
-            // html_body: Some(format!("<html><body><a href='https://clubcoding.com/email/verify/{}'>Please press this link to confirm your e-mail.</a></body></html>", token)),
-
             let body = EmailBody {
                 from: "axel@clubcoding.com".to_string(),
                 to: email,
@@ -354,23 +352,30 @@ fn send_recover_email_page(csrf_token: CsrfToken, flash: Option<FlashMessage>) -
 }
 
 fn send_recover_mail(token: String, email: String) -> Result<(), Error> {
-    let body = EmailBody {
-        from: "axel@clubcoding.com".to_string(),
-        to: email,
-        subject: Some("Recover your account".to_string()),
-        html_body: Some(format!("<html><body><a href='https://clubcoding.com/email/recover/{}'>Please press this link to recover your account.</a></body></html>", token)),
-        cc: None,
-        bcc: None,
-        tag: None,
-        text_body: None,
-        reply_to: None,
-        headers: None,
-        track_opens: None,
-        track_links: None,
-    };
-    let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
-    postmark_client.send_email(&body)?;
-    Ok(())
+    let tera = compile_templates!("templates/emails/**/*");
+    let verify = VerifyEmail { token: &token };
+    match tera.render("recover_account.html.tera", &verify) {
+        Ok(html_body) => {
+            let body = EmailBody {
+                from: "axel@clubcoding.com".to_string(),
+                to: email,
+                subject: Some("Recover your account".to_string()),
+                html_body: Some(html_body),
+                cc: None,
+                bcc: None,
+                tag: None,
+                text_body: None,
+                reply_to: None,
+                headers: None,
+                track_opens: None,
+                track_links: None,
+            };
+            let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+            postmark_client.send_email(&body)?;
+            Ok(())
+        }
+        Err(_) => Err(Error::new(ErrorKind::Other, "couldn't render template")),
+    }
 }
 
 #[post("/recover/email")]

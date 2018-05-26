@@ -105,26 +105,36 @@ fn create_customer(
     }
 }
 
+#[derive(Serialize)]
+struct VerifyEmail<'a> {
+    token: &'a str,
+}
+
 fn send_card_added_mail(email: String) -> Result<(), Error> {
-    let body = EmailBody {
-        from: "axel@clubcoding.com".to_string(),
-        to: email,
-        subject: Some("Card added!".to_string()),
-        html_body: Some(
-            "<html><body>A card has been added to your account.</body></html>".to_string(),
-        ),
-        cc: None,
-        bcc: None,
-        tag: None,
-        text_body: None,
-        reply_to: None,
-        headers: None,
-        track_opens: None,
-        track_links: None,
-    };
-    let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
-    postmark_client.send_email(&body)?;
-    Ok(())
+    let tera = compile_templates!("templates/emails/**/*");
+    let verify = VerifyEmail { token: "" };
+    match tera.render("card_added.html.tera", &verify) {
+        Ok(html_body) => {
+            let body = EmailBody {
+                from: "axel@clubcoding.com".to_string(),
+                to: email,
+                subject: Some("Card added!".to_string()),
+                html_body: Some(html_body),
+                cc: None,
+                bcc: None,
+                tag: None,
+                text_body: None,
+                reply_to: None,
+                headers: None,
+                track_opens: None,
+                track_links: None,
+            };
+            let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+            postmark_client.send_email(&body)?;
+            Ok(())
+        }
+        Err(_) => Err(Error::new(ErrorKind::Other, "couldn't render template")),
+    }
 }
 
 fn charge(connection: &DbConn, data: &Stripe, email: &str, user_id: i64) -> Result<(), Error> {
@@ -132,27 +142,33 @@ fn charge(connection: &DbConn, data: &Stripe, email: &str, user_id: i64) -> Resu
     let _ = insert_new_card(
         &connection,
         user_id,
-        data.card_address_city.clone(),
-        data.card_address_country.clone(),
-        data.card_address_line1.clone(),
-        data.card_address_line1_check.clone(),
-        data.card_address_line2.clone(),
-        data.card_address_state.clone(),
-        data.card_address_zip.clone(),
-        data.card_address_zip_check.clone(),
+        data.card_address_city.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_country.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_line1.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_line1_check
+            .as_ref()
+            .map_or(None, |x| Some(x)),
+        data.card_address_line2.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_state.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_zip.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_zip_check
+            .as_ref()
+            .map_or(None, |x| Some(x)),
         &data.card_brand,
         &data.card_country,
-        data.card_cvc_check.clone(),
-        data.card_dynamic_last4.clone(),
+        data.card_cvc_check.as_ref().map_or(None, |x| Some(x)),
+        data.card_dynamic_last4.as_ref().map_or(None, |x| Some(x)),
         data.card_exp_month,
         data.card_exp_year,
-        data.card_funding.clone(),
-        data.card_id.clone(),
+        data.card_funding.as_ref().map_or(None, |x| Some(x)),
+        data.card_id.as_ref().map_or(None, |x| Some(x)),
         &data.card_last4,
-        data.card_metadata.clone(),
-        data.card_name.clone(),
-        data.card_object.clone(),
-        data.card_tokenization_method.clone(),
+        data.card_metadata.as_ref().map_or(None, |x| Some(x)),
+        data.card_name.as_ref().map_or(None, |x| Some(x)),
+        data.card_object.as_ref().map_or(None, |x| Some(x)),
+        data.card_tokenization_method
+            .as_ref()
+            .map_or(None, |x| Some(x)),
     )?;
     let _ = insert_new_users_stripe_token(
         &connection,
@@ -161,8 +177,8 @@ fn charge(connection: &DbConn, data: &Stripe, email: &str, user_id: i64) -> Resu
         data.created,
         &data.id,
         data.livemode,
-        data.object.clone(),
-        data.type_of_payment.clone(),
+        data.object.as_ref().map_or(None, |x| Some(x)),
+        data.type_of_payment.as_ref().map_or(None, |x| Some(x)),
         data.used,
     )?;
     match create_customer(&client, email, &(data.id.clone())) {
@@ -172,12 +188,12 @@ fn charge(connection: &DbConn, data: &Stripe, email: &str, user_id: i64) -> Resu
                 user_id,
                 &customer.id,
                 customer.account_balance,
-                customer.business_vat_id,
+                customer.business_vat_id.as_ref().map_or(None, |x| Some(x)),
                 customer.created as i64,
-                customer.default_source,
+                customer.default_source.as_ref().map_or(None, |x| Some(x)),
                 customer.delinquent,
-                customer.desc,
-                customer.email,
+                customer.desc.as_ref().map_or(None, |x| Some(x)),
+                customer.email.as_ref().map_or(None, |x| Some(x)),
                 customer.livemode,
             )?;
             match send_card_added_mail(email.to_string()) {

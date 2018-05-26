@@ -212,7 +212,10 @@ fn watch_as_user(
                     None => Ok(Template::render("watch_nomember", &context)),
                 }
             } else {
-                Ok(Template::render("watch_member", &context))
+                match create_new_view(&conn, video.id, user.id) {
+                    Ok(_) => Ok(Template::render("watch_member", &context)),
+                    Err(_) => Ok(Template::render("watch_member", &context)),
+                }
             }
         }
         Err(_video_not_found) => Err(Redirect::to("/")),
@@ -328,24 +331,36 @@ fn get_serie(connection: &DbConn, sid: i64) -> Option<Series> {
     }
 }
 
-fn send_bought_email(email: String) -> Result<(), Error> {
-    let body = EmailBody {
-        from: "axel@clubcoding.com".to_string(),
-        to: email,
-        subject: Some("Series bought!".to_string()),
-        html_body: Some("<html><body>You recently bought a series.</body></html>".to_string()),
-        cc: None,
-        bcc: None,
-        tag: None,
-        text_body: None,
-        reply_to: None,
-        headers: None,
-        track_opens: None,
-        track_links: None,
-    };
-    let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
-    postmark_client.send_email(&body)?;
-    Ok(())
+#[derive(Serialize)]
+struct VerifyEmail<'a> {
+    token: &'a str,
+}
+
+fn send_bought_email(email: &str) -> Result<(), Error> {
+    let tera = compile_templates!("templates/emails/**/*");
+    let verify = VerifyEmail { token: "" };
+    match tera.render("series_bought.html.tera", &verify) {
+        Ok(html_body) => {
+            let body = EmailBody {
+                from: "axel@clubcoding.com".to_string(),
+                to: email.to_string(),
+                subject: Some("Series bought!".to_string()),
+                html_body: Some(html_body),
+                cc: None,
+                bcc: None,
+                tag: None,
+                text_body: None,
+                reply_to: None,
+                headers: None,
+                track_opens: None,
+                track_links: None,
+            };
+            let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+            postmark_client.send_email(&body)?;
+            Ok(())
+        }
+        Err(_) => Err(Error::new(ErrorKind::Other, "couldn't render template")),
+    }
 }
 
 fn charge(
@@ -400,26 +415,32 @@ fn charge(
                 &charge.id,
                 charge.amount as i32,
                 charge.amount_refunded as i32,
-                charge.balance_transaction,
+                charge
+                    .balance_transaction
+                    .as_ref()
+                    .map_or(None, |x| Some(x)),
                 charge.captured,
                 charge.created,
-                charge.description,
-                charge.destination,
-                charge.dispute,
-                failure_code,
-                charge.failure_message,
+                charge.description.as_ref().map_or(None, |x| Some(x)),
+                charge.destination.as_ref().map_or(None, |x| Some(x)),
+                charge.dispute.as_ref().map_or(None, |x| Some(x)),
+                failure_code.as_ref().map_or(None, |x| Some(x)),
+                charge.failure_message.as_ref().map_or(None, |x| Some(x)),
                 charge.livemode,
-                charge.on_behalf_of,
-                charge.order,
+                charge.on_behalf_of.as_ref().map_or(None, |x| Some(x)),
+                charge.order.as_ref().map_or(None, |x| Some(x)),
                 charge.paid,
                 charge.refunded,
                 &source_id,
-                charge.source_transfer,
-                charge.statement_descriptor,
+                charge.source_transfer.as_ref().map_or(None, |x| Some(x)),
+                charge
+                    .statement_descriptor
+                    .as_ref()
+                    .map_or(None, |x| Some(x)),
                 &charge.status,
             )?;
             let _ = create_new_user_series_access(&*conn, user.id, series_id, true)?;
-            let _ = send_bought_email(user.email.clone())?;
+            let _ = send_bought_email(&user.email)?;
             Ok(())
         }
         None => Err(Error::new(ErrorKind::Other, "no customer_source")),

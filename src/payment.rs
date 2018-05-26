@@ -201,26 +201,36 @@ fn update_customer(
     )
 }
 
+#[derive(Serialize)]
+struct VerifyEmail<'a> {
+    token: &'a str,
+}
+
 fn send_card_updated_mail(email: String) -> Result<(), Error> {
-    let body = EmailBody {
-        from: "axel@clubcoding.com".to_string(),
-        to: email,
-        subject: Some("Card updated!".to_string()),
-        html_body: Some(
-            "<html><body>A card has been updated on your account.</body></html>".to_string(),
-        ),
-        cc: None,
-        bcc: None,
-        tag: None,
-        text_body: None,
-        reply_to: None,
-        headers: None,
-        track_opens: None,
-        track_links: None,
-    };
-    let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
-    postmark_client.send_email(&body)?;
-    Ok(())
+    let tera = compile_templates!("templates/emails/**/*");
+    let verify = VerifyEmail { token: "" };
+    match tera.render("card_updated.html.tera", &verify) {
+        Ok(html_body) => {
+            let body = EmailBody {
+                from: "axel@clubcoding.com".to_string(),
+                to: email,
+                subject: Some("Card updated!".to_string()),
+                html_body: Some(html_body),
+                cc: None,
+                bcc: None,
+                tag: None,
+                text_body: None,
+                reply_to: None,
+                headers: None,
+                track_opens: None,
+                track_links: None,
+            };
+            let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+            postmark_client.send_email(&body)?;
+            Ok(())
+        }
+        Err(_) => Err(Error::new(ErrorKind::Other, "couldn't render template")),
+    }
 }
 
 fn charge(connection: &DbConn, data: &Stripe, user_id: i64, email: String) -> Result<(), Error> {
@@ -228,27 +238,33 @@ fn charge(connection: &DbConn, data: &Stripe, user_id: i64, email: String) -> Re
     let _ = insert_new_card(
         &*connection,
         user_id,
-        data.card_address_city.clone(),
-        data.card_address_country.clone(),
-        data.card_address_line1.clone(),
-        data.card_address_line1_check.clone(),
-        data.card_address_line2.clone(),
-        data.card_address_state.clone(),
-        data.card_address_zip.clone(),
-        data.card_address_zip_check.clone(),
+        data.card_address_city.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_country.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_line1.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_line1_check
+            .as_ref()
+            .map_or(None, |x| Some(x)),
+        data.card_address_line2.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_state.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_zip.as_ref().map_or(None, |x| Some(x)),
+        data.card_address_zip_check
+            .as_ref()
+            .map_or(None, |x| Some(x)),
         &data.card_brand,
         &data.card_country,
-        data.card_cvc_check.clone(),
-        data.card_dynamic_last4.clone(),
+        data.card_cvc_check.as_ref().map_or(None, |x| Some(x)),
+        data.card_dynamic_last4.as_ref().map_or(None, |x| Some(x)),
         data.card_exp_month,
         data.card_exp_year,
-        data.card_funding.clone(),
-        data.card_id.clone(),
+        data.card_funding.as_ref().map_or(None, |x| Some(x)),
+        data.card_id.as_ref().map_or(None, |x| Some(x)),
         &data.card_last4,
-        data.card_metadata.clone(),
-        data.card_name.clone(),
-        data.card_object.clone(),
-        data.card_tokenization_method.clone(),
+        data.card_metadata.as_ref().map_or(None, |x| Some(x)),
+        data.card_name.as_ref().map_or(None, |x| Some(x)),
+        data.card_object.as_ref().map_or(None, |x| Some(x)),
+        data.card_tokenization_method
+            .as_ref()
+            .map_or(None, |x| Some(x)),
     )?;
     let _ = insert_new_users_stripe_token(
         &*connection,
@@ -257,8 +273,8 @@ fn charge(connection: &DbConn, data: &Stripe, user_id: i64, email: String) -> Re
         data.created,
         &data.id,
         data.livemode,
-        data.object.clone(),
-        data.type_of_payment.clone(),
+        data.object.as_ref().map_or(None, |x| Some(x)),
+        data.type_of_payment.as_ref().map_or(None, |x| Some(x)),
         data.used,
     )?;
     let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
@@ -316,25 +332,30 @@ fn delete_and_get_card(connection: &DbConn, uid: i64) -> Option<String> {
 }
 
 fn send_card_deleted_mail(email: String) -> Result<(), Error> {
-    let body = EmailBody {
-        from: "axel@clubcoding.com".to_string(),
-        to: email,
-        subject: Some("Card deleted!".to_string()),
-        html_body: Some(
-            "<html><body>A card has been deleted from your account.</body></html>".to_string(),
-        ),
-        cc: None,
-        bcc: None,
-        tag: None,
-        text_body: None,
-        reply_to: None,
-        headers: None,
-        track_opens: None,
-        track_links: None,
-    };
-    let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
-    postmark_client.send_email(&body)?;
-    Ok(())
+    let tera = compile_templates!("templates/emails/**/*");
+    let verify = VerifyEmail { token: "" };
+    match tera.render("card_deleted.html.tera", &verify) {
+        Ok(html_body) => {
+            let body = EmailBody {
+                from: "axel@clubcoding.com".to_string(),
+                to: email,
+                subject: Some("Card deleted!".to_string()),
+                html_body: Some(html_body),
+                cc: None,
+                bcc: None,
+                tag: None,
+                text_body: None,
+                reply_to: None,
+                headers: None,
+                track_opens: None,
+                track_links: None,
+            };
+            let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+            postmark_client.send_email(&body)?;
+            Ok(())
+        }
+        Err(_) => Err(Error::new(ErrorKind::Other, "couldn't render template")),
+    }
 }
 
 fn delete(connection: &DbConn, user_id: i64, email: String) -> Result<(), Error> {
