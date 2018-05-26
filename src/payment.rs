@@ -2,7 +2,8 @@ use rocket::Route;
 use rocket::request::Form;
 use rocket_contrib::Template;
 use rocket::response::{Flash, Redirect};
-use club_coding::{establish_connection, insert_new_card, insert_new_users_stripe_token};
+use club_coding::{insert_new_card, insert_new_users_stripe_token};
+use database::DbConn;
 use users::User;
 use stripe;
 use rocket::request::FlashMessage;
@@ -20,15 +21,13 @@ struct ChargeContext {
     flash_msg: String,
 }
 
-fn customer_exists(uid: i64) -> Option<UsersStripeCustomer> {
+fn customer_exists(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer> {
     use club_coding::schema::users_stripe_customer::dsl::*;
-
-    let connection = establish_connection();
 
     match users_stripe_customer
         .filter(user_id.eq(uid))
         .limit(1)
-        .load::<UsersStripeCustomer>(&connection)
+        .load::<UsersStripeCustomer>(&**connection)
     {
         Ok(user) => {
             if user.len() == 1 {
@@ -57,14 +56,13 @@ struct PaymentsContext {
     charges: Vec<Charge>,
 }
 
-fn get_charges(uid: i64) -> Vec<Charge> {
+fn get_charges(connection: &DbConn, uid: i64) -> Vec<Charge> {
     use club_coding::schema::users_stripe_charge::dsl::*;
 
-    let connection = establish_connection();
     match users_stripe_charge
         .filter(user_id.eq(uid))
         .order(id.desc())
-        .load::<UsersStripeCharge>(&connection)
+        .load::<UsersStripeCharge>(&**connection)
     {
         Ok(charges) => {
             let mut to_return: Vec<Charge> = vec![];
@@ -72,7 +70,7 @@ fn get_charges(uid: i64) -> Vec<Charge> {
                 use club_coding::schema::series::dsl::*;
 
                 let serie: Option<Series> =
-                    match series.filter(id.eq(charge.series_id)).first(&connection) {
+                    match series.filter(id.eq(charge.series_id)).first(&**connection) {
                         Ok(serie) => Some(serie),
                         Err(_) => None,
                     };
@@ -96,10 +94,14 @@ fn get_charges(uid: i64) -> Vec<Charge> {
 }
 
 #[get("/")]
-fn payments_page(user: User, flash: Option<FlashMessage>) -> Result<Template, Redirect> {
-    match customer_exists(user.id) {
+fn payments_page(
+    conn: DbConn,
+    user: User,
+    flash: Option<FlashMessage>,
+) -> Result<Template, Redirect> {
+    match customer_exists(&conn, user.id) {
         Some(_) => {
-            let charges = get_charges(user.id);
+            let charges = get_charges(&conn, user.id);
             let (name, msg) = match flash {
                 Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
                 None => ("".to_string(), "".to_string()),
@@ -165,12 +167,12 @@ struct Stripe {
     used: bool,
 }
 
-fn get_customer(connection: &MysqlConnection, uid: i64) -> Option<UsersStripeCustomer> {
+fn get_customer(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer> {
     use club_coding::schema::users_stripe_customer::dsl::*;
 
     match users_stripe_customer
         .filter(user_id.eq(uid))
-        .first(connection)
+        .first(&**connection)
     {
         Ok(user) => Some(user),
         Err(_) => None,
@@ -221,11 +223,10 @@ fn send_card_updated_mail(email: String) -> Result<(), Error> {
     Ok(())
 }
 
-fn charge(data: &Stripe, user_id: i64, email: String) -> Result<(), Error> {
-    let connection = establish_connection();
+fn charge(connection: &DbConn, data: &Stripe, user_id: i64, email: String) -> Result<(), Error> {
     let customer = get_customer(&connection, user_id);
     let _ = insert_new_card(
-        &connection,
+        &*connection,
         user_id,
         data.card_address_city.clone(),
         data.card_address_country.clone(),
@@ -250,7 +251,7 @@ fn charge(data: &Stripe, user_id: i64, email: String) -> Result<(), Error> {
         data.card_tokenization_method.clone(),
     )?;
     let _ = insert_new_users_stripe_token(
-        &connection,
+        &*connection,
         user_id,
         data.client_ip.clone(),
         data.created.clone(),
@@ -274,9 +275,13 @@ fn charge(data: &Stripe, user_id: i64, email: String) -> Result<(), Error> {
 }
 
 #[post("/card/update", data = "<form_data>")]
-fn update_card(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>, Flash<Redirect>> {
+fn update_card(
+    conn: DbConn,
+    user: User,
+    form_data: Form<Stripe>,
+) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let data = form_data.into_inner();
-    match charge(&data, user.id, user.email.clone()) {
+    match charge(&conn, &data, user.id, user.email.clone()) {
         Ok(()) => Ok(Flash::success(
             Redirect::to("/"),
             "Card updated. Great choice!",
@@ -288,20 +293,24 @@ fn update_card(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>, F
     }
 }
 
-fn delete_and_get_card(connection: &MysqlConnection, uid: i64) -> Option<String> {
+fn delete_and_get_card(connection: &DbConn, uid: i64) -> Option<String> {
     use club_coding::schema::users_stripe_card::dsl::*;
 
-    let card: Option<UsersStripeCard> =
-        match users_stripe_card.filter(user_id.eq(uid)).first(connection) {
-            Ok(card) => Some(card),
-            Err(_) => None,
-        };
+    let card: Option<UsersStripeCard> = match users_stripe_card
+        .filter(user_id.eq(uid))
+        .first(&**connection)
+    {
+        Ok(card) => Some(card),
+        Err(_) => None,
+    };
 
     match card {
-        Some(card) => match diesel::delete(users_stripe_card.find(card.id)).execute(connection) {
-            Ok(_) => card.card_id,
-            Err(_) => None,
-        },
+        Some(card) => {
+            match diesel::delete(users_stripe_card.find(card.id)).execute(&**connection) {
+                Ok(_) => card.card_id,
+                Err(_) => None,
+            }
+        }
         None => None,
     }
 }
@@ -328,16 +337,15 @@ fn send_card_deleted_mail(email: String) -> Result<(), Error> {
     Ok(())
 }
 
-fn delete(user_id: i64, email: String) -> Result<(), Error> {
-    let connection = establish_connection();
-    let _card = delete_and_get_card(&connection, user_id);
+fn delete(connection: &DbConn, user_id: i64, email: String) -> Result<(), Error> {
+    let _card = delete_and_get_card(connection, user_id);
     send_card_deleted_mail(email)?;
     Ok(())
 }
 
 #[post("/card/delete")]
-fn delete_card(user: User) -> Result<Flash<Redirect>, Flash<Redirect>> {
-    match delete(user.id, user.email.clone()) {
+fn delete_card(conn: DbConn, user: User) -> Result<Flash<Redirect>, Flash<Redirect>> {
+    match delete(&conn, user.id, user.email.clone()) {
         Ok(()) => Ok(Flash::success(Redirect::to("/"), "Oh no! Card deleted.")),
         _ => Err(Flash::error(
             Redirect::to("/settings/payment"),

@@ -1,7 +1,8 @@
 use rocket_contrib::Template;
 use admin::structs::Administrator;
 use club_coding::models::{Users, UsersGroup, UsersSeriesAccess};
-use club_coding::{create_new_user_group, create_new_user_series_access, establish_connection};
+use club_coding::{create_new_user_group, create_new_user_series_access};
+use database::DbConn;
 use chrono::NaiveDateTime;
 use rocket_contrib::Json;
 use diesel::prelude::*;
@@ -22,11 +23,10 @@ struct UsersC {
     updated: NaiveDateTime,
 }
 
-fn get_all_users() -> Vec<UsersC> {
+fn get_all_users(connection: &DbConn) -> Vec<UsersC> {
     use club_coding::schema::users::dsl::*;
 
-    let connection = establish_connection();
-    match users.load::<Users>(&connection) {
+    match users.load::<Users>(&**connection) {
         Ok(result) => {
             let mut ret: Vec<UsersC> = vec![];
 
@@ -53,25 +53,23 @@ struct UsersContext {
 }
 
 #[get("/users")]
-pub fn users(user: Administrator) -> Template {
+pub fn users(conn: DbConn, user: Administrator) -> Template {
     let context = UsersContext {
         header: "Club Coding".to_string(),
         user: user,
-        users: get_all_users(),
+        users: get_all_users(&conn),
     };
     Template::render("admin/users", &context)
 }
 
-pub fn get_all_groups_for_user(uid: i64) -> Vec<i64> {
+pub fn get_all_groups_for_user(connection: &DbConn, uid: i64) -> Vec<i64> {
     use club_coding::schema::users_group::dsl::*;
-
-    let connection = establish_connection();
 
     let mut returning_groups = vec![];
 
     match users_group
         .filter(user_id.eq(uid))
-        .load::<UsersGroup>(&connection)
+        .load::<UsersGroup>(&**connection)
     {
         Ok(matching_groups) => for group in matching_groups {
             returning_groups.push(group.group_id);
@@ -81,14 +79,12 @@ pub fn get_all_groups_for_user(uid: i64) -> Vec<i64> {
     returning_groups
 }
 
-pub fn get_all_series_for_user(uid: i64) -> Vec<i64> {
+pub fn get_all_series_for_user(connection: &DbConn, uid: i64) -> Vec<i64> {
     use club_coding::schema::users_series_access::dsl::*;
-
-    let connection = establish_connection();
 
     match users_series_access
         .filter(user_id.eq(uid))
-        .load::<UsersSeriesAccess>(&connection)
+        .load::<UsersSeriesAccess>(&**connection)
     {
         Ok(matching_series) => {
             let mut returning_series = vec![];
@@ -121,11 +117,10 @@ struct EditUsersContext<'a> {
     series: Vec<SerieC>,
 }
 
-fn get_user(uid: i64) -> Option<UsersC> {
+fn get_user(connection: &DbConn, uid: i64) -> Option<UsersC> {
     use club_coding::schema::users::dsl::*;
 
-    let connection = establish_connection();
-    match users.filter(id.eq(uid)).load::<Users>(&connection) {
+    match users.filter(id.eq(uid)).load::<Users>(&**connection) {
         Ok(result) => {
             if result.len() == 1 {
                 Some(UsersC {
@@ -144,20 +139,20 @@ fn get_user(uid: i64) -> Option<UsersC> {
 }
 
 #[get("/users/edit/<uuid>")]
-pub fn edit_users(uuid: i64, admin: Administrator) -> Option<Template> {
-    match get_user(uuid) {
+pub fn edit_users(conn: DbConn, uuid: i64, admin: Administrator) -> Option<Template> {
+    match get_user(&conn, uuid) {
         Some(user) => {
             let context = EditUsersContext {
                 header: "Club Coding".to_string(),
                 user: &admin,
                 uuid: uuid,
-                groups: get_all_groupsc(),
-                series: get_all_seriesc(),
+                groups: get_all_groupsc(&conn),
+                series: get_all_seriesc(&conn),
                 user_data: EditUser {
                     username: user.username.clone(),
                     email: user.email.clone(),
-                    groups: get_all_groups_for_user(user.id),
-                    series: get_all_series_for_user(user.id),
+                    groups: get_all_groups_for_user(&conn, user.id),
+                    series: get_all_series_for_user(&conn, user.id),
                     force_resend_email: false,
                 },
             };
@@ -167,18 +162,17 @@ pub fn edit_users(uuid: i64, admin: Administrator) -> Option<Template> {
     }
 }
 
-fn resend_confirmation_email(uid: i64) -> Result<(), Error> {
-    match get_user(uid) {
+fn resend_confirmation_email(connection: &DbConn, uid: i64) -> Result<(), Error> {
+    match get_user(connection, uid) {
         Some(user) => {
             use club_coding::schema::users::dsl::*;
-            let connection = establish_connection();
 
             match diesel::update(users.find(uid))
                 .set(verified.eq(false))
-                .execute(&connection)
+                .execute(&**connection)
             {
                 Ok(_) => {
-                    send_verify_email(&connection, user.id, user.email)?;
+                    send_verify_email(connection, user.id, user.email)?;
                     Ok(())
                 }
                 Err(_) => Err(Error::new(
@@ -192,19 +186,23 @@ fn resend_confirmation_email(uid: i64) -> Result<(), Error> {
 }
 
 #[post("/users/edit/<uid>", format = "application/json", data = "<data>")]
-pub fn update_user(uid: i64, _user: Administrator, data: Json<EditUser>) -> Result<(), ()> {
+pub fn update_user(
+    conn: DbConn,
+    uid: i64,
+    _user: Administrator,
+    data: Json<EditUser>,
+) -> Result<(), ()> {
     use club_coding::schema::users::dsl::*;
-    let connection = establish_connection();
 
     match diesel::update(users.find(uid))
         .set((
             username.eq(data.0.username.clone()),
             email.eq(data.0.email.clone()),
         ))
-        .execute(&connection)
+        .execute(&*conn)
     {
         Ok(_) => {
-            let groups = get_all_groups_for_user(uid);
+            let groups = get_all_groups_for_user(&conn, uid);
             for group in &groups {
                 let mut should_delete = true;
                 for data_group in &data.0.groups {
@@ -219,7 +217,7 @@ pub fn update_user(uid: i64, _user: Administrator, data: Json<EditUser>) -> Resu
                         users_group
                             .filter(user_id.eq(uid))
                             .filter(group_id.eq(*group)),
-                    ).execute(&connection)
+                    ).execute(&*conn)
                     {
                         Ok(_) => {}
                         Err(_) => return Err(()),
@@ -235,14 +233,14 @@ pub fn update_user(uid: i64, _user: Administrator, data: Json<EditUser>) -> Resu
                     }
                 }
                 if should_create {
-                    match create_new_user_group(&connection, uid, *data_group) {
+                    match create_new_user_group(&conn, uid, *data_group) {
                         Ok(_) => {}
                         Err(_) => return Err(()),
                     }
                 }
             }
 
-            let series = get_all_series_for_user(uid);
+            let series = get_all_series_for_user(&conn, uid);
             for serie in &series {
                 let mut should_delete = true;
                 for data_serie in &data.0.series {
@@ -258,7 +256,7 @@ pub fn update_user(uid: i64, _user: Administrator, data: Json<EditUser>) -> Resu
                             .filter(user_id.eq(uid))
                             .filter(bought.eq(false))
                             .filter(series_id.eq(*serie)),
-                    ).execute(&connection)
+                    ).execute(&*conn)
                     {
                         Ok(_) => {}
                         Err(_) => return Err(()),
@@ -274,7 +272,7 @@ pub fn update_user(uid: i64, _user: Administrator, data: Json<EditUser>) -> Resu
                     }
                 }
                 if should_create {
-                    match create_new_user_series_access(&connection, uid, *data_serie, false) {
+                    match create_new_user_series_access(&conn, uid, *data_serie, false) {
                         Ok(_) => {}
                         Err(_) => return Err(()),
                     }
@@ -282,7 +280,7 @@ pub fn update_user(uid: i64, _user: Administrator, data: Json<EditUser>) -> Resu
             }
 
             match data.0.force_resend_email {
-                true => match resend_confirmation_email(uid) {
+                true => match resend_confirmation_email(&conn, uid) {
                     Ok(_) => Ok(()),
                     Err(_) => Err(()),
                 },

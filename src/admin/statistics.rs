@@ -4,6 +4,7 @@ use admin::structs::{Administrator, LoggedInContext};
 use series::get_series;
 use videos::get_videos;
 use rocket::Route;
+use database::DbConn;
 
 #[derive(Serialize)]
 struct AdminContext {
@@ -18,16 +19,16 @@ struct AdminContext {
 }
 
 #[get("/")]
-pub fn index(user: Administrator) -> Template {
+pub fn index(conn: DbConn, user: Administrator) -> Template {
     let context = AdminContext {
         header: "Club Coding".to_string(),
         user: user,
         views_today: 187232,
-        videos_total: get_videos().len(),
-        series_total: get_series().len(),
+        videos_total: get_videos(&conn).len(),
+        series_total: get_series(&conn).len(),
         revenue_month: 102230,
         paying_users: 123,
-        total_users: get_users().len(),
+        total_users: get_users(&conn).len(),
     };
     Template::render("admin/index", &context)
 }

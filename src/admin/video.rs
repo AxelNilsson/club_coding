@@ -2,7 +2,8 @@ use rocket_contrib::Template;
 use admin::structs::Administrator;
 use rocket::response::Redirect;
 use club_coding::models::{Series, Videos};
-use club_coding::{create_new_video, establish_connection};
+use club_coding::create_new_video;
+use database::DbConn;
 use chrono::NaiveDateTime;
 use rocket_contrib::Json;
 use diesel::prelude::*;
@@ -34,11 +35,10 @@ struct VideosContext {
     videos: Vec<Video>,
 }
 
-fn get_all_videos() -> Vec<Video> {
+fn get_all_videos(connection: &DbConn) -> Vec<Video> {
     use club_coding::schema::videos::dsl::*;
 
-    let connection = establish_connection();
-    match videos.load::<Videos>(&connection) {
+    match videos.load::<Videos>(&**connection) {
         Ok(result) => {
             let mut ret: Vec<Video> = vec![];
 
@@ -47,7 +47,8 @@ fn get_all_videos() -> Vec<Video> {
                     Some(serie_id) => {
                         use club_coding::schema::series::dsl::*;
 
-                        let serie: Option<Series> = match series.find(serie_id).first(&connection) {
+                        let serie: Option<Series> = match series.find(serie_id).first(&**connection)
+                        {
                             Ok(serie) => Some(serie),
                             Err(_) => None,
                         };
@@ -79,21 +80,21 @@ fn get_all_videos() -> Vec<Video> {
 }
 
 #[get("/videos")]
-pub fn videos(user: Administrator) -> Template {
+pub fn videos(conn: DbConn, user: Administrator) -> Template {
     let context = VideosContext {
         header: "Club Coding".to_string(),
         user: user,
-        videos: get_all_videos(),
+        videos: get_all_videos(&conn),
     };
     Template::render("admin/videos", &context)
 }
 
 #[get("/videos/new")]
-pub fn new_video(user: Administrator) -> Template {
+pub fn new_video(conn: DbConn, user: Administrator) -> Template {
     let context = SeriesContext {
         header: "Club Coding".to_string(),
         user: user,
-        series: get_all_series(),
+        series: get_all_series(&conn),
     };
     Template::render("admin/new_video", &context)
 }
@@ -107,13 +108,12 @@ pub struct NewVideo {
     membership_only: bool,
 }
 
-fn get_series_from_uuid(uid: Option<String>) -> Option<i64> {
+fn get_series_from_uuid(connection: &DbConn, uid: Option<String>) -> Option<i64> {
     match uid {
         Some(uid) => {
             use club_coding::schema::series::dsl::*;
-            let connection = establish_connection();
 
-            let serie: Option<Series> = match series.filter(uuid.eq(uid)).first(&connection) {
+            let serie: Option<Series> = match series.filter(uuid.eq(uid)).first(&**connection) {
                 Ok(serie) => Some(serie),
                 Err(_) => None,
             };
@@ -127,16 +127,15 @@ fn get_series_from_uuid(uid: Option<String>) -> Option<i64> {
     }
 }
 
-fn get_highest_episode_from_series(series_id: Option<i64>) -> Option<i32> {
+fn get_highest_episode_from_series(connection: &DbConn, series_id: Option<i64>) -> Option<i32> {
     match series_id {
         Some(series_id) => {
             use club_coding::schema::videos::dsl::*;
-            let connection = establish_connection();
 
             let video: Option<Videos> = match videos
                 .filter(series.eq(series_id))
                 .order(episode_number.desc())
-                .first(&connection)
+                .first(&**connection)
             {
                 Ok(video) => Some(video),
                 Err(_) => None,
@@ -155,15 +154,18 @@ fn get_highest_episode_from_series(series_id: Option<i64>) -> Option<i32> {
 }
 
 #[post("/videos/new", data = "<video>")]
-pub fn insert_new_video(_user: Administrator, video: Form<NewVideo>) -> Result<Redirect, Redirect> {
+pub fn insert_new_video(
+    conn: DbConn,
+    _user: Administrator,
+    video: Form<NewVideo>,
+) -> Result<Redirect, Redirect> {
     let new_video: NewVideo = video.into_inner();
     let slug = create_slug(&new_video.title);
-    let connection = establish_connection();
-    let series: Option<i64> = get_series_from_uuid(new_video.serie);
-    let episode_number: Option<i32> = get_highest_episode_from_series(series);
+    let series: Option<i64> = get_series_from_uuid(&conn, new_video.serie);
+    let episode_number: Option<i32> = get_highest_episode_from_series(&conn, series);
     match generate_token(24) {
         Ok(uuid) => match create_new_video(
-            &connection,
+            &conn,
             uuid.clone(),
             new_video.title,
             slug,
@@ -191,14 +193,13 @@ struct EditVideo {
     video: UpdateVideo,
 }
 
-fn get_video(uid: String) -> Option<Videos> {
+fn get_video(connection: &DbConn, uid: String) -> Option<Videos> {
     use club_coding::schema::videos::dsl::*;
 
-    let connection = establish_connection();
     match videos
         .filter(uuid.eq(uid))
         .limit(1)
-        .load::<Videos>(&connection)
+        .load::<Videos>(&**connection)
     {
         Ok(result) => {
             if result.len() == 1 {
@@ -211,13 +212,12 @@ fn get_video(uid: String) -> Option<Videos> {
     }
 }
 
-fn get_serie_from_video(series_id: Option<i64>) -> Option<String> {
+fn get_serie_from_video(connection: &DbConn, series_id: Option<i64>) -> Option<String> {
     match series_id {
         Some(sid) => {
             use club_coding::schema::series::dsl::*;
 
-            let connection = establish_connection();
-            let serie: Option<Series> = match series.find(sid).first(&connection) {
+            let serie: Option<Series> = match series.find(sid).first(&**connection) {
                 Ok(serie) => Some(serie),
                 Err(_) => None,
             };
@@ -232,15 +232,15 @@ fn get_serie_from_video(series_id: Option<i64>) -> Option<String> {
 }
 
 #[get("/videos/edit/<uuid>")]
-pub fn edit_video(uuid: String, user: Administrator) -> Option<Template> {
-    match get_video(uuid.clone()) {
+pub fn edit_video(conn: DbConn, uuid: String, user: Administrator) -> Option<Template> {
+    match get_video(&conn, uuid.clone()) {
         Some(video) => {
-            let serie_title = get_serie_from_video(video.series);
+            let serie_title = get_serie_from_video(&conn, video.series);
             let context = EditVideo {
                 header: "Club Coding".to_string(),
                 user: user,
                 uuid: uuid,
-                series: get_all_series(),
+                series: get_all_series(&conn),
                 video: UpdateVideo {
                     title: video.title,
                     description: video.description,
@@ -267,10 +267,13 @@ pub struct UpdateVideo {
 }
 
 #[post("/videos/edit/<uid>", format = "application/json", data = "<data>")]
-pub fn update_video(uid: String, _user: Administrator, data: Json<UpdateVideo>) -> Result<(), ()> {
+pub fn update_video(
+    conn: DbConn,
+    uid: String,
+    _user: Administrator,
+    data: Json<UpdateVideo>,
+) -> Result<(), ()> {
     use club_coding::schema::videos::dsl::*;
-
-    let connection = establish_connection();
 
     match diesel::update(videos.filter(uuid.eq(uid)))
         .set((
@@ -280,7 +283,7 @@ pub fn update_video(uid: String, _user: Administrator, data: Json<UpdateVideo>) 
             membership_only.eq(data.0.membership),
             published.eq(data.0.published),
         ))
-        .execute(&connection)
+        .execute(&*conn)
     {
         Ok(_) => Ok(()),
         Err(_) => Err(()),

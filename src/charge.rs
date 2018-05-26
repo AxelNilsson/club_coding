@@ -2,12 +2,12 @@ use rocket::Route;
 use rocket::request::Form;
 use rocket_contrib::Template;
 use rocket::response::{Flash, Redirect};
-use club_coding::{establish_connection, insert_new_card, insert_new_users_stripe_customer,
-                  insert_new_users_stripe_token};
+use club_coding::{insert_new_card, insert_new_users_stripe_customer, insert_new_users_stripe_token};
 use users::User;
 use stripe;
 use rocket::request::FlashMessage;
 use email::{EmailBody, PostmarkClient};
+use database::DbConn;
 use std::io::{Error, ErrorKind};
 
 #[derive(Serialize)]
@@ -127,9 +127,8 @@ fn send_card_added_mail(email: String) -> Result<(), Error> {
     Ok(())
 }
 
-fn charge(data: &Stripe, email: &str, user_id: i64) -> Result<(), Error> {
+fn charge(connection: &DbConn, data: &Stripe, email: &str, user_id: i64) -> Result<(), Error> {
     let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
-    let connection = establish_connection();
     let _ = insert_new_card(
         &connection,
         user_id,
@@ -191,9 +190,13 @@ fn charge(data: &Stripe, email: &str, user_id: i64) -> Result<(), Error> {
 }
 
 #[post("/card/add", data = "<form_data>")]
-fn add_card(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>, Flash<Redirect>> {
+fn add_card(
+    conn: DbConn,
+    user: User,
+    form_data: Form<Stripe>,
+) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let data = form_data.into_inner();
-    match charge(&data, &user.email, user.id) {
+    match charge(&conn, &data, &user.email, user.id) {
         Ok(()) => Ok(Flash::success(
             Redirect::to("/"),
             "Card added. Welcome to the club!",
@@ -207,12 +210,13 @@ fn add_card(user: User, form_data: Form<Stripe>) -> Result<Flash<Redirect>, Flas
 
 #[post("/card/add/<uuid>", data = "<form_data>")]
 fn add_card_uuid(
+    conn: DbConn,
     user: User,
     form_data: Form<Stripe>,
     uuid: String,
 ) -> Result<Redirect, Flash<Redirect>> {
     let data = form_data.into_inner();
-    match charge(&data, &user.email, user.id) {
+    match charge(&conn, &data, &user.email, user.id) {
         Ok(()) => Ok(Redirect::to(&format!("/watch/{}/buy", uuid))),
         _ => Err(Flash::error(
             Redirect::to("/card/add"),

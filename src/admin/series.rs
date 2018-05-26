@@ -2,7 +2,8 @@ use rocket_contrib::Template;
 use admin::structs::{Administrator, LoggedInContext};
 use rocket::response::Redirect;
 use club_coding::models::Series;
-use club_coding::{create_new_series, establish_connection};
+use club_coding::create_new_series;
+use database::DbConn;
 use chrono::NaiveDateTime;
 use rocket_contrib::Json;
 use diesel::prelude::*;
@@ -36,11 +37,10 @@ pub struct SerieC {
     name: String,
 }
 
-pub fn get_all_seriesc() -> Vec<SerieC> {
+pub fn get_all_seriesc(connection: &DbConn) -> Vec<SerieC> {
     use club_coding::schema::series::dsl::*;
 
-    let connection = establish_connection();
-    match series.load::<Series>(&connection) {
+    match series.load::<Series>(&**connection) {
         Ok(result) => {
             let mut ret: Vec<SerieC> = vec![];
 
@@ -56,11 +56,10 @@ pub fn get_all_seriesc() -> Vec<SerieC> {
     }
 }
 
-pub fn get_all_series() -> Vec<Serie> {
+pub fn get_all_series(connection: &DbConn) -> Vec<Serie> {
     use club_coding::schema::series::dsl::*;
 
-    let connection = establish_connection();
-    match series.load::<Series>(&connection) {
+    match series.load::<Series>(&**connection) {
         Ok(result) => {
             let mut ret: Vec<Serie> = vec![];
 
@@ -83,11 +82,11 @@ pub fn get_all_series() -> Vec<Serie> {
 }
 
 #[get("/series")]
-pub fn series(user: Administrator) -> Template {
+pub fn series(conn: DbConn, user: Administrator) -> Template {
     let context = SeriesContext {
         header: "Club Coding".to_string(),
         user: user,
-        series: get_all_series(),
+        series: get_all_series(&conn),
     };
     Template::render("admin/series", &context)
 }
@@ -110,15 +109,15 @@ pub struct NewSerie {
 
 #[post("/series/new", data = "<serie>")]
 pub fn insert_new_series(
+    conn: DbConn,
     _user: Administrator,
     serie: Form<NewSerie>,
 ) -> Result<Redirect, Redirect> {
     let new_serie: NewSerie = serie.into_inner();
     let slug = create_slug(&new_serie.title);
-    let connection = establish_connection();
     match generate_token(24) {
         Ok(uuid) => match create_new_series(
-            &connection,
+            &*conn,
             uuid.clone(),
             new_serie.title,
             slug,
@@ -134,14 +133,13 @@ pub fn insert_new_series(
     }
 }
 
-fn get_serie(uid: String) -> Option<Series> {
+fn get_serie(connection: &DbConn, uid: String) -> Option<Series> {
     use club_coding::schema::series::dsl::*;
 
-    let connection = establish_connection();
     match series
         .filter(uuid.eq(uid))
         .limit(1)
-        .load::<Series>(&connection)
+        .load::<Series>(&**connection)
     {
         Ok(result) => {
             if result.len() == 1 {
@@ -168,8 +166,8 @@ pub struct EditSeries {
 }
 
 #[get("/series/edit/<uuid>")]
-pub fn edit_series(uuid: String, user: Administrator) -> Option<Template> {
-    match get_serie(uuid.clone()) {
+pub fn edit_series(conn: DbConn, uuid: String, user: Administrator) -> Option<Template> {
+    match get_serie(&conn, uuid.clone()) {
         Some(serie) => {
             let context = EditSeries {
                 header: "Club Coding".to_string(),
@@ -199,10 +197,13 @@ pub struct UpdateSerie {
 }
 
 #[post("/series/edit/<uid>", format = "application/json", data = "<data>")]
-pub fn update_serie(uid: String, _user: Administrator, data: Json<UpdateSerie>) -> Result<(), ()> {
+pub fn update_serie(
+    conn: DbConn,
+    uid: String,
+    _user: Administrator,
+    data: Json<UpdateSerie>,
+) -> Result<(), ()> {
     use club_coding::schema::series::dsl::*;
-
-    let connection = establish_connection();
 
     match diesel::update(series.filter(uuid.eq(uid)))
         .set((
@@ -213,7 +214,7 @@ pub fn update_serie(uid: String, _user: Administrator, data: Json<UpdateSerie>) 
             archived.eq(data.0.archived),
             in_development.eq(data.0.in_development),
         ))
-        .execute(&connection)
+        .execute(&*conn)
     {
         Ok(_) => Ok(()),
         Err(_) => Err(()),

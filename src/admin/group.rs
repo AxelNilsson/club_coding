@@ -2,7 +2,8 @@ use rocket_contrib::Template;
 use admin::structs::{Administrator, LoggedInContext};
 use rocket::response::Redirect;
 use club_coding::models::Groups;
-use club_coding::{create_new_group, establish_connection};
+use club_coding::create_new_group;
+use database::DbConn;
 use chrono::NaiveDateTime;
 use rocket_contrib::Json;
 use diesel::prelude::*;
@@ -16,11 +17,10 @@ pub struct GroupC {
     name: String,
 }
 
-pub fn get_all_groupsc() -> Vec<GroupC> {
+pub fn get_all_groupsc(connection: &DbConn) -> Vec<GroupC> {
     use club_coding::schema::groups::dsl::*;
 
-    let connection = establish_connection();
-    match groups.load::<Groups>(&connection) {
+    match groups.load::<Groups>(&**connection) {
         Ok(result) => {
             let mut ret: Vec<GroupC> = vec![];
 
@@ -44,11 +44,10 @@ pub struct GroupContext {
     updated: NaiveDateTime,
 }
 
-pub fn get_all_groups() -> Vec<GroupContext> {
+pub fn get_all_groups(connection: &DbConn) -> Vec<GroupContext> {
     use club_coding::schema::groups::dsl::*;
 
-    let connection = establish_connection();
-    match groups.load::<Groups>(&connection) {
+    match groups.load::<Groups>(&**connection) {
         Ok(result) => {
             let mut ret: Vec<GroupContext> = vec![];
 
@@ -74,11 +73,11 @@ struct GroupsContext {
 }
 
 #[get("/groups")]
-pub fn groups(user: Administrator) -> Template {
+pub fn groups(conn: DbConn, user: Administrator) -> Template {
     let context = GroupsContext {
         header: "Club Coding".to_string(),
         user: user,
-        groups: get_all_groups(),
+        groups: get_all_groups(&conn),
     };
     Template::render("admin/groups", &context)
 }
@@ -98,11 +97,14 @@ pub struct NewGroup {
 }
 
 #[post("/groups/new", data = "<group>")]
-pub fn insert_new_group(_user: Administrator, group: Form<NewGroup>) -> Result<Redirect, Redirect> {
+pub fn insert_new_group(
+    conn: DbConn,
+    _user: Administrator,
+    group: Form<NewGroup>,
+) -> Result<Redirect, Redirect> {
     let new_group: NewGroup = group.into_inner();
-    let connection = establish_connection();
     match generate_token(24) {
-        Ok(uuid) => match create_new_group(&connection, uuid.clone(), new_group.name) {
+        Ok(uuid) => match create_new_group(&*conn, uuid.clone(), new_group.name) {
             Ok(_) => Ok(Redirect::to(&format!("/admin/groups/edit/{}", uuid))),
             Err(_) => Ok(Redirect::to(&format!("/admin/groups/edit/{}", uuid))),
         },
@@ -123,12 +125,10 @@ struct EditGroupsContext<'a> {
     group: EditGroup,
 }
 
-fn get_group_by_uuid<'a>(uid: &'a String) -> Option<Groups> {
+fn get_group_by_uuid<'a>(connection: &DbConn, uid: &'a String) -> Option<Groups> {
     use club_coding::schema::groups::dsl::*;
 
-    let connection = establish_connection();
-
-    match groups.filter(uuid.eq(uid)).load::<Groups>(&connection) {
+    match groups.filter(uuid.eq(uid)).load::<Groups>(&**connection) {
         Ok(group) => {
             if group.len() == 1 {
                 Some(group[0].clone())
@@ -141,8 +141,8 @@ fn get_group_by_uuid<'a>(uid: &'a String) -> Option<Groups> {
 }
 
 #[get("/groups/edit/<uuid>")]
-pub fn edit_group(uuid: String, user: Administrator) -> Option<Template> {
-    match get_group_by_uuid(&uuid) {
+pub fn edit_group(conn: DbConn, uuid: String, user: Administrator) -> Option<Template> {
+    match get_group_by_uuid(&conn, &uuid) {
         Some(group) => {
             let context = EditGroupsContext {
                 header: "Club Coding".to_string(),
@@ -157,14 +157,17 @@ pub fn edit_group(uuid: String, user: Administrator) -> Option<Template> {
 }
 
 #[post("/groups/edit/<uid>", format = "application/json", data = "<data>")]
-pub fn update_group(uid: String, _user: Administrator, data: Json<EditGroup>) -> Result<(), ()> {
+pub fn update_group(
+    conn: DbConn,
+    uid: String,
+    _user: Administrator,
+    data: Json<EditGroup>,
+) -> Result<(), ()> {
     use club_coding::schema::groups::dsl::*;
-
-    let connection = establish_connection();
 
     match diesel::update(groups.filter(uuid.eq(uid)))
         .set(name.eq(data.0.name))
-        .execute(&connection)
+        .execute(&*conn)
     {
         Ok(_) => Ok(()),
         Err(_) => Err(()),

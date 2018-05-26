@@ -4,6 +4,7 @@ use rocket_contrib::Template;
 use users::User;
 use series::PublicSeries;
 use series::get_last_10_series;
+use database::DbConn;
 
 #[derive(Serialize)]
 struct IndexLoggedInContext {
@@ -23,7 +24,7 @@ struct IndexContext {
 }
 
 #[get("/")]
-fn index(user: User, flash: Option<FlashMessage>) -> Template {
+fn index(conn: DbConn, user: User, flash: Option<FlashMessage>) -> Template {
     let (name, msg) = match flash {
         Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
         None => ("".to_string(), "".to_string()),
@@ -33,13 +34,13 @@ fn index(user: User, flash: Option<FlashMessage>) -> Template {
         user: user,
         flash_name: name,
         flash_msg: msg,
-        series: get_last_10_series(),
+        series: get_last_10_series(&conn),
     };
     Template::render("home", &context)
 }
 
 #[get("/", rank = 2)]
-fn index_nouser(flash: Option<FlashMessage>) -> Template {
+fn index_nouser(conn: DbConn, flash: Option<FlashMessage>) -> Template {
     let (name, msg) = match flash {
         Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
         None => ("".to_string(), "".to_string()),
@@ -48,7 +49,7 @@ fn index_nouser(flash: Option<FlashMessage>) -> Template {
         header: "Club Coding".to_string(),
         flash_name: name,
         flash_msg: msg,
-        series: get_last_10_series(),
+        series: get_last_10_series(&conn),
     };
     Template::render("index", &context)
 }

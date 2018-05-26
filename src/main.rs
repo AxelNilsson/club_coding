@@ -10,6 +10,7 @@ extern crate data_encoding;
 extern crate diesel;
 extern crate futures;
 extern crate hyper_tls;
+extern crate r2d2;
 extern crate rand;
 extern crate rocket;
 extern crate rocket_contrib;
@@ -41,6 +42,7 @@ mod email;
 mod custom_csrf;
 mod charge;
 mod payment;
+mod database;
 
 fn main() {
     rocket::ignite()
@@ -54,5 +56,6 @@ fn main() {
         .mount("/series", series::endpoints())
         .mount("/admin", admin::endpoints())
         .attach(rocket_contrib::Template::fairing())
+        .manage(database::init_pool())
         .launch();
 }

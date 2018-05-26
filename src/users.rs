@@ -2,14 +2,14 @@ use club_coding::establish_connection;
 use club_coding::models::{Users, UsersGroup, UsersSessions};
 use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
+use database::DbConn;
 
 use diesel::prelude::*;
 
-pub fn get_users() -> Vec<Users> {
+pub fn get_users(connection: &DbConn) -> Vec<Users> {
     use club_coding::schema::users::dsl::*;
 
-    let connection = establish_connection();
-    match users.order(created.asc()).load::<Users>(&connection) {
+    match users.order(created.asc()).load::<Users>(&**connection) {
         Ok(vec_of_users) => vec_of_users,
         Err(_) => vec![],
     }
@@ -44,7 +44,6 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                         if results.len() == 1 {
                             use club_coding::schema::users::dsl::*;
 
-                            let connection = establish_connection();
                             match users
                                 .filter(id.eq(results[0].user_id))
                                 .filter(verified.eq(true))
@@ -55,7 +54,6 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                                     if results.len() == 1 {
                                         use club_coding::schema::users_group::dsl::*;
 
-                                        let connection = establish_connection();
                                         match users_group
                                             .filter(user_id.eq(results[0].id))
                                             .filter(group_id.eq(1))

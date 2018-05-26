@@ -1,8 +1,7 @@
-use club_coding::establish_connection;
 use club_coding::models::{Users, UsersGroup, UsersSessions};
 use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
-
+use club_coding::establish_connection;
 use diesel::prelude::*;
 
 #[derive(Serialize)]
@@ -22,13 +21,12 @@ impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
     type Error = ();
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Administrator, ()> {
+        let connection = establish_connection();
         let username = request
             .cookies()
             .get_private("session_token")
             .map(|cookie| {
                 use club_coding::schema::users_sessions::dsl::*;
-
-                let connection = establish_connection();
 
                 match users_sessions
                     .filter(token.eq(cookie.value().to_string()))
@@ -39,7 +37,6 @@ impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
                         if results.len() == 1 {
                             use club_coding::schema::users::dsl::*;
 
-                            let connection = establish_connection();
                             match users
                                 .filter(id.eq(results[0].user_id))
                                 .limit(1)
@@ -49,7 +46,6 @@ impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
                                     if results.len() == 1 {
                                         use club_coding::schema::users_group::dsl::*;
 
-                                        let connection = establish_connection();
                                         match users_group
                                             .filter(user_id.eq(results[0].id))
                                             .filter(group_id.eq(1))

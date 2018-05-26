@@ -3,9 +3,8 @@ use rocket::Route;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use rocket_contrib::{Json, Template};
 use rocket::response::Redirect;
-use club_coding::establish_connection;
 use club_coding::models::Users;
-
+use database::DbConn;
 use structs::LoggedInContext;
 use users::User;
 use diesel;
@@ -38,14 +37,13 @@ struct Message {
     text: String,
 }
 
-fn get_password_hash_from_userid(user_id: i64) -> Result<String, Error> {
+fn get_password_hash_from_userid(connection: &DbConn, user_id: i64) -> Result<String, Error> {
     use club_coding::schema::users::dsl::*;
 
-    let connection = establish_connection();
     match users
         .filter(id.eq(user_id))
         .limit(1)
-        .load::<Users>(&connection)
+        .load::<Users>(&**connection)
     {
         Ok(results) => {
             if results.len() == 1 {
@@ -59,9 +57,13 @@ fn get_password_hash_from_userid(user_id: i64) -> Result<String, Error> {
 }
 
 #[post("/settings/password", data = "<json_data>")]
-fn update_password(user: User, json_data: Json<UpdatePasswordStruct>) -> Json<Message> {
+fn update_password(
+    conn: DbConn,
+    user: User,
+    json_data: Json<UpdatePasswordStruct>,
+) -> Json<Message> {
     if json_data.new_password == json_data.confirm_new_password {
-        match get_password_hash_from_userid(user.id) {
+        match get_password_hash_from_userid(&conn, user.id) {
             Ok(password_hash) => match verify(&json_data.old_password, &password_hash) {
                 Ok(passwords_match) => {
                     if passwords_match {
@@ -69,10 +71,9 @@ fn update_password(user: User, json_data: Json<UpdatePasswordStruct>) -> Json<Me
                             Ok(hashed_password) => {
                                 use club_coding::schema::users::dsl::*;
 
-                                let connection = establish_connection();
                                 match diesel::update(users.filter(id.eq(user.id)))
                                     .set(password.eq(hashed_password))
-                                    .execute(&connection)
+                                    .execute(&*conn)
                                 {
                                     Ok(_) => Json(Message {
                                         text: "Password updated".to_string(),

@@ -1,19 +1,18 @@
 use rocket::Route;
-use club_coding::establish_connection;
 use diesel::prelude::*;
 use club_coding::models::{Series, UsersViews, Videos};
 use rocket_contrib::Template;
+use database::DbConn;
 use users::User;
 
-pub fn get_series() -> Vec<Series> {
+pub fn get_series(connection: &DbConn) -> Vec<Series> {
     use club_coding::schema::series::dsl::*;
 
-    let connection = establish_connection();
     match series
         .filter(published.eq(true))
         .filter(archived.eq(false))
         .order(updated.asc())
-        .load::<Series>(&connection)
+        .load::<Series>(&**connection)
     {
         Ok(vec_of_series) => vec_of_series,
         Err(_) => vec![],
@@ -29,16 +28,15 @@ pub struct PublicSeries {
     price: i32,
 }
 
-pub fn get_last_10_series() -> Vec<PublicSeries> {
+pub fn get_last_10_series(connection: &DbConn) -> Vec<PublicSeries> {
     use club_coding::schema::series::dsl::*;
 
-    let connection = establish_connection();
     match series
         .filter(published.eq(true))
         .filter(archived.eq(false))
         .limit(10)
         .order(updated.asc())
-        .load::<Series>(&connection)
+        .load::<Series>(&**connection)
     {
         Ok(s_eries) => {
             let mut to_return: Vec<PublicSeries> = vec![];
@@ -57,15 +55,14 @@ pub fn get_last_10_series() -> Vec<PublicSeries> {
     }
 }
 
-fn get_serie(uid: &String) -> Option<Series> {
+fn get_serie(connection: &DbConn, uid: &String) -> Option<Series> {
     use club_coding::schema::series::dsl::*;
 
-    let connection = establish_connection();
     match series
         .filter(uuid.eq(uid))
         .filter(published.eq(true))
         .filter(archived.eq(false))
-        .first(&connection)
+        .first(&**connection)
     {
         Ok(serie) => Some(serie),
         Err(_) => None,
@@ -81,31 +78,28 @@ pub struct PublicVideo {
     pub watched: bool,
 }
 
-pub fn get_video_watched(uid: i64, vid: i64) -> bool {
+pub fn get_video_watched(connection: &DbConn, uid: i64, vid: i64) -> bool {
     use club_coding::schema::users_views::dsl::*;
-
-    let connection = establish_connection();
 
     match users_views
         .filter(user_id.eq(uid))
         .filter(video_id.eq(vid))
-        .load::<UsersViews>(&connection)
+        .load::<UsersViews>(&**connection)
     {
         Ok(results) => return results.len() == 1,
         Err(_) => false,
     }
 }
 
-fn get_videos(uid: i64, sid: i64) -> Vec<PublicVideo> {
+fn get_videos(connection: &DbConn, uid: i64, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
-    let connection = establish_connection();
     match videos
         .filter(series.eq(sid))
         .filter(published.eq(true))
         .filter(archived.eq(false))
         .order(episode_number.asc())
-        .load::<Videos>(&connection)
+        .load::<Videos>(&**connection)
     {
         Ok(vec_of_videos) => {
             let mut to_return: Vec<PublicVideo> = vec![];
@@ -115,7 +109,7 @@ fn get_videos(uid: i64, sid: i64) -> Vec<PublicVideo> {
                     uuid: video.uuid,
                     title: video.title,
                     description: video.description,
-                    watched: get_video_watched(uid, video.id),
+                    watched: get_video_watched(connection, uid, video.id),
                 });
             }
             to_return
@@ -137,8 +131,8 @@ struct SerieStruct<'a> {
 }
 
 #[get("/<uuid>")]
-fn serie(user: User, uuid: String) -> Option<Template> {
-    match get_serie(&uuid) {
+fn serie(conn: DbConn, user: User, uuid: String) -> Option<Template> {
+    match get_serie(&conn, &uuid) {
         Some(serie) => {
             let mut description = serie.description;
             description.retain(|c| c != '\\');
@@ -150,7 +144,7 @@ fn serie(user: User, uuid: String) -> Option<Template> {
                 description: description,
                 in_development: serie.in_development,
                 price: serie.price,
-                videos: get_videos(user.id, serie.id),
+                videos: get_videos(&conn, user.id, serie.id),
             };
             Some(Template::render("series", &context))
         }
@@ -168,16 +162,15 @@ struct SerieNoLogin<'a> {
     videos: Vec<PublicVideo>,
 }
 
-fn get_videos_nologin(sid: i64) -> Vec<PublicVideo> {
+fn get_videos_nologin(connection: &DbConn, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
-    let connection = establish_connection();
     match videos
         .filter(series.eq(sid))
         .filter(published.eq(true))
         .filter(archived.eq(false))
         .order(episode_number.asc())
-        .load::<Videos>(&connection)
+        .load::<Videos>(&**connection)
     {
         Ok(v_ideos) => {
             let mut to_return: Vec<PublicVideo> = vec![];
@@ -197,8 +190,8 @@ fn get_videos_nologin(sid: i64) -> Vec<PublicVideo> {
 }
 
 #[get("/<uuid>", rank = 2)]
-fn serie_nologin(uuid: String) -> Option<Template> {
-    match get_serie(&uuid) {
+fn serie_nologin(conn: DbConn, uuid: String) -> Option<Template> {
+    match get_serie(&conn, &uuid) {
         Some(serie) => {
             let context = SerieNoLogin {
                 header: &serie.title,
@@ -206,7 +199,7 @@ fn serie_nologin(uuid: String) -> Option<Template> {
                 title: &serie.title,
                 description: serie.description,
                 in_development: serie.in_development,
-                videos: get_videos_nologin(serie.id),
+                videos: get_videos_nologin(&conn, serie.id),
             };
             Some(Template::render("series_nologin", &context))
         }

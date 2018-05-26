@@ -3,7 +3,8 @@ use rocket::request::{FlashMessage, Form};
 use rocket_contrib::Template;
 use rocket::response::{Flash, Redirect};
 use club_coding::{create_new_user, create_new_user_session, create_new_users_recover_email,
-                  create_new_users_verify_email, establish_connection};
+                  create_new_users_verify_email};
+use database::DbConn;
 use rocket::http::{Cookie, Cookies};
 use time::Duration;
 use rocket::Route;
@@ -28,14 +29,13 @@ fn generate_token(length: u8) -> String {
     return strings.join("");
 }
 
-fn get_password_hash_from_username(name: String) -> Result<String, Error> {
+fn get_password_hash_from_username(connection: &DbConn, name: String) -> Result<String, Error> {
     use club_coding::schema::users::dsl::*;
 
-    let connection = establish_connection();
     match users
         .filter(username.eq(name))
         .limit(1)
-        .load::<Users>(&connection)
+        .load::<Users>(&**connection)
     {
         Ok(results) => {
             if results.len() == 1 {
@@ -48,15 +48,14 @@ fn get_password_hash_from_username(name: String) -> Result<String, Error> {
     }
 }
 
-fn get_user_id_from_username(name: String) -> Result<i64, Error> {
+fn get_user_id_from_username(connection: &DbConn, name: String) -> Result<i64, Error> {
     use club_coding::schema::users::dsl::*;
 
-    let connection = establish_connection();
     match users
         .filter(username.eq(name))
         .filter(verified.eq(true))
         .limit(1)
-        .load::<Users>(&connection)
+        .load::<Users>(&**connection)
     {
         Ok(results) => {
             if results.len() == 1 {
@@ -69,15 +68,14 @@ fn get_user_id_from_username(name: String) -> Result<i64, Error> {
     }
 }
 
-fn get_user_id_from_email(name: String) -> Option<i64> {
+fn get_user_id_from_email(connection: &DbConn, name: String) -> Option<i64> {
     use club_coding::schema::users::dsl::*;
 
-    let connection = establish_connection();
     match users
         .filter(email.eq(name))
         .filter(verified.eq(true))
         .limit(1)
-        .load::<Users>(&connection)
+        .load::<Users>(&**connection)
     {
         Ok(results) => {
             if results.len() == 1 {
@@ -120,21 +118,21 @@ fn login_page(token: CsrfToken, flash: Option<FlashMessage>) -> Template {
 
 #[post("/login", data = "<user>")]
 fn login(
+    conn: DbConn,
     csrf_cookie: CsrfCookie,
     mut cookies: Cookies,
     user: Form<User>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input_data: User = user.into_inner();
     if csrf_matches(input_data.csrf, csrf_cookie.value()) {
-        match get_password_hash_from_username(input_data.username.clone()) {
+        match get_password_hash_from_username(&conn, input_data.username.clone()) {
             Ok(password_hash) => match verify(&input_data.password, &password_hash) {
                 Ok(passwords_match) => {
                     if passwords_match {
                         let session_token = generate_token(64);
-                        let connection = establish_connection();
-                        match get_user_id_from_username(input_data.username) {
+                        match get_user_id_from_username(&conn, input_data.username) {
                             Ok(user_id) => match create_new_user_session(
-                                &connection,
+                                &*conn,
                                 user_id,
                                 session_token.clone(),
                             ) {
@@ -217,6 +215,7 @@ pub fn send_verify_email(
 
 #[post("/signup", data = "<user>")]
 fn register_user(
+    conn: DbConn,
     csrf_cookie: CsrfCookie,
     user: Form<UserRegistration>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
@@ -224,32 +223,27 @@ fn register_user(
     if input.password == input.confirm_password {
         if csrf_matches(input.csrf, csrf_cookie.value()) {
             match hash(&input.password, DEFAULT_COST) {
-                Ok(hashed_password) => {
-                    let connection = establish_connection();
-                    match create_new_user(
-                        &connection,
-                        input.username.clone(),
-                        hashed_password,
-                        input.email.clone(),
-                    ) {
-                        Ok(new_user) => {
-                            match send_verify_email(&connection, new_user.id, input.email) {
-                                Ok(_) => Ok(Flash::success(
-                                    Redirect::to("/"),
-                                    "Registration successful! Please check your email.",
-                                )),
-                                Err(_) => Err(Flash::error(
-                                    Redirect::to("/signup"),
-                                    "An error occured, please try again later.",
-                                )),
-                            }
-                        }
+                Ok(hashed_password) => match create_new_user(
+                    &*conn,
+                    input.username.clone(),
+                    hashed_password,
+                    input.email.clone(),
+                ) {
+                    Ok(new_user) => match send_verify_email(&*conn, new_user.id, input.email) {
+                        Ok(_) => Ok(Flash::success(
+                            Redirect::to("/"),
+                            "Registration successful! Please check your email.",
+                        )),
                         Err(_) => Err(Flash::error(
                             Redirect::to("/signup"),
                             "An error occured, please try again later.",
                         )),
-                    }
-                }
+                    },
+                    Err(_) => Err(Flash::error(
+                        Redirect::to("/signup"),
+                        "An error occured, please try again later.",
+                    )),
+                },
                 Err(_) => Err(Flash::error(
                     Redirect::to("/signup"),
                     "An error occured, please try again later.",
@@ -292,14 +286,13 @@ fn verify_email_loggedin(_uuid: String, _userid: UserStruct) -> Redirect {
 }
 
 #[get("/email/verify/<uuid>", rank = 2)]
-fn verify_email(uuid: String) -> Result<Flash<Redirect>, Flash<Redirect>> {
+fn verify_email(conn: DbConn, uuid: String) -> Result<Flash<Redirect>, Flash<Redirect>> {
     use club_coding::schema::users_verify_email::dsl::*;
 
-    let connection = establish_connection();
     match users_verify_email
         .filter(token.eq(uuid))
         .limit(1)
-        .load::<UsersVerifyEmail>(&connection)
+        .load::<UsersVerifyEmail>(&*conn)
     {
         Ok(results) => {
             if results.len() == 1 {
@@ -308,13 +301,13 @@ fn verify_email(uuid: String) -> Result<Flash<Redirect>, Flash<Redirect>> {
                 } else {
                     match diesel::update(users_verify_email.find(results[0].id))
                         .set(used.eq(true))
-                        .execute(&connection)
+                        .execute(&*conn)
                     {
                         Ok(_) => {
                             use club_coding::schema::users::dsl::*;
                             match diesel::update(users.find(results[0].user_id))
                                 .set(verified.eq(true))
-                                .execute(&connection)
+                                .execute(&*conn)
                             {
                                 Ok(_) => Ok(Flash::success(
                                     Redirect::to("/"),
@@ -396,17 +389,17 @@ struct RecoverAccount {
 
 #[post("/recover/email", data = "<user>", rank = 2)]
 fn send_recover_email(
+    conn: DbConn,
     csrf_cookie: CsrfCookie,
     user: Form<RecoverAccount>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input: RecoverAccount = user.into_inner();
     if csrf_matches(input.csrf, csrf_cookie.value()) {
-        let connection = establish_connection();
-        match get_user_id_from_email(input.email.clone()) {
+        match get_user_id_from_email(&conn, input.email.clone()) {
             Some(user_id) => {
                 let token = generate_token(30);
                 match send_recover_mail(token.clone(), input.email) {
-                    Ok(_) => match create_new_users_recover_email(&connection, user_id, token) {
+                    Ok(_) => match create_new_users_recover_email(&conn, user_id, token) {
                         Ok(_) => Ok(Flash::success(
                             Redirect::to("/"),
                             "Email sent. Please check your inbox.",
@@ -442,17 +435,17 @@ fn recover_email_loggedin_page(_uuid: String, _userid: UserStruct) -> Redirect {
 
 #[get("/email/recover/<uuid>", rank = 2)]
 fn recover_email_page(
+    conn: DbConn,
     csrf_token: CsrfToken,
     flash: Option<FlashMessage>,
     uuid: String,
 ) -> Result<Template, Flash<Redirect>> {
     use club_coding::schema::users_recover_email::dsl::*;
 
-    let connection = establish_connection();
     match users_recover_email
         .filter(token.eq(uuid.clone()))
         .limit(1)
-        .load::<UsersRecoverEmail>(&connection)
+        .load::<UsersRecoverEmail>(&*conn)
     {
         Ok(results) => {
             if results.len() == 1 {
@@ -496,6 +489,7 @@ struct UpdatePassword {
 
 #[post("/email/recover/<uuid>", data = "<user>", rank = 2)]
 fn recover_email(
+    conn: DbConn,
     uuid: String,
     csrf_cookie: CsrfCookie,
     user: Form<UpdatePassword>,
@@ -504,11 +498,10 @@ fn recover_email(
     if input.password == input.confirm_password {
         use club_coding::schema::users_recover_email::dsl::*;
 
-        let connection = establish_connection();
         match users_recover_email
             .filter(token.eq(uuid.clone()))
             .limit(1)
-            .load::<UsersRecoverEmail>(&connection)
+            .load::<UsersRecoverEmail>(&*conn)
         {
             Ok(results) => {
                 if results.len() == 1 {
@@ -520,13 +513,13 @@ fn recover_email(
                                 Ok(hashed_password) => match diesel::update(
                                     users_recover_email.find(results[0].id),
                                 ).set(used.eq(true))
-                                    .execute(&connection)
+                                    .execute(&*conn)
                                 {
                                     Ok(_) => {
                                         use club_coding::schema::users::dsl::*;
                                         match diesel::update(users.find(results[0].user_id))
                                             .set(password.eq(hashed_password))
-                                            .execute(&connection)
+                                            .execute(&*conn)
                                         {
                                             Ok(_) => Ok(Flash::success(
                                                 Redirect::to("/"),
