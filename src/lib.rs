@@ -110,13 +110,14 @@ pub fn create_new_user(
         email: email,
     };
 
-    diesel::insert_into(users::table)
+    match diesel::insert_into(users::table)
         .values(&new_user)
         .execute(conn)
-        .expect("Error saving new user");
-
-    match users::table.order(users::id.desc()).first(conn) {
-        Ok(user) => Ok(user),
+    {
+        Ok(_) => match users::table.order(users::id.desc()).first(conn) {
+            Ok(user) => Ok(user),
+            Err(_) => Err(Error::new(ErrorKind::Other, "No user found")),
+        },
         Err(_) => Err(Error::new(ErrorKind::Other, "No user found")),
     }
 }
