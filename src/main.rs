@@ -20,6 +20,9 @@ extern crate time;
 extern crate tokio_core;
 
 #[macro_use]
+extern crate tera;
+
+#[macro_use]
 extern crate hyper;
 
 #[macro_use]

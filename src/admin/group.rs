@@ -116,14 +116,14 @@ pub struct EditGroup {
 }
 
 #[derive(Serialize)]
-struct EditGroupsContext {
+struct EditGroupsContext<'a> {
     header: String,
     user: Administrator,
-    uuid: String,
+    uuid: &'a String,
     group: EditGroup,
 }
 
-fn get_group_by_uuid(uid: String) -> Option<Groups> {
+fn get_group_by_uuid<'a>(uid: &'a String) -> Option<Groups> {
     use club_coding::schema::groups::dsl::*;
 
     let connection = establish_connection();
@@ -142,12 +142,12 @@ fn get_group_by_uuid(uid: String) -> Option<Groups> {
 
 #[get("/groups/edit/<uuid>")]
 pub fn edit_group(uuid: String, user: Administrator) -> Option<Template> {
-    match get_group_by_uuid(uuid.clone()) {
+    match get_group_by_uuid(&uuid) {
         Some(group) => {
             let context = EditGroupsContext {
                 header: "Club Coding".to_string(),
                 user: user,
-                uuid: uuid,
+                uuid: &uuid,
                 group: EditGroup { name: group.name },
             };
             Some(Template::render("admin/edit_group", &context))
@@ -163,7 +163,7 @@ pub fn update_group(uid: String, _user: Administrator, data: Json<EditGroup>) ->
     let connection = establish_connection();
 
     match diesel::update(groups.filter(uuid.eq(uid)))
-        .set(name.eq(data.0.name.clone()))
+        .set(name.eq(data.0.name))
         .execute(&connection)
     {
         Ok(_) => Ok(()),

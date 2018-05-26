@@ -1,6 +1,6 @@
 use rocket_contrib::Template;
 use users::get_users;
-use admin::structs::{LoggedInContext, Administrator};
+use admin::structs::{Administrator, LoggedInContext};
 use series::get_series;
 use videos::get_videos;
 use rocket::Route;

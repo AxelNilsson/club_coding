@@ -4,3 +4,8 @@ port = 8000
 log = "normal"
 limits = { forms = 32768 }
 secret_key = "I6zwdzlm3itGxZ44UBDIyeku/iWp+znCssBpDAbq9hg="
+mysql_user = "axel"
+mysql_password = "Testing1"
+mysql_host = "localhost"
+mysql_database = "youtube"
+database_url = "mysql://axel:Testing1@localhost/youtube"

@@ -102,6 +102,8 @@ fn get_videos(uid: i64, sid: i64) -> Vec<PublicVideo> {
     let connection = establish_connection();
     match videos
         .filter(series.eq(sid))
+        .filter(published.eq(true))
+        .filter(archived.eq(false))
         .order(episode_number.asc())
         .load::<Videos>(&connection)
     {

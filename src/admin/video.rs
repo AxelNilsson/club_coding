@@ -234,26 +234,24 @@ fn get_serie_from_video(series_id: Option<i64>) -> Option<String> {
 #[get("/videos/edit/<uuid>")]
 pub fn edit_video(uuid: String, user: Administrator) -> Option<Template> {
     match get_video(uuid.clone()) {
-        Some(video) => match get_serie_from_video(video.series) {
-            Some(serie_title) => {
-                let context = EditVideo {
-                    header: "Club Coding".to_string(),
-                    user: user,
-                    uuid: uuid,
-                    series: get_all_series(),
-                    video: UpdateVideo {
-                        title: video.title,
-                        description: video.description,
-                        vimeo_id: video.vimeo_id,
-                        membership: video.membership_only,
-                        published: video.published,
-                        serie: serie_title,
-                    },
-                };
-                Some(Template::render("admin/edit_video", &context))
-            }
-            None => None,
-        },
+        Some(video) => {
+            let serie_title = get_serie_from_video(video.series);
+            let context = EditVideo {
+                header: "Club Coding".to_string(),
+                user: user,
+                uuid: uuid,
+                series: get_all_series(),
+                video: UpdateVideo {
+                    title: video.title,
+                    description: video.description,
+                    vimeo_id: video.vimeo_id,
+                    membership: video.membership_only,
+                    published: video.published,
+                    serie: serie_title,
+                },
+            };
+            Some(Template::render("admin/edit_video", &context))
+        }
         None => None,
     }
 }
@@ -265,7 +263,7 @@ pub struct UpdateVideo {
     vimeo_id: String,
     membership: bool,
     published: bool,
-    serie: String,
+    serie: Option<String>,
 }
 
 #[post("/videos/edit/<uid>", format = "application/json", data = "<data>")]

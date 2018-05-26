@@ -1,15 +1,14 @@
 extern crate chrono;
 #[macro_use]
 extern crate diesel;
-extern crate dotenv;
+extern crate rocket;
 
 pub mod models;
 pub mod schema;
 
 use diesel::prelude::*;
-use dotenv::dotenv;
-use std::env;
 use std::io::{Error, ErrorKind};
+use rocket::config::{Config, Environment};
 
 use self::models::{NewGroup, NewSerie, NewUser, NewUserGroup, NewUserRecoverEmail,
                    NewUserSeriesAccess, NewUserSession, NewUserStripeCard, NewUserStripeCharge,
@@ -17,9 +16,13 @@ use self::models::{NewGroup, NewSerie, NewUser, NewUserGroup, NewUserRecoverEmai
                    NewVideo, Users};
 
 pub fn establish_connection() -> MysqlConnection {
-    dotenv().ok();
+    let config = Config::build(Environment::Development)
+        .extra("database_url", "mysql://axel:Testing1@localhost/youtube")
+        .unwrap();
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set!");
+    let database_url = config
+        .get_str("database_url")
+        .expect("DATABASE_URL must be set!");
     MysqlConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url))
 }
