@@ -1,4 +1,4 @@
-# Project Title
+# Club Coding
 
 One Paragraph of project description goes here
 
