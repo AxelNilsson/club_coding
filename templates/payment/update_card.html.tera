@@ -1,9 +1,10 @@
-{% extends "logged_in_base" %}
+{% extends "bases/logged_in" %}
 {% block title %}{{ header }}{% endblock title %}
 {% block head %}
+{{ super() }}
 <style>
     #main {
-      margin-top: 5vh;
+      margin-top: 2.5vh;
     }
     /**
     * The CSS shown here will not be introduced in the Quickstart guide, but shows
@@ -67,37 +68,44 @@
   {% endif %}
   {{ super() }}
   <v-container>
-    <v-layout wrap row>
-      <v-flex xs8 offset-xs2>
-        <div id="main">
-          <v-layout>
-            <v-flex xs10 offset-xs1 style="text-align: center;">
-              <img src="https://laracasts.com/svg-loaders/hearts.svg" style="margin-bottom: 2em;">
-              <h1 class="display-2 blue-grey--text text--darken-2" style="text-align: center; font-weight: 400!important;">You're almost there.</h1>
-              <v-layout>
-                <v-flex xs8 offset-xs2>
-                  <p class="subheading blue-grey--text text--lighten-1" style="letter-spacing: 0.5px!important; margin-top: 1em; line-height: 1.4!important; font-size: 18px!important; font-weight: 400; text-align: center">Joining takes less than a minute, and, if your peers are correct, is a pretty dang good decision. If you're still on the fence, we have a plan called “monthly” - and it’s not like the gym. Seriously - you can cancel in five seconds, if this isn't for you.</p>
-                </v-flex>
-              </v-layout>
-            </v-flex>
+    <div id="main">
+      <v-layout wrap row>
+        <v-flex xs2>
+          <v-btn href="/settings/payment" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Payments</span></v-btn>
+          <v-btn large depressed block dark color="grey lighten-1" style="font-weight: 700;"><span class="title">Update Card</span></v-btn>
+          <v-btn @click.stop="cancel_subscription = true" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Remove Card</span></v-btn>
+        </v-flex>
+        <v-flex xs6 offset-xs1>
+          <v-card flat style="padding: 2em;">
+            <h2 class="headline">Update the card on your account</h2>
+            <form method="post" style="margin: 1em 0;" id="payment-form">
+              <div class="form-row">
+                  <div id="card-element"></div>
+                  <div id="card-errors" role="alert"></div>
+              </div>
+              <v-btn style="margin: 1em 0 -1em;" large block dark color="green" :disabled="disabled" :loading="loading"  @click="add_card($event)">Update card</v-btn>
+            </form>
+          </v-card>
+        </v-flex>
+      </v-layout>
+    </div>
+    <v-dialog v-model="cancel_subscription" max-width="500px">
+      <v-card>
+        <v-card-title><span class="display-1" style="width: 100%; text-align: center;">Are you sure?</span></v-card-title>
+        <v-card-actions>
+          <v-layout wrap row>
+          <v-flex xs5>
+            <v-btn color="primary" large block @click.stop="cancel_subscription = false">Close</v-btn>
+          </v-flex>
+          <v-flex xs6 offset-xs1>
+            <v-form method="POST" action="/settings/payment/card/delete">
+              <v-btn color="green" large block dark type="submit">Yes I'm sure!</v-btn>
+            <v-form>
+          </v-flex>
           </v-layout>
-          <v-layout style="margin-top: 4em;">
-            <v-flex xs6 offset-xs3>
-                <v-card flat style="padding: 2em;">
-                <h2 class="headline">Add a card to your account</h2>
-                <form method="POST" style="margin: 1em 0;" id="payment-form">
-                    <div class="form-row">
-                    <div id="card-element"></div>
-                    <div id="card-errors" role="alert"></div>
-                    </div>
-                    <v-btn style="margin: 1em 0 -1em;" large block dark color="green" :disabled="disabled" :loading="loading"  @click="add_card($event)">Add card</v-btn>
-                </form>
-                </v-card>
-            </v-flex>
-          </v-layout>
-        </div>
-      </v-flex>
-    </v-layout>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 {% endblock content %}
 {% block script %}
@@ -106,6 +114,7 @@
       el: '#app',
       delimiters: ["${","}"],
       data: {
+        cancel_subscription: false,
         loading: false,
         disabled: false,
         card: null,
@@ -113,7 +122,7 @@
       },
       mounted() {
         // Create a Stripe client.
-        this.stripe = Stripe('pk_test_HCH7T02JK4oEgsBP1NohbMFX');
+        this.stripe = Stripe('{{ publishable_key }}');
 
         // Create an instance of Elements.
         var elements = this.stripe.elements();

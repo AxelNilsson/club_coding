@@ -37,7 +37,7 @@ fn index(conn: DbConn, user: User, flash: Option<FlashMessage>) -> Template {
         flash_msg: msg,
         series: get_last_10_series(&conn),
     };
-    Template::render("home", &context)
+    Template::render("pages/home", &context)
 }
 
 #[get("/", rank = 2)]
@@ -52,7 +52,7 @@ fn index_nouser(conn: DbConn, flash: Option<FlashMessage>) -> Template {
         flash_msg: msg,
         series: get_last_10_series(&conn),
     };
-    Template::render("index", &context)
+    Template::render("pages/index", &context)
 }
 
 #[get("/terms_of_service")]
@@ -61,7 +61,7 @@ fn terms_of_service(user: User) -> Template {
         header: "Club Coding".to_string(),
         user: user,
     };
-    Template::render("terms_of_service", &context)
+    Template::render("pages/terms_of_service", &context)
 }
 
 #[get("/terms_of_service", rank = 2)]
@@ -69,7 +69,7 @@ fn terms_of_service_nologin() -> Template {
     let context = Context {
         header: "Club Coding".to_string(),
     };
-    Template::render("terms_of_service_nologin", &context)
+    Template::render("pages/terms_of_service_nologin", &context)
 }
 
 #[get("/cookie_policy")]
@@ -78,7 +78,7 @@ fn cookie_policy(user: User) -> Template {
         header: "Club Coding".to_string(),
         user: user,
     };
-    Template::render("cookie_policy", &context)
+    Template::render("pages/cookie_policy", &context)
 }
 
 #[get("/cookie_policy", rank = 2)]
@@ -86,7 +86,7 @@ fn cookie_policy_nologin() -> Template {
     let context = Context {
         header: "Club Coding".to_string(),
     };
-    Template::render("cookie_policy_nologin", &context)
+    Template::render("pages/cookie_policy_nologin", &context)
 }
 
 #[get("/privacy_policy")]
@@ -95,7 +95,7 @@ fn privacy_policy(user: User) -> Template {
         header: "Club Coding".to_string(),
         user: user,
     };
-    Template::render("privacy_policy", &context)
+    Template::render("pages/privacy_policy", &context)
 }
 
 #[get("/privacy_policy", rank = 2)]
@@ -103,7 +103,7 @@ fn privacy_policy_nologin() -> Template {
     let context = Context {
         header: "Club Coding".to_string(),
     };
-    Template::render("privacy_policy_nologin", &context)
+    Template::render("pages/privacy_policy_nologin", &context)
 }
 
 pub fn endpoints() -> Vec<Route> {

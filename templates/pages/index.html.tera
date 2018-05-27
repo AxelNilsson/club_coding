@@ -1,6 +1,7 @@
 {% extends "base" %}
 {% block title %}{{ header }}{% endblock title %}
 {% block head %}
+{{ super() }}
   <style>
     .application.theme--light {
       background-color: #FFF;

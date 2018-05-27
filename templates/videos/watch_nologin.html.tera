@@ -1,6 +1,7 @@
 {% extends "base" %}
 {% block title %}{{ title }}{% endblock title %}
 {% block head %}
+{{ super() }}
   <style>
     p.title > a {
       text-decoration: none;

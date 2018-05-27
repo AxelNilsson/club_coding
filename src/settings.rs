@@ -17,7 +17,7 @@ fn password_page(user: User) -> Template {
         header: "Club Coding".to_string(),
         user: user,
     };
-    Template::render("password", &context)
+    Template::render("settings/password", &context)
 }
 
 #[get("/settings/password", rank = 2)]

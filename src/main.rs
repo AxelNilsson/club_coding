@@ -43,6 +43,7 @@ mod custom_csrf;
 mod charge;
 mod payment;
 mod database;
+mod errors;
 
 fn main() {
     rocket::ignite()
@@ -59,5 +60,6 @@ fn main() {
         .attach(database::fairing())
         .attach(structs::stripe_token_fairing())
         .attach(structs::postmark_token_fairing())
+        .catch(errors::endpoints())
         .launch();
 }

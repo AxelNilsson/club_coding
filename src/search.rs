@@ -83,7 +83,7 @@ fn search(conn: DbConn, user: User, query: Query) -> Result<Template, Flash<Redi
                 user: user,
                 search_query: &query.search_query,
             };
-            Ok(Template::render("search", &context))
+            Ok(Template::render("search/search", &context))
         } else {
             Err(Flash::error(Redirect::to("/"), "No results found"))
         }
@@ -112,7 +112,7 @@ fn search_nologin(conn: DbConn, query: Query) -> Result<Template, Flash<Redirect
                 videos: &videos,
                 search_query: &query.search_query,
             };
-            Ok(Template::render("search_nologin", &context))
+            Ok(Template::render("search/search_nologin", &context))
         } else {
             Err(Flash::error(Redirect::to("/"), "No results found"))
         }

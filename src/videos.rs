@@ -191,19 +191,19 @@ fn watch_as_user(
                     Some(series_id) => {
                         if user_has_bought(&conn, series_id, user.id) {
                             match create_new_view(&conn, video.id, user.id) {
-                                Ok(_) => Ok(Template::render("watch_member", &context)),
-                                Err(_) => Ok(Template::render("watch_member", &context)),
+                                Ok(_) => Ok(Template::render("videos/watch_member", &context)),
+                                Err(_) => Ok(Template::render("videos/watch_member", &context)),
                             }
                         } else {
-                            Ok(Template::render("watch_nomember", &context))
+                            Ok(Template::render("videos/watch_nomember", &context))
                         }
                     }
-                    None => Ok(Template::render("watch_nomember", &context)),
+                    None => Ok(Template::render("videos/watch_nomember", &context)),
                 }
             } else {
                 match create_new_view(&conn, video.id, user.id) {
-                    Ok(_) => Ok(Template::render("watch_member", &context)),
-                    Err(_) => Ok(Template::render("watch_member", &context)),
+                    Ok(_) => Ok(Template::render("videos/watch_member", &context)),
+                    Err(_) => Ok(Template::render("videos/watch_member", &context)),
                 }
             }
         }
@@ -278,7 +278,7 @@ fn watch_nouser(
                 flash_name: name,
                 flash_msg: msg,
             };
-            Ok(Template::render("watch_nologin", &context))
+            Ok(Template::render("videos/watch_nologin", &context))
         }
         Err(_video_not_found) => Err(Redirect::to("/")),
     }

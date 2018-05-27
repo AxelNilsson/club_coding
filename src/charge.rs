@@ -13,15 +13,20 @@ use rocket::State;
 use std::io::{Error, ErrorKind};
 
 #[derive(Serialize)]
-struct ChargeContext {
-    header: String,
-    user: User,
-    flash_name: String,
-    flash_msg: String,
+pub struct ChargeContext<'a> {
+    pub header: String,
+    pub user: User,
+    pub publishable_key: &'a str,
+    pub flash_name: String,
+    pub flash_msg: String,
 }
 
 #[get("/card/add")]
-fn add_card_page(user: User, flash: Option<FlashMessage>) -> Template {
+fn add_card_page(
+    user: User,
+    stripe_token: State<StripeToken>,
+    flash: Option<FlashMessage>,
+) -> Template {
     let (name, msg) = match flash {
         Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
         None => ("".to_string(), "".to_string()),
@@ -29,14 +34,20 @@ fn add_card_page(user: User, flash: Option<FlashMessage>) -> Template {
     let context = ChargeContext {
         header: "Club Coding".to_string(),
         user: user,
+        publishable_key: &stripe_token.publishable_key,
         flash_name: name,
         flash_msg: msg,
     };
-    Template::render("add_card", &context)
+    Template::render("charge/add_card", &context)
 }
 
 #[get("/card/add/<_uuid>")]
-fn add_card_uuid_page(user: User, flash: Option<FlashMessage>, _uuid: String) -> Template {
+fn add_card_uuid_page(
+    user: User,
+    stripe_token: State<StripeToken>,
+    flash: Option<FlashMessage>,
+    _uuid: String,
+) -> Template {
     let (name, msg) = match flash {
         Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
         None => ("".to_string(), "".to_string()),
@@ -44,10 +55,11 @@ fn add_card_uuid_page(user: User, flash: Option<FlashMessage>, _uuid: String) ->
     let context = ChargeContext {
         header: "Club Coding".to_string(),
         user: user,
+        publishable_key: &stripe_token.publishable_key,
         flash_name: name,
         flash_msg: msg,
     };
-    Template::render("add_card", &context)
+    Template::render("charge/add_card", &context)
 }
 
 #[derive(Debug, FromForm)]

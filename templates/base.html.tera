@@ -5,6 +5,7 @@
   <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
   <title>{% block title %}{% endblock title %}</title>
+  {% block head %}
   <style>
     .input-group.input-group--solo label {
       top: 14px;
@@ -15,11 +16,14 @@
     h1.headline > a:hover {
       text-decoration: none!important;
     }
+    footer.footer > div.layout.row.wrap.justify-center > div.flex.xs12.py-3.text-xs-center.white--text > a {
+      color: white;
+      text-decoration: none;
+    }
     [v-cloak] {
       display: none;
     }
   </style>
-  {% block head %}
   {% endblock head %}
 </head>
 <body>
@@ -68,6 +72,9 @@
         <v-layout row wrap justify-center>
           <v-flex xs12 py-3 text-xs-center white--text>
             &copy;2018 — <strong>CLUB CODING</strong>
+            <a href="/terms_of_service">Terms of Service</a>
+            <a href="/privacy_policy">Privacy Policy</a>
+            <a href="/cookie_policy">Cookie Policy</a>
           </v-flex>
         </v-layout>
       </v-footer>

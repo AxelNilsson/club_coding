@@ -1,6 +1,7 @@
-{% extends "logged_in_base" %}
+{% extends "bases/logged_in" %}
 {% block title %}{{ title }}{% endblock title %}
 {% block head %}
+{{ super() }}
   <style>
     p.title > a {
       text-decoration: none;

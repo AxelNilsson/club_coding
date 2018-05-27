@@ -1,6 +1,7 @@
 {% extends "base" %}
 {% block title %}{{ header }}{% endblock title %}
 {% block head %}
+{{ super() }}
   <style>
   #main {
     background: linear-gradient(-45deg,#00b1b3,#1d5086);

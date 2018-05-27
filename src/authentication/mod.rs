@@ -94,7 +94,7 @@ fn login_page(token: CsrfToken, flash: Option<FlashMessage>) -> Template {
         flash_name: name,
         flash_msg: msg,
     };
-    Template::render("login", &context)
+    Template::render("authentication/login", &context)
 }
 
 #[post("/login", data = "<user>")]
@@ -260,7 +260,7 @@ fn signup_page(token: CsrfToken, flash: Option<FlashMessage>) -> Template {
         flash_name: name,
         flash_msg: msg,
     };
-    Template::render("signup", &context)
+    Template::render("authentication/signup", &context)
 }
 
 #[get("/email/verify/<_uuid>")]
@@ -328,7 +328,7 @@ fn send_recover_email_page(csrf_token: CsrfToken, flash: Option<FlashMessage>) -
         flash_name: name,
         flash_msg: msg,
     };
-    Template::render("send_recover", &context)
+    Template::render("authentication/send_recover", &context)
 }
 
 fn send_recover_mail(postmark_token: &str, token: &String, email: String) -> Result<(), Error> {
@@ -443,7 +443,7 @@ fn recover_email_page(
                     flash_name: name,
                     flash_msg: msg,
                 };
-                Ok(Template::render("recover_email", &context))
+                Ok(Template::render("authentication/recover_email", &context))
             }
         }
         Err(_) => Err(Flash::error(Redirect::to("/"), "Link incorrect.")),

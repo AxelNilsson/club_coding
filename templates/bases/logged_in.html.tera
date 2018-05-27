@@ -1,0 +1,75 @@
+{% extends "base" %}
+{% block head %}
+<style>
+.input-group.input-group--solo label {
+    top: 14px;
+}
+h1.headline > a:hover, div.list > div > a.list__tile.list__tile--link:hover {
+    text-decoration: none!important;
+}
+footer.footer > div.layout.row.wrap.justify-center > div.flex.xs12.py-3.text-xs-center.white--text > a {
+    color: white;
+    text-decoration: none;
+}    
+[v-cloak] {
+    display: none;
+}
+</style>
+{% endblock head %}
+{% block content %}
+<v-card style="background-color: #4d545d;">
+<v-container>
+    <v-layout wrap row>
+    <v-flex xs3 xl2>
+        <h1 class="headline" style="font-weight: 800; color: white; line-height: 56px!important;"><a style="text-decoration: none; color: white;" href="/">CLUB CODING</a></h1>
+    </v-flex>
+    <v-flex xs0 xl1></v-flex>
+    <v-flex xs6 xl6>
+        <v-card style="padding: 0 8px">
+        <v-layout wrap row>
+            <v-flex xs10>
+            <v-form method="GET" action="/search">
+                <v-text-field style="height: 100%;" name="search_query" prepend-icon="search" solo flat label="WHAT ARE YOU INTERESTED IN?"></v-text-field>
+            </v-form>
+            </v-flex>
+            <v-flex xs2>
+            <v-btn large block style="color: white; background-color: #00b1b3;">SEARCH</v-btn>
+            </v-flex>
+        </v-layout>
+        </v-card>
+    </v-flex>
+    <v-flex xs1 xl1></v-flex>
+    <v-flex xs2 xl2>
+        <v-menu offset-y>
+        <v-btn large outline color="white" slot="activator">{{ user.username }}<v-icon>arrow_drop_down</v-icon></v-btn>
+        <v-list>
+            {% if user.admin %}
+            <v-list-tile href="/admin/users">
+            <v-list-tile-title>All Users</v-list-tile-title>
+            </v-list-tile>
+            <v-list-tile href="/admin/groups">
+            <v-list-tile-title>All Groups</v-list-tile-title>
+            </v-list-tile>
+            <v-list-tile href="/admin/videos">
+            <v-list-tile-title>All Videos</v-list-tile-title>
+            </v-list-tile>
+            <v-list-tile href="/admin/series">
+            <v-list-tile-title>All Series</v-list-tile-title>
+            </v-list-tile>
+            {% endif %}
+            <v-list-tile href="/settings/payment">
+            <v-list-tile-title>Payment</v-list-tile-title>
+            </v-list-tile>
+            <v-list-tile href="/settings/password">
+            <v-list-tile-title>Password</v-list-tile-title>
+            </v-list-tile>
+            <v-list-tile href="/logout">
+            <v-list-tile-title>Logout</v-list-tile-title>
+            </v-list-tile>
+        </v-list>
+        </v-menu>
+    </v-flex>
+    </v-layout>
+</v-container>
+</v-card>
+{% endblock content %}

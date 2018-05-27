@@ -1,0 +1,44 @@
+{% extends "base" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+{{ super() }}
+  <style>
+    #main {
+      margin-top: 5vh;
+      padding: 1em;
+    }
+    p.body-1 > a {
+      color: #000;
+      font-weight: 700;
+      text-decoration: none;
+    }
+  </style>
+{% endblock head %}
+{% block content %}
+  {% if flash_name == "error" %}
+    <v-alert style="margin: 0; text-align: center; font-size: 16px;" color="error" :value="true">{{ flash_msg }}</v-alert>
+  {% endif %}
+  {% if flash_name == "success" %}
+    <v-alert style="margin: 0; text-align: center; font-size: 16px;" color="success" :value="true">{{ flash_msg }}</v-alert>
+  {% endif %}
+  {{ super() }}
+  <v-container>
+    <v-layout wrap row>
+      <v-flex xs3></v-flex>
+      <v-flex xs6>
+        <v-card flat id="main">
+          <h1 class="display-1">Create an account</h1>
+          <form method="POST">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <v-text-field box type="text" name="username" label="Username" required></v-text-field>
+            <v-text-field box type="text" name="email" label="E-mail address" required></v-text-field>
+            <v-text-field box type="password" name="password" label="Password" required></v-text-field>
+            <v-text-field box type="password" name="confirm_password" label="Confirm Password" required></v-text-field>
+            <v-btn large block type="submit" color="primary">Sign up!</v-btn>
+            <p class="body-1">By pressing "Sign up!" you are agreeing to our <a href="/terms_of_service">Terms of Service</a>, <a href="/privacy_policy">Privacy Policy</a> and <a href="/cookie_policy">Cookie Policy</a>.</p>
+          </form>
+        </v-card>
+      </v-flex>
+    </v-layout>
+  </v-container>
+{% endblock content %}

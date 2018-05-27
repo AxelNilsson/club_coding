@@ -1,5 +1,7 @@
-{% extends "logged_in_base" %}
-{% block title %}{{ header }}{% endblock title %} {% block head %}
+{% extends "bases/logged_in" %}
+{% block title %}{{ header }}{% endblock title %}
+{% block head %}
+{{ super() }}
 <style>
   #main {
     margin-top: 5vh;

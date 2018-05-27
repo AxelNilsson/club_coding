@@ -13,15 +13,8 @@ use email::{EmailBody, PostmarkClient};
 use structs::{PostmarkToken, StripeToken};
 use std::io::{Error, ErrorKind};
 use rocket::State;
+use charge::ChargeContext;
 use diesel::prelude::*;
-
-#[derive(Serialize)]
-struct ChargeContext {
-    header: String,
-    user: User,
-    flash_name: String,
-    flash_msg: String,
-}
 
 fn customer_exists(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer> {
     use club_coding::schema::users_stripe_customer::dsl::*;
@@ -110,14 +103,18 @@ fn payments_page(
                 flash_msg: msg,
                 charges: charges,
             };
-            Ok(Template::render("payment", &context))
+            Ok(Template::render("payment/payment", &context))
         }
         None => Err(Redirect::to("/card/add")),
     }
 }
 
 #[get("/card/update")]
-fn update_card_page(user: User, flash: Option<FlashMessage>) -> Template {
+fn update_card_page(
+    user: User,
+    stripe_token: State<StripeToken>,
+    flash: Option<FlashMessage>,
+) -> Template {
     let (name, msg) = match flash {
         Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
         None => ("".to_string(), "".to_string()),
@@ -125,10 +122,11 @@ fn update_card_page(user: User, flash: Option<FlashMessage>) -> Template {
     let context = ChargeContext {
         header: "Club Coding".to_string(),
         user: user,
+        publishable_key: &stripe_token.publishable_key,
         flash_name: name,
         flash_msg: msg,
     };
-    Template::render("update_card", &context)
+    Template::render("payment/update_card", &context)
 }
 
 #[derive(Debug, FromForm)]

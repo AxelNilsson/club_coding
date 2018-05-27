@@ -1,6 +1,7 @@
-{% extends "base" %}
+{% extends "bases/logged_in" %}
 {% block title %}{{ header }}{% endblock title %}
 {% block head %}
+{{ super() }}
   <style>
   #main {
     background: linear-gradient(-45deg,#00b1b3,#1d5086);
@@ -63,6 +64,7 @@
       <v-flex lg5 offset-lg1 xl3 offset-xl3 style="margin-top: auto; margin-bottom: auto;">
         <h1 class="display-2">{{ title }}</h1>
         <p class="subheading">{{ description | safe }}</p>
+        <v-btn outline color="orange darken-1">${{ price/100 }}</v-btn>
       </v-flex>
       <v-flex lg5 xl2 offset-xl1>
         <div style="display: block; height: 400px; width: 400px; border-radius: 100%; border: 5px solid rgba(255, 255, 255, 0.2); background-image: url(/thumbnail/9C2D35BB3D02B96AA0D5F994FBDA32B4C4349988A5A531A5); background-position: 0 90px; background-repeat: no-repeat; background-size: 400px; text-align: center; background-color: white;"></div>
@@ -103,5 +105,10 @@
   </v-layout>
 {% endblock content %}
 {% block script %}
-  {{ super() }}
+  <script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"]
+    });
+  </script>
 {% endblock script %}

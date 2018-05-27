@@ -146,7 +146,7 @@ fn serie(conn: DbConn, user: User, uuid: String) -> Option<Template> {
                 price: serie.price,
                 videos: get_videos(&conn, user.id, serie.id),
             };
-            Some(Template::render("series", &context))
+            Some(Template::render("series/series", &context))
         }
         None => None,
     }
@@ -201,7 +201,7 @@ fn serie_nologin(conn: DbConn, uuid: String) -> Option<Template> {
                 in_development: serie.in_development,
                 videos: get_videos_nologin(&conn, serie.id),
             };
-            Some(Template::render("series_nologin", &context))
+            Some(Template::render("series/series_nologin", &context))
         }
         None => None,
     }
