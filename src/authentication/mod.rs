@@ -29,7 +29,7 @@ fn generate_token(length: u8) -> String {
     return strings.join("");
 }
 
-fn get_password_hash_from_username(connection: &DbConn, name: String) -> Result<String, Error> {
+fn get_password_hash_from_username(connection: &DbConn, name: &str) -> Result<String, Error> {
     use club_coding::schema::users::dsl::*;
 
     match users
@@ -48,7 +48,7 @@ fn get_password_hash_from_username(connection: &DbConn, name: String) -> Result<
     }
 }
 
-fn get_user_id_from_username(connection: &DbConn, name: String) -> Result<i64, Error> {
+fn get_user_id_from_username(connection: &DbConn, name: &str) -> Result<i64, Error> {
     use club_coding::schema::users::dsl::*;
 
     match users
@@ -68,7 +68,7 @@ fn get_user_id_from_username(connection: &DbConn, name: String) -> Result<i64, E
     }
 }
 
-fn get_user_id_from_email(connection: &DbConn, name: String) -> Option<i64> {
+fn get_user_id_from_email(connection: &DbConn, name: &str) -> Option<i64> {
     use club_coding::schema::users::dsl::*;
 
     match users
@@ -125,12 +125,12 @@ fn login(
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input_data: User = user.into_inner();
     if csrf_matches(input_data.csrf, csrf_cookie.value()) {
-        match get_password_hash_from_username(&conn, input_data.username.clone()) {
+        match get_password_hash_from_username(&conn, &input_data.username) {
             Ok(password_hash) => match verify(&input_data.password, &password_hash) {
                 Ok(passwords_match) => {
                     if passwords_match {
                         let session_token = generate_token(64);
-                        match get_user_id_from_username(&conn, input_data.username) {
+                        match get_user_id_from_username(&conn, &input_data.username) {
                             Ok(user_id) => match create_new_user_session(
                                 &*conn,
                                 user_id,
@@ -397,7 +397,7 @@ fn send_recover_email(
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input: RecoverAccount = user.into_inner();
     if csrf_matches(input.csrf, csrf_cookie.value()) {
-        match get_user_id_from_email(&conn, input.email.clone()) {
+        match get_user_id_from_email(&conn, &input.email) {
             Some(user_id) => {
                 let token = generate_token(30);
                 match send_recover_mail(token.clone(), input.email) {
@@ -445,7 +445,7 @@ fn recover_email_page(
     use club_coding::schema::users_recover_email::dsl::*;
 
     match users_recover_email
-        .filter(token.eq(uuid.clone()))
+        .filter(token.eq(&uuid))
         .limit(1)
         .load::<UsersRecoverEmail>(&*conn)
     {
@@ -501,7 +501,7 @@ fn recover_email(
         use club_coding::schema::users_recover_email::dsl::*;
 
         match users_recover_email
-            .filter(token.eq(uuid.clone()))
+            .filter(token.eq(&uuid))
             .limit(1)
             .load::<UsersRecoverEmail>(&*conn)
         {

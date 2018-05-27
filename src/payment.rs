@@ -279,7 +279,7 @@ fn charge(connection: &DbConn, data: &Stripe, user_id: i64, email: String) -> Re
     )?;
     let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
     match customer {
-        Some(customer) => match update_customer(&client, &customer.uuid, &(data.id.clone())) {
+        Some(customer) => match update_customer(&client, &customer.uuid, &data.id) {
             Ok(_) => {
                 send_card_updated_mail(email)?;
                 Ok(())
@@ -297,7 +297,7 @@ fn update_card(
     form_data: Form<Stripe>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let data = form_data.into_inner();
-    match charge(&conn, &data, user.id, user.email.clone()) {
+    match charge(&conn, &data, user.id, user.email) {
         Ok(()) => Ok(Flash::success(
             Redirect::to("/"),
             "Card updated. Great choice!",
@@ -366,7 +366,7 @@ fn delete(connection: &DbConn, user_id: i64, email: String) -> Result<(), Error>
 
 #[post("/card/delete")]
 fn delete_card(conn: DbConn, user: User) -> Result<Flash<Redirect>, Flash<Redirect>> {
-    match delete(&conn, user.id, user.email.clone()) {
+    match delete(&conn, user.id, user.email) {
         Ok(()) => Ok(Flash::success(Redirect::to("/"), "Oh no! Card deleted.")),
         _ => Err(Flash::error(
             Redirect::to("/settings/payment"),

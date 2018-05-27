@@ -133,7 +133,7 @@ pub fn insert_new_series(
     }
 }
 
-fn get_serie(connection: &DbConn, uid: String) -> Option<Series> {
+fn get_serie(connection: &DbConn, uid: &str) -> Option<Series> {
     use club_coding::schema::series::dsl::*;
 
     match series
@@ -153,10 +153,10 @@ fn get_serie(connection: &DbConn, uid: String) -> Option<Series> {
 }
 
 #[derive(Serialize)]
-pub struct EditSeries {
+pub struct EditSeries<'a> {
     header: String,
     user: Administrator,
-    uuid: String,
+    uuid: &'a str,
     title: String,
     description: String,
     price: i32,
@@ -167,12 +167,12 @@ pub struct EditSeries {
 
 #[get("/series/edit/<uuid>")]
 pub fn edit_series(conn: DbConn, uuid: String, user: Administrator) -> Option<Template> {
-    match get_serie(&conn, uuid.clone()) {
+    match get_serie(&conn, &uuid) {
         Some(serie) => {
             let context = EditSeries {
                 header: "Club Coding".to_string(),
                 user: user,
-                uuid: uuid,
+                uuid: &uuid,
                 title: serie.title,
                 description: serie.description,
                 price: serie.price,
@@ -207,8 +207,8 @@ pub fn update_serie(
 
     match diesel::update(series.filter(uuid.eq(uid)))
         .set((
-            title.eq(data.0.title.clone()),
-            description.eq(data.description.clone()),
+            title.eq(&data.0.title),
+            description.eq(&data.description),
             price.eq(data.price),
             published.eq(data.0.published),
             archived.eq(data.0.archived),

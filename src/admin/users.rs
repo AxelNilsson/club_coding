@@ -195,10 +195,7 @@ pub fn update_user(
     use club_coding::schema::users::dsl::*;
 
     match diesel::update(users.find(uid))
-        .set((
-            username.eq(data.0.username.clone()),
-            email.eq(data.0.email.clone()),
-        ))
+        .set((username.eq(&data.0.username), email.eq(&data.0.email)))
         .execute(&*conn)
     {
         Ok(_) => {

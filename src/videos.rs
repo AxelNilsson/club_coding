@@ -192,7 +192,7 @@ fn watch_as_user(
             };
             match get_option_series(&conn, video.series) {
                 Some(serie) => {
-                    context.series_title = serie.title.clone();
+                    context.series_title = serie.title;
                     context.price = serie.price;
                 }
                 None => {}

@@ -181,7 +181,7 @@ fn charge(connection: &DbConn, data: &Stripe, email: &str, user_id: i64) -> Resu
         data.type_of_payment.as_ref().map_or(None, |x| Some(x)),
         data.used,
     )?;
-    match create_customer(&client, email, &(data.id.clone())) {
+    match create_customer(&client, email, &data.id) {
         Ok(customer) => {
             let _ = insert_new_users_stripe_customer(
                 &connection,

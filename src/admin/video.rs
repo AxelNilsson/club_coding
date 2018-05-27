@@ -185,15 +185,15 @@ pub fn insert_new_video(
 }
 
 #[derive(Serialize)]
-struct EditVideo {
+struct EditVideo<'a> {
     header: String,
     user: Administrator,
-    uuid: String,
+    uuid: &'a str,
     series: Vec<Serie>,
     video: UpdateVideo,
 }
 
-fn get_video(connection: &DbConn, uid: String) -> Option<Videos> {
+fn get_video(connection: &DbConn, uid: &str) -> Option<Videos> {
     use club_coding::schema::videos::dsl::*;
 
     match videos
@@ -233,13 +233,13 @@ fn get_serie_from_video(connection: &DbConn, series_id: Option<i64>) -> Option<S
 
 #[get("/videos/edit/<uuid>")]
 pub fn edit_video(conn: DbConn, uuid: String, user: Administrator) -> Option<Template> {
-    match get_video(&conn, uuid.clone()) {
+    match get_video(&conn, &uuid) {
         Some(video) => {
             let serie_title = get_serie_from_video(&conn, video.series);
             let context = EditVideo {
                 header: "Club Coding".to_string(),
                 user: user,
-                uuid: uuid,
+                uuid: &uuid,
                 series: get_all_series(&conn),
                 video: UpdateVideo {
                     title: video.title,
@@ -277,9 +277,9 @@ pub fn update_video(
 
     match diesel::update(videos.filter(uuid.eq(uid)))
         .set((
-            title.eq(data.0.title.clone()),
-            description.eq(data.description.clone()),
-            vimeo_id.eq(data.vimeo_id.clone()),
+            title.eq(&data.0.title),
+            description.eq(&data.description),
+            vimeo_id.eq(&data.vimeo_id),
             membership_only.eq(data.0.membership),
             published.eq(data.0.published),
         ))
