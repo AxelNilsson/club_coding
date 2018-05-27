@@ -136,19 +136,19 @@ pub fn insert_new_series(
 fn get_serie(connection: &DbConn, uid: &str) -> Option<Series> {
     use club_coding::schema::series::dsl::*;
 
-    match series
+    let result = match series
         .filter(uuid.eq(uid))
         .limit(1)
         .load::<Series>(&**connection)
     {
-        Ok(result) => {
-            if result.len() == 1 {
-                Some(result[0].clone())
-            } else {
-                None
-            }
-        }
-        Err(_) => None,
+        Ok(result) => result,
+        Err(_) => return None,
+    };
+
+    if result.len() == 1 {
+        Some(result[0].clone())
+    } else {
+        None
     }
 }
 

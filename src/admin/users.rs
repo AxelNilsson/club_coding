@@ -120,21 +120,21 @@ struct EditUsersContext<'a> {
 fn get_user(connection: &DbConn, uid: i64) -> Option<UsersC> {
     use club_coding::schema::users::dsl::*;
 
-    match users.filter(id.eq(uid)).load::<Users>(&**connection) {
-        Ok(result) => {
-            if result.len() == 1 {
-                Some(UsersC {
-                    id: result[0].id,
-                    username: result[0].username.clone(),
-                    email: result[0].email.clone(),
-                    created: result[0].created,
-                    updated: result[0].updated,
-                })
-            } else {
-                None
-            }
-        }
-        Err(_) => None,
+    let result = match users.filter(id.eq(uid)).load::<Users>(&**connection) {
+        Ok(result) => result,
+        Err(_) => return None,
+    };
+
+    if result.len() == 1 {
+        Some(UsersC {
+            id: result[0].id,
+            username: result[0].username.clone(),
+            email: result[0].email.clone(),
+            created: result[0].created,
+            updated: result[0].updated,
+        })
+    } else {
+        None
     }
 }
 
@@ -149,8 +149,8 @@ pub fn edit_users(conn: DbConn, uuid: i64, admin: Administrator) -> Option<Templ
                 groups: get_all_groupsc(&conn),
                 series: get_all_seriesc(&conn),
                 user_data: EditUser {
-                    username: user.username.clone(),
-                    email: user.email.clone(),
+                    username: user.username,
+                    email: user.email,
                     groups: get_all_groups_for_user(&conn, user.id),
                     series: get_all_series_for_user(&conn, user.id),
                     force_resend_email: false,

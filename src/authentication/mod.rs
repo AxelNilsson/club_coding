@@ -351,9 +351,9 @@ fn send_recover_email_page(csrf_token: CsrfToken, flash: Option<FlashMessage>) -
     Template::render("send_recover", &context)
 }
 
-fn send_recover_mail(token: String, email: String) -> Result<(), Error> {
+fn send_recover_mail(token: &String, email: String) -> Result<(), Error> {
     let tera = compile_templates!("templates/emails/**/*");
-    let verify = VerifyEmail { token: &token };
+    let verify = VerifyEmail { token: token };
     match tera.render("recover_account.html.tera", &verify) {
         Ok(html_body) => {
             let body = EmailBody {
@@ -400,7 +400,7 @@ fn send_recover_email(
         match get_user_id_from_email(&conn, &input.email) {
             Some(user_id) => {
                 let token = generate_token(30);
-                match send_recover_mail(token.clone(), input.email) {
+                match send_recover_mail(&token, input.email) {
                     Ok(_) => match create_new_users_recover_email(&conn, user_id, &token) {
                         Ok(_) => Ok(Flash::success(
                             Redirect::to("/"),

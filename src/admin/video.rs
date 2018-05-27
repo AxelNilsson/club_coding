@@ -196,19 +196,19 @@ struct EditVideo<'a> {
 fn get_video(connection: &DbConn, uid: &str) -> Option<Videos> {
     use club_coding::schema::videos::dsl::*;
 
-    match videos
+    let result = match videos
         .filter(uuid.eq(uid))
         .limit(1)
         .load::<Videos>(&**connection)
     {
-        Ok(result) => {
-            if result.len() == 1 {
-                return Some(result[0].clone());
-            } else {
-                return None;
-            }
-        }
-        Err(_) => None,
+        Ok(result) => result,
+        Err(_) => return None,
+    };
+
+    if result.len() == 1 {
+        return Some(result[0].clone());
+    } else {
+        return None;
     }
 }
 

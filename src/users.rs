@@ -37,7 +37,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                     use club_coding::schema::users_sessions::dsl::*;
 
                     match users_sessions
-                        .filter(token.eq(cookie.value().to_string()))
+                        .filter(token.eq(cookie.value()))
                         .limit(1)
                         .load::<UsersSessions>(&*connection)
                     {

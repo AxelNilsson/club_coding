@@ -24,19 +24,19 @@ struct ChargeContext {
 fn customer_exists(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer> {
     use club_coding::schema::users_stripe_customer::dsl::*;
 
-    match users_stripe_customer
+    let result = match users_stripe_customer
         .filter(user_id.eq(uid))
         .limit(1)
         .load::<UsersStripeCustomer>(&**connection)
     {
-        Ok(user) => {
-            if user.len() == 1 {
-                Some(user[0].clone())
-            } else {
-                None
-            }
-        }
-        Err(_) => None,
+        Ok(result) => result,
+        Err(_) => return None,
+    };
+
+    if result.len() == 1 {
+        Some(result[0].clone())
+    } else {
+        None
     }
 }
 

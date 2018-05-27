@@ -49,28 +49,26 @@ fn get_video_data_from_uuid(connection: &DbConn, uid: &String) -> Result<Videos,
 }
 
 fn get_series_title(connection: &DbConn, uid: Option<i64>) -> Option<String> {
-    match uid {
-        Some(uid) => {
-            use club_coding::schema::series::dsl::*;
+    let uid: i64 = match uid {
+        Some(uid) => uid,
+        None => return None,
+    };
+    use club_coding::schema::series::dsl::*;
 
-            match series
-                .filter(id.eq(uid))
-                .filter(published.eq(true))
-                .filter(archived.eq(false))
-                .limit(1)
-                .load::<Series>(&**connection)
-            {
-                Ok(result) => {
-                    if result.len() == 1 {
-                        Some(result[0].title.clone())
-                    } else {
-                        None
-                    }
-                }
-                Err(_) => None,
-            }
-        }
-        None => None,
+    let result = match series
+        .filter(id.eq(uid))
+        .filter(published.eq(true))
+        .filter(archived.eq(false))
+        .limit(1)
+        .load::<Series>(&**connection)
+    {
+        Ok(result) => result,
+        Err(_) => return None,
+    };
+    if result.len() == 1 {
+        Some(result[0].title.clone())
+    } else {
+        None
     }
 }
 
@@ -306,19 +304,19 @@ fn thumbnail(uuid: String) -> Option<NamedFile> {
 fn get_customer(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer> {
     use club_coding::schema::users_stripe_customer::dsl::*;
 
-    match users_stripe_customer
+    let result = match users_stripe_customer
         .filter(user_id.eq(uid))
         .limit(1)
         .load::<UsersStripeCustomer>(&**connection)
     {
-        Ok(result) => {
-            if result.len() == 1 {
-                Some(result[0].clone())
-            } else {
-                None
-            }
-        }
-        Err(_) => None,
+        Ok(result) => result,
+        Err(_) => return None,
+    };
+
+    if result.len() == 1 {
+        Some(result[0].clone())
+    } else {
+        None
     }
 }
 
