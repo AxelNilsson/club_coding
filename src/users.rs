@@ -51,24 +51,21 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                                 Ok(results) => {
                                     use club_coding::schema::users_group::dsl::*;
 
-                                    match users_group
+                                    let is_admin = match users_group
                                         .filter(user_id.eq(results.id))
                                         .filter(group_id.eq(1))
                                         .first::<UsersGroup>(&*connection)
                                     {
-                                        Ok(_) => Some(User {
-                                            id: results.id,
-                                            username: results.username.clone(),
-                                            email: results.email.clone(),
-                                            admin: true,
-                                        }),
-                                        Err(_) => Some(User {
-                                            id: results.id,
-                                            username: results.username.clone(),
-                                            email: results.email.clone(),
-                                            admin: false,
-                                        }),
-                                    }
+                                        Ok(_) => true,
+                                        Err(_) => false,
+                                    };
+
+                                    Some(User {
+                                        id: results.id,
+                                        username: results.username,
+                                        email: results.email,
+                                        admin: is_admin,
+                                    })
                                 }
                                 Err(_) => None,
                             }

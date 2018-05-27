@@ -36,7 +36,7 @@ fn get_password_hash_from_username(connection: &DbConn, name: &str) -> Result<St
         .filter(username.eq(name))
         .first::<Users>(&**connection)
     {
-        Ok(results) => Ok(results.password.clone()),
+        Ok(results) => Ok(results.password),
         Err(_) => Err(Error::new(ErrorKind::Other, "No user found")),
     }
 }

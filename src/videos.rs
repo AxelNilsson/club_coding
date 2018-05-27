@@ -40,7 +40,7 @@ fn get_video_data_from_uuid(connection: &DbConn, uid: &String) -> Result<Videos,
         Err(_) => return Err(Error::new(ErrorKind::Other, "error loading videos")),
     };
 
-    Ok(result.clone())
+    Ok(result)
 }
 
 fn get_series_title(connection: &DbConn, uid: Option<i64>) -> Option<String> {
@@ -61,7 +61,7 @@ fn get_series_title(connection: &DbConn, uid: Option<i64>) -> Option<String> {
         Err(_) => return None,
     };
 
-    Some(result.title.clone())
+    Some(result.title)
 }
 
 fn get_option_series(connection: &DbConn, uid: Option<i64>) -> Option<Series> {
@@ -302,7 +302,7 @@ fn get_customer(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer> {
         Err(_) => return None,
     };
 
-    Some(result.clone())
+    Some(result)
 }
 
 fn get_serie(connection: &DbConn, sid: i64) -> Option<Series> {

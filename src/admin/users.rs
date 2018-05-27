@@ -123,8 +123,8 @@ fn get_user(connection: &DbConn, uid: i64) -> Option<UsersC> {
     match users.filter(id.eq(uid)).first::<Users>(&**connection) {
         Ok(result) => Some(UsersC {
             id: result.id,
-            username: result.username.clone(),
-            email: result.email.clone(),
+            username: result.username,
+            email: result.email,
             created: result.created,
             updated: result.updated,
         }),

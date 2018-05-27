@@ -133,7 +133,7 @@ fn get_group_by_uuid<'a>(connection: &DbConn, uid: &'a String) -> Option<Groups>
         Err(_) => return None,
     };
 
-    Some(result.clone())
+    Some(result)
 }
 
 #[get("/groups/edit/<uuid>")]

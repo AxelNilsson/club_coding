@@ -32,7 +32,7 @@ fn customer_exists(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer>
         Err(_) => return None,
     };
 
-    Some(result.clone())
+    Some(result)
 }
 
 #[derive(Serialize)]

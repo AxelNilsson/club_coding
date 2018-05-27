@@ -41,7 +41,7 @@ fn get_password_hash_from_userid(connection: &DbConn, user_id: i64) -> Result<St
     use club_coding::schema::users::dsl::*;
 
     match users.filter(id.eq(user_id)).first::<Users>(&**connection) {
-        Ok(result) => Ok(result.password.clone()),
+        Ok(result) => Ok(result.password),
         Err(_) => return Err(Error::new(ErrorKind::Other, "No user found")),
     }
 }

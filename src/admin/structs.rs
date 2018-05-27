@@ -51,7 +51,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
                                     {
                                         Ok(_) => Some(Administrator {
                                             id: results.id,
-                                            username: results.username.clone(),
+                                            username: results.username,
                                             admin: true,
                                         }),
                                         Err(_) => None,
