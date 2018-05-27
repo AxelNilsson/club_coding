@@ -4,21 +4,46 @@ use std::ops::Deref;
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
 use rocket::{Outcome, Request, State};
-use rocket::config::{Config, Environment};
+use rocket::fairing::AdHoc;
 
 pub type MySqlPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
-pub fn init_pool() -> MySqlPool {
-    let config = Config::build(Environment::Development)
-        .extra("database_url", "mysql://axel:Testing1@localhost/youtube")
-        .unwrap();
+pub fn fairing() -> rocket::fairing::AdHoc {
+    AdHoc::on_attach(|rocket| init_pool(rocket))
+}
 
-    let database_url = config
-        .get_str("database_url")
-        .expect("DATABASE_URL must be set!");
+pub fn init_pool(rocket: rocket::Rocket) -> Result<rocket::Rocket, rocket::Rocket> {
+    let config = rocket.config().clone();
+
+    let user = config
+        .get_str("mysql_user")
+        .expect("mysql_user not specified");
+
+    let password = config
+        .get_str("mysql_password")
+        .expect("mysql_password not specified");
+
+    let host = config
+        .get_str("mysql_host")
+        .expect("mysql_host not specified");
+
+    let port = config
+        .get_str("mysql_port")
+        .expect("mysql_port not specified");
+
+    let database = config
+        .get_str("mysql_database")
+        .expect("mysql_database not specified");
+
+    let database_url = format!(
+        "mysql://{}:{}@{}:{}/{}",
+        user, password, host, port, database
+    );
 
     let manager = ConnectionManager::<MysqlConnection>::new(database_url);
-    r2d2::Pool::new(manager).expect("db pool")
+    let pool = r2d2::Pool::new(manager).expect("db pool");
+
+    Ok(rocket.manage(pool))
 }
 
 // Connection request guard type: a wrapper around an r2d2 pooled connection.

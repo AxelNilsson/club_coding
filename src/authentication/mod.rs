@@ -14,6 +14,8 @@ use email::{EmailBody, PostmarkClient};
 use club_coding::models::{Users, UsersRecoverEmail, UsersVerifyEmail};
 use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
 use std::io::{Error, ErrorKind};
+use structs::PostmarkToken;
+use rocket::State;
 use diesel::prelude::*;
 
 #[derive(FromForm)]
@@ -159,6 +161,7 @@ struct VerifyEmail<'a> {
 
 pub fn send_verify_email(
     connection: &MysqlConnection,
+    postmark_token: &str,
     user_id: i64,
     email: String,
 ) -> Result<(), Error> {
@@ -182,7 +185,7 @@ pub fn send_verify_email(
                 track_opens: None,
                 track_links: None,
             };
-            let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+            let postmark_client = PostmarkClient::new(postmark_token);
             postmark_client.send_email(&body)?;
             Ok(())
         }
@@ -193,6 +196,7 @@ pub fn send_verify_email(
 #[post("/signup", data = "<user>")]
 fn register_user(
     conn: DbConn,
+    postmark_token: State<PostmarkToken>,
     csrf_cookie: CsrfCookie,
     user: Form<UserRegistration>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
@@ -202,7 +206,12 @@ fn register_user(
             match hash(&input.password, DEFAULT_COST) {
                 Ok(hashed_password) => {
                     match create_new_user(&*conn, &input.username, &hashed_password, &input.email) {
-                        Ok(new_user) => match send_verify_email(&*conn, new_user.id, input.email) {
+                        Ok(new_user) => match send_verify_email(
+                            &*conn,
+                            &postmark_token.0,
+                            new_user.id,
+                            input.email,
+                        ) {
                             Ok(_) => Ok(Flash::success(
                                 Redirect::to("/"),
                                 "Registration successful! Please check your email.",
@@ -322,7 +331,7 @@ fn send_recover_email_page(csrf_token: CsrfToken, flash: Option<FlashMessage>) -
     Template::render("send_recover", &context)
 }
 
-fn send_recover_mail(token: &String, email: String) -> Result<(), Error> {
+fn send_recover_mail(postmark_token: &str, token: &String, email: String) -> Result<(), Error> {
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: token };
     match tera.render("recover_account.html.tera", &verify) {
@@ -341,7 +350,7 @@ fn send_recover_mail(token: &String, email: String) -> Result<(), Error> {
                 track_opens: None,
                 track_links: None,
             };
-            let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+            let postmark_client = PostmarkClient::new(postmark_token);
             postmark_client.send_email(&body)?;
             Ok(())
         }
@@ -363,6 +372,7 @@ struct RecoverAccount {
 #[post("/recover/email", data = "<user>", rank = 2)]
 fn send_recover_email(
     conn: DbConn,
+    postmark_token: State<PostmarkToken>,
     csrf_cookie: CsrfCookie,
     user: Form<RecoverAccount>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
@@ -371,7 +381,7 @@ fn send_recover_email(
         match get_user_id_from_email(&conn, &input.email) {
             Some(user_id) => {
                 let token = generate_token(30);
-                match send_recover_mail(&token, input.email) {
+                match send_recover_mail(&postmark_token.0, &token, input.email) {
                     Ok(_) => match create_new_users_recover_email(&conn, user_id, &token) {
                         Ok(_) => Ok(Flash::success(
                             Redirect::to("/"),

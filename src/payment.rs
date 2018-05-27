@@ -10,8 +10,10 @@ use rocket::request::FlashMessage;
 use club_coding::models::{Series, UsersStripeCard, UsersStripeCharge, UsersStripeCustomer};
 use chrono::NaiveDateTime;
 use email::{EmailBody, PostmarkClient};
-use diesel::prelude::*;
+use structs::{PostmarkToken, StripeToken};
 use std::io::{Error, ErrorKind};
+use rocket::State;
+use diesel::prelude::*;
 
 #[derive(Serialize)]
 struct ChargeContext {
@@ -201,7 +203,7 @@ struct VerifyEmail<'a> {
     token: &'a str,
 }
 
-fn send_card_updated_mail(email: String) -> Result<(), Error> {
+fn send_card_updated_mail(postmark_token: &str, email: String) -> Result<(), Error> {
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: "" };
     match tera.render("card_updated.html.tera", &verify) {
@@ -220,7 +222,7 @@ fn send_card_updated_mail(email: String) -> Result<(), Error> {
                 track_opens: None,
                 track_links: None,
             };
-            let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+            let postmark_client = PostmarkClient::new(postmark_token);
             postmark_client.send_email(&body)?;
             Ok(())
         }
@@ -228,7 +230,14 @@ fn send_card_updated_mail(email: String) -> Result<(), Error> {
     }
 }
 
-fn charge(connection: &DbConn, data: &Stripe, user_id: i64, email: String) -> Result<(), Error> {
+fn charge(
+    connection: &DbConn,
+    stripe_secret: &str,
+    postmark_token: &str,
+    data: &Stripe,
+    user_id: i64,
+    email: String,
+) -> Result<(), Error> {
     let customer = get_customer(&connection, user_id);
     let _ = insert_new_card(
         &*connection,
@@ -272,11 +281,11 @@ fn charge(connection: &DbConn, data: &Stripe, user_id: i64, email: String) -> Re
         data.type_of_payment.as_ref().map_or(None, |x| Some(x)),
         data.used,
     )?;
-    let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
+    let client = stripe::Client::new(stripe_secret);
     match customer {
         Some(customer) => match update_customer(&client, &customer.uuid, &data.id) {
             Ok(_) => {
-                send_card_updated_mail(email)?;
+                send_card_updated_mail(postmark_token, email)?;
                 Ok(())
             }
             Err(_) => Err(Error::new(ErrorKind::Other, "Could not update customer")),
@@ -288,11 +297,20 @@ fn charge(connection: &DbConn, data: &Stripe, user_id: i64, email: String) -> Re
 #[post("/card/update", data = "<form_data>")]
 fn update_card(
     conn: DbConn,
+    stripe_token: State<StripeToken>,
+    postmark: State<PostmarkToken>,
     user: User,
     form_data: Form<Stripe>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let data = form_data.into_inner();
-    match charge(&conn, &data, user.id, user.email) {
+    match charge(
+        &conn,
+        &stripe_token.secret_key,
+        &postmark.0,
+        &data,
+        user.id,
+        user.email,
+    ) {
         Ok(()) => Ok(Flash::success(
             Redirect::to("/"),
             "Card updated. Great choice!",
@@ -326,7 +344,7 @@ fn delete_and_get_card(connection: &DbConn, uid: i64) -> Option<String> {
     }
 }
 
-fn send_card_deleted_mail(email: String) -> Result<(), Error> {
+fn send_card_deleted_mail(postmark_token: &str, email: String) -> Result<(), Error> {
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: "" };
     match tera.render("card_deleted.html.tera", &verify) {
@@ -345,7 +363,7 @@ fn send_card_deleted_mail(email: String) -> Result<(), Error> {
                 track_opens: None,
                 track_links: None,
             };
-            let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+            let postmark_client = PostmarkClient::new(postmark_token);
             postmark_client.send_email(&body)?;
             Ok(())
         }
@@ -353,15 +371,24 @@ fn send_card_deleted_mail(email: String) -> Result<(), Error> {
     }
 }
 
-fn delete(connection: &DbConn, user_id: i64, email: String) -> Result<(), Error> {
+fn delete(
+    connection: &DbConn,
+    postmark_token: &str,
+    user_id: i64,
+    email: String,
+) -> Result<(), Error> {
     let _card = delete_and_get_card(connection, user_id);
-    send_card_deleted_mail(email)?;
+    send_card_deleted_mail(postmark_token, email)?;
     Ok(())
 }
 
 #[post("/card/delete")]
-fn delete_card(conn: DbConn, user: User) -> Result<Flash<Redirect>, Flash<Redirect>> {
-    match delete(&conn, user.id, user.email) {
+fn delete_card(
+    conn: DbConn,
+    postmark: State<PostmarkToken>,
+    user: User,
+) -> Result<Flash<Redirect>, Flash<Redirect>> {
+    match delete(&conn, &postmark.0, user.id, user.email) {
         Ok(()) => Ok(Flash::success(Redirect::to("/"), "Oh no! Card deleted.")),
         _ => Err(Flash::error(
             Redirect::to("/settings/payment"),

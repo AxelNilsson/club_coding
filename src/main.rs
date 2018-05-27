@@ -56,6 +56,8 @@ fn main() {
         .mount("/series", series::endpoints())
         .mount("/admin", admin::endpoints())
         .attach(rocket_contrib::Template::fairing())
-        .manage(database::init_pool())
+        .attach(database::fairing())
+        .attach(structs::stripe_token_fairing())
+        .attach(structs::postmark_token_fairing())
         .launch();
 }

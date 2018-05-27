@@ -11,6 +11,8 @@ use rocket::request::FlashMessage;
 use stripe::Source::Card;
 use email::{EmailBody, PostmarkClient};
 use database::DbConn;
+use structs::{PostmarkToken, StripeToken};
+use rocket::State;
 use diesel::prelude::*;
 
 pub fn get_videos(connection: &DbConn) -> Vec<Videos> {
@@ -319,7 +321,7 @@ struct VerifyEmail<'a> {
     token: &'a str,
 }
 
-fn send_bought_email(email: &str) -> Result<(), Error> {
+fn send_bought_email(postmark_token: &str, email: &str) -> Result<(), Error> {
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: "" };
     match tera.render("series_bought.html.tera", &verify) {
@@ -338,7 +340,7 @@ fn send_bought_email(email: &str) -> Result<(), Error> {
                 track_opens: None,
                 track_links: None,
             };
-            let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+            let postmark_client = PostmarkClient::new(postmark_token);
             postmark_client.send_email(&body)?;
             Ok(())
         }
@@ -348,6 +350,8 @@ fn send_bought_email(email: &str) -> Result<(), Error> {
 
 fn charge(
     conn: &DbConn,
+    stripe_secret: &str,
+    postmark_token: &str,
     series_id: i64,
     user: &User,
     stripe_customer: &UsersStripeCustomer,
@@ -359,7 +363,7 @@ fn charge(
     match stripe_customer.default_source {
         Some(ref customer_source) => {
             // Create the customer
-            let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
+            let client = stripe::Client::new(stripe_secret);
 
             let charge = match stripe::Charge::create(
                 &client,
@@ -423,7 +427,7 @@ fn charge(
                 &charge.status,
             )?;
             let _ = create_new_user_series_access(&*conn, user.id, series_id, true)?;
-            let _ = send_bought_email(&user.email)?;
+            let _ = send_bought_email(postmark_token, &user.email)?;
             Ok(())
         }
         None => Err(Error::new(ErrorKind::Other, "no customer_source")),
@@ -431,24 +435,35 @@ fn charge(
 }
 
 #[get("/watch/<uuid>/buy")]
-fn buy_serie(conn: DbConn, user: User, uuid: String) -> Result<Flash<Redirect>, Redirect> {
+fn buy_serie(
+    conn: DbConn,
+    stripe_token: State<StripeToken>,
+    postmark_token: State<PostmarkToken>,
+    user: User,
+    uuid: String,
+) -> Result<Flash<Redirect>, Redirect> {
     match get_video_data_from_uuid(&conn, &uuid) {
         Ok(video) => match video.series {
             Some(series_id) => {
                 if !user_has_bought(&conn, series_id, user.id) {
                     match get_customer(&conn, user.id) {
-                        Some(stripe_customer) => {
-                            match charge(&conn, series_id, &user, &stripe_customer) {
-                                Ok(_) => Ok(Flash::success(
-                                    Redirect::to(&format!("/watch/{}", uuid)),
-                                    "Series unlocked! Congratulations!",
-                                )),
-                                Err(_) => Ok(Flash::error(
-                                    Redirect::to(&format!("/watch/{}", uuid)),
-                                    "An error occured, please try again later.",
-                                )),
-                            }
-                        }
+                        Some(stripe_customer) => match charge(
+                            &conn,
+                            &stripe_token.secret_key,
+                            &postmark_token.0,
+                            series_id,
+                            &user,
+                            &stripe_customer,
+                        ) {
+                            Ok(_) => Ok(Flash::success(
+                                Redirect::to(&format!("/watch/{}", uuid)),
+                                "Series unlocked! Congratulations!",
+                            )),
+                            Err(_) => Ok(Flash::error(
+                                Redirect::to(&format!("/watch/{}", uuid)),
+                                "An error occured, please try again later.",
+                            )),
+                        },
                         None => Err(Redirect::to(&format!("/card/add/{}", uuid))),
                     }
                 } else {

@@ -8,6 +8,8 @@ use stripe;
 use rocket::request::FlashMessage;
 use email::{EmailBody, PostmarkClient};
 use database::DbConn;
+use structs::{PostmarkToken, StripeToken};
+use rocket::State;
 use std::io::{Error, ErrorKind};
 
 #[derive(Serialize)]
@@ -110,7 +112,7 @@ struct VerifyEmail<'a> {
     token: &'a str,
 }
 
-fn send_card_added_mail(email: String) -> Result<(), Error> {
+fn send_card_added_mail(postmark_token: &str, email: String) -> Result<(), Error> {
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: "" };
     match tera.render("card_added.html.tera", &verify) {
@@ -129,7 +131,7 @@ fn send_card_added_mail(email: String) -> Result<(), Error> {
                 track_opens: None,
                 track_links: None,
             };
-            let postmark_client = PostmarkClient::new("5f60334c-c829-45c6-aa34-08144c70559c");
+            let postmark_client = PostmarkClient::new(postmark_token);
             postmark_client.send_email(&body)?;
             Ok(())
         }
@@ -137,8 +139,15 @@ fn send_card_added_mail(email: String) -> Result<(), Error> {
     }
 }
 
-fn charge(connection: &DbConn, data: &Stripe, email: &str, user_id: i64) -> Result<(), Error> {
-    let client = stripe::Client::new("sk_test_cztFtKdeTEnlPLL6DpvkbjFf");
+fn charge(
+    connection: &DbConn,
+    stripe_secret: &str,
+    postmark_token: &str,
+    data: &Stripe,
+    email: &str,
+    user_id: i64,
+) -> Result<(), Error> {
+    let client = stripe::Client::new(stripe_secret);
     let _ = insert_new_card(
         &connection,
         user_id,
@@ -196,7 +205,7 @@ fn charge(connection: &DbConn, data: &Stripe, email: &str, user_id: i64) -> Resu
                 customer.email.as_ref().map_or(None, |x| Some(x)),
                 customer.livemode,
             )?;
-            match send_card_added_mail(email.to_string()) {
+            match send_card_added_mail(postmark_token, email.to_string()) {
                 Ok(_) => Ok(()),
                 Err(_) => Err(Error::new(ErrorKind::Other, "Could not send email")),
             }
@@ -208,11 +217,20 @@ fn charge(connection: &DbConn, data: &Stripe, email: &str, user_id: i64) -> Resu
 #[post("/card/add", data = "<form_data>")]
 fn add_card(
     conn: DbConn,
+    stripe_token: State<StripeToken>,
+    postmark: State<PostmarkToken>,
     user: User,
     form_data: Form<Stripe>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let data = form_data.into_inner();
-    match charge(&conn, &data, &user.email, user.id) {
+    match charge(
+        &conn,
+        &stripe_token.secret_key,
+        &postmark.0,
+        &data,
+        &user.email,
+        user.id,
+    ) {
         Ok(()) => Ok(Flash::success(
             Redirect::to("/"),
             "Card added. Welcome to the club!",
@@ -227,12 +245,21 @@ fn add_card(
 #[post("/card/add/<uuid>", data = "<form_data>")]
 fn add_card_uuid(
     conn: DbConn,
+    stripe_token: State<StripeToken>,
+    postmark: State<PostmarkToken>,
     user: User,
     form_data: Form<Stripe>,
     uuid: String,
 ) -> Result<Redirect, Flash<Redirect>> {
     let data = form_data.into_inner();
-    match charge(&conn, &data, &user.email, user.id) {
+    match charge(
+        &conn,
+        &stripe_token.secret_key,
+        &postmark.0,
+        &data,
+        &user.email,
+        user.id,
+    ) {
         Ok(()) => Ok(Redirect::to(&format!("/watch/{}/buy", uuid))),
         _ => Err(Flash::error(
             Redirect::to("/card/add"),

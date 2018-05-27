@@ -12,6 +12,8 @@ use admin::series::SerieC;
 use admin::group::GroupC;
 use authentication::send_verify_email;
 use rocket::Route;
+use structs::PostmarkToken;
+use rocket::State;
 use std::io::{Error, ErrorKind};
 
 #[derive(Serialize)]
@@ -156,7 +158,11 @@ pub fn edit_users(conn: DbConn, uuid: i64, admin: Administrator) -> Option<Templ
     }
 }
 
-fn resend_confirmation_email(connection: &DbConn, uid: i64) -> Result<(), Error> {
+fn resend_confirmation_email(
+    connection: &DbConn,
+    postmark_token: &str,
+    uid: i64,
+) -> Result<(), Error> {
     match get_user(connection, uid) {
         Some(user) => {
             use club_coding::schema::users::dsl::*;
@@ -166,7 +172,7 @@ fn resend_confirmation_email(connection: &DbConn, uid: i64) -> Result<(), Error>
                 .execute(&**connection)
             {
                 Ok(_) => {
-                    send_verify_email(connection, user.id, user.email)?;
+                    send_verify_email(connection, postmark_token, user.id, user.email)?;
                     Ok(())
                 }
                 Err(_) => Err(Error::new(
@@ -182,6 +188,7 @@ fn resend_confirmation_email(connection: &DbConn, uid: i64) -> Result<(), Error>
 #[post("/users/edit/<uid>", format = "application/json", data = "<data>")]
 pub fn update_user(
     conn: DbConn,
+    postmark_token: State<PostmarkToken>,
     uid: i64,
     _user: Administrator,
     data: Json<EditUser>,
@@ -271,7 +278,7 @@ pub fn update_user(
             }
 
             match data.0.force_resend_email {
-                true => match resend_confirmation_email(&conn, uid) {
+                true => match resend_confirmation_email(&conn, &postmark_token.0, uid) {
                     Ok(_) => Ok(()),
                     Err(_) => Err(()),
                 },
