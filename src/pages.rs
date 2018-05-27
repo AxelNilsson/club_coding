@@ -5,6 +5,7 @@ use users::User;
 use series::PublicSeries;
 use series::get_last_10_series;
 use database::DbConn;
+use structs::{Context, LoggedInContext};
 
 #[derive(Serialize)]
 struct IndexLoggedInContext {
@@ -54,6 +55,47 @@ fn index_nouser(conn: DbConn, flash: Option<FlashMessage>) -> Template {
     Template::render("index", &context)
 }
 
+#[get("/user_policy")]
+fn user_policy(user: User) -> Template {
+    let context = LoggedInContext {
+        header: "Club Coding".to_string(),
+        user: user,
+    };
+    Template::render("user_policy", &context)
+}
+
+#[get("/user_policy", rank = 2)]
+fn user_policy_nologin() -> Template {
+    let context = Context {
+        header: "Club Coding".to_string(),
+    };
+    Template::render("user_policy_nologin", &context)
+}
+
+#[get("/privacy_policy")]
+fn privacy_policy(user: User) -> Template {
+    let context = LoggedInContext {
+        header: "Club Coding".to_string(),
+        user: user,
+    };
+    Template::render("privacy_policy", &context)
+}
+
+#[get("/privacy_policy", rank = 2)]
+fn privacy_policy_nologin() -> Template {
+    let context = Context {
+        header: "Club Coding".to_string(),
+    };
+    Template::render("privacy_policy_nologin", &context)
+}
+
 pub fn endpoints() -> Vec<Route> {
-    routes![index, index_nouser]
+    routes![
+        index,
+        index_nouser,
+        user_policy,
+        user_policy_nologin,
+        privacy_policy,
+        privacy_policy_nologin
+    ]
 }

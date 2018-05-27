@@ -7,6 +7,11 @@ pub struct LoggedInContext {
     pub user: User,
 }
 
+#[derive(Serialize)]
+pub struct Context {
+    pub header: String,
+}
+
 pub struct StripeToken {
     pub publishable_key: String,
     pub secret_key: String,
