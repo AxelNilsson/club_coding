@@ -55,47 +55,66 @@ fn index_nouser(conn: DbConn, flash: Option<FlashMessage>) -> Template {
     Template::render("index", &context)
 }
 
-#[get("/user_policy")]
-fn user_policy(user: User) -> Template {
+#[get("/terms_of_service")]
+fn terms_of_service(user: User) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
         user: user,
     };
-    Template::render("user_policy", &context)
+    Template::render("terms_of_service", &context)
 }
 
-#[get("/user_policy", rank = 2)]
-fn user_policy_nologin() -> Template {
+#[get("/terms_of_service", rank = 2)]
+fn terms_of_service_nologin() -> Template {
     let context = Context {
         header: "Club Coding".to_string(),
     };
-    Template::render("user_policy_nologin", &context)
+    Template::render("terms_of_service_nologin", &context)
 }
 
-#[get("/privacy_policy")]
-fn privacy_policy(user: User) -> Template {
+#[get("/cookie_policy")]
+fn cookie_policy(user: User) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
         user: user,
     };
-    Template::render("privacy_policy", &context)
+    Template::render("cookie_policy", &context)
 }
 
-#[get("/privacy_policy", rank = 2)]
-fn privacy_policy_nologin() -> Template {
+#[get("/cookie_policy", rank = 2)]
+fn cookie_policy_nologin() -> Template {
     let context = Context {
         header: "Club Coding".to_string(),
     };
-    Template::render("privacy_policy_nologin", &context)
+    Template::render("cookie_policy_nologin", &context)
+}
+
+#[get("/gdpr_policy")]
+fn gdpr_policy(user: User) -> Template {
+    let context = LoggedInContext {
+        header: "Club Coding".to_string(),
+        user: user,
+    };
+    Template::render("gdpr_policy", &context)
+}
+
+#[get("/gdpr_policy", rank = 2)]
+fn gdpr_policy_nologin() -> Template {
+    let context = Context {
+        header: "Club Coding".to_string(),
+    };
+    Template::render("gdpr_policy_nologin", &context)
 }
 
 pub fn endpoints() -> Vec<Route> {
     routes![
         index,
         index_nouser,
-        user_policy,
-        user_policy_nologin,
-        privacy_policy,
-        privacy_policy_nologin
+        terms_of_service,
+        terms_of_service_nologin,
+        cookie_policy,
+        cookie_policy_nologin,
+        gdpr_policy,
+        gdpr_policy_nologin
     ]
 }
