@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Axel Nilsson"]
 
 [dependencies]
-rocket = "0.3.7"
+rocket = { version = "0.3.11", features = ["tls"] }
 rocket_codegen = "0.3.7"
 serde_derive = "1.0.37"
 serde = "1.0.37"
