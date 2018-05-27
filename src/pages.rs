@@ -89,21 +89,21 @@ fn cookie_policy_nologin() -> Template {
     Template::render("cookie_policy_nologin", &context)
 }
 
-#[get("/gdpr_policy")]
-fn gdpr_policy(user: User) -> Template {
+#[get("/data_policy")]
+fn data_policy(user: User) -> Template {
     let context = LoggedInContext {
         header: "Club Coding".to_string(),
         user: user,
     };
-    Template::render("gdpr_policy", &context)
+    Template::render("data_policy", &context)
 }
 
-#[get("/gdpr_policy", rank = 2)]
-fn gdpr_policy_nologin() -> Template {
+#[get("/data_policy", rank = 2)]
+fn data_policy_nologin() -> Template {
     let context = Context {
         header: "Club Coding".to_string(),
     };
-    Template::render("gdpr_policy_nologin", &context)
+    Template::render("data_policy_nologin", &context)
 }
 
 pub fn endpoints() -> Vec<Route> {
@@ -114,7 +114,7 @@ pub fn endpoints() -> Vec<Route> {
         terms_of_service_nologin,
         cookie_policy,
         cookie_policy_nologin,
-        gdpr_policy,
-        gdpr_policy_nologin
+        data_policy,
+        data_policy_nologin
     ]
 }
