@@ -120,21 +120,15 @@ struct EditUsersContext<'a> {
 fn get_user(connection: &DbConn, uid: i64) -> Option<UsersC> {
     use club_coding::schema::users::dsl::*;
 
-    let result = match users.filter(id.eq(uid)).load::<Users>(&**connection) {
-        Ok(result) => result,
-        Err(_) => return None,
-    };
-
-    if result.len() == 1 {
-        Some(UsersC {
-            id: result[0].id,
-            username: result[0].username.clone(),
-            email: result[0].email.clone(),
-            created: result[0].created,
-            updated: result[0].updated,
-        })
-    } else {
-        None
+    match users.filter(id.eq(uid)).first::<Users>(&**connection) {
+        Ok(result) => Some(UsersC {
+            id: result.id,
+            username: result.username.clone(),
+            email: result.email.clone(),
+            created: result.created,
+            updated: result.updated,
+        }),
+        Err(_) => None,
     }
 }
 

@@ -34,16 +34,9 @@ fn get_password_hash_from_username(connection: &DbConn, name: &str) -> Result<St
 
     match users
         .filter(username.eq(name))
-        .limit(1)
-        .load::<Users>(&**connection)
+        .first::<Users>(&**connection)
     {
-        Ok(results) => {
-            if results.len() == 1 {
-                Ok(results[0].password.to_string())
-            } else {
-                Err(Error::new(ErrorKind::Other, "No user found"))
-            }
-        }
+        Ok(results) => Ok(results.password.clone()),
         Err(_) => Err(Error::new(ErrorKind::Other, "No user found")),
     }
 }
@@ -54,16 +47,9 @@ fn get_user_id_from_username(connection: &DbConn, name: &str) -> Result<i64, Err
     match users
         .filter(username.eq(name))
         .filter(verified.eq(true))
-        .limit(1)
-        .load::<Users>(&**connection)
+        .first::<Users>(&**connection)
     {
-        Ok(results) => {
-            if results.len() == 1 {
-                Ok(results[0].id)
-            } else {
-                Err(Error::new(ErrorKind::Other, "No user found"))
-            }
-        }
+        Ok(result) => Ok(result.id),
         Err(_) => Err(Error::new(ErrorKind::Other, "No user found")),
     }
 }
@@ -74,16 +60,9 @@ fn get_user_id_from_email(connection: &DbConn, name: &str) -> Option<i64> {
     match users
         .filter(email.eq(name))
         .filter(verified.eq(true))
-        .limit(1)
-        .load::<Users>(&**connection)
+        .first::<Users>(&**connection)
     {
-        Ok(results) => {
-            if results.len() == 1 {
-                Some(results[0].id)
-            } else {
-                None
-            }
-        }
+        Ok(result) => Some(result.id),
         Err(_) => None,
     }
 }
@@ -286,48 +265,40 @@ fn verify_email(conn: DbConn, uuid: String) -> Result<Flash<Redirect>, Flash<Red
 
     match users_verify_email
         .filter(token.eq(uuid))
-        .limit(1)
-        .load::<UsersVerifyEmail>(&*conn)
+        .first::<UsersVerifyEmail>(&*conn)
     {
-        Ok(results) => {
-            if results.len() == 1 {
-                if results[0].used {
-                    Err(Flash::error(Redirect::to("/"), "Link already used."))
-                } else {
-                    match diesel::update(users_verify_email.find(results[0].id))
-                        .set(used.eq(true))
-                        .execute(&*conn)
-                    {
-                        Ok(_) => {
-                            use club_coding::schema::users::dsl::*;
-                            match diesel::update(users.find(results[0].user_id))
-                                .set(verified.eq(true))
-                                .execute(&*conn)
-                            {
-                                Ok(_) => Ok(Flash::success(
-                                    Redirect::to("/"),
-                                    "Email verified, please sign in.",
-                                )),
-                                Err(_) => Err(Flash::error(
-                                    Redirect::to("/"),
-                                    "An error occured, please try again later.",
-                                )),
-                            }
-                        }
-                        Err(_) => Err(Flash::error(
-                            Redirect::to("/"),
-                            "An error occured, please try again later.",
-                        )),
-                    }
-                }
+        Ok(result) => {
+            if result.used {
+                Err(Flash::error(Redirect::to("/"), "Link already used."))
             } else {
-                Err(Flash::error(Redirect::to("/"), "Link incorrect."))
+                match diesel::update(users_verify_email.find(result.id))
+                    .set(used.eq(true))
+                    .execute(&*conn)
+                {
+                    Ok(_) => {
+                        use club_coding::schema::users::dsl::*;
+                        match diesel::update(users.find(result.user_id))
+                            .set(verified.eq(true))
+                            .execute(&*conn)
+                        {
+                            Ok(_) => Ok(Flash::success(
+                                Redirect::to("/"),
+                                "Email verified, please sign in.",
+                            )),
+                            Err(_) => Err(Flash::error(
+                                Redirect::to("/"),
+                                "An error occured, please try again later.",
+                            )),
+                        }
+                    }
+                    Err(_) => Err(Flash::error(
+                        Redirect::to("/"),
+                        "An error occured, please try again later.",
+                    )),
+                }
             }
         }
-        Err(_) => Err(Flash::error(
-            Redirect::to("/"),
-            "An error occured, please try again later.",
-        )),
+        Err(_) => Err(Flash::error(Redirect::to("/"), "Link incorrect.")),
     }
 }
 
@@ -446,34 +417,26 @@ fn recover_email_page(
 
     match users_recover_email
         .filter(token.eq(&uuid))
-        .limit(1)
-        .load::<UsersRecoverEmail>(&*conn)
+        .first::<UsersRecoverEmail>(&*conn)
     {
-        Ok(results) => {
-            if results.len() == 1 {
-                if results[0].used {
-                    Err(Flash::error(Redirect::to("/"), "Link already used."))
-                } else {
-                    let (name, msg) = match flash {
-                        Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
-                        None => ("".to_string(), "".to_string()),
-                    };
-                    let context = LoginContext {
-                        header: "recover_email".to_string(),
-                        csrf: csrf_token.value(),
-                        flash_name: name,
-                        flash_msg: msg,
-                    };
-                    Ok(Template::render("recover_email", &context))
-                }
+        Ok(result) => {
+            if result.used {
+                Err(Flash::error(Redirect::to("/"), "Link already used."))
             } else {
-                Err(Flash::error(Redirect::to("/"), "Link incorrect."))
+                let (name, msg) = match flash {
+                    Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
+                    None => ("".to_string(), "".to_string()),
+                };
+                let context = LoginContext {
+                    header: "recover_email".to_string(),
+                    csrf: csrf_token.value(),
+                    flash_name: name,
+                    flash_msg: msg,
+                };
+                Ok(Template::render("recover_email", &context))
             }
         }
-        Err(_) => Err(Flash::error(
-            Redirect::to(&format!("/email/recover/{}", uuid)),
-            "An error occured, please try again later.",
-        )),
+        Err(_) => Err(Flash::error(Redirect::to("/"), "Link incorrect.")),
     }
 }
 
@@ -503,63 +466,56 @@ fn recover_email(
         match users_recover_email
             .filter(token.eq(&uuid))
             .limit(1)
-            .load::<UsersRecoverEmail>(&*conn)
+            .first::<UsersRecoverEmail>(&*conn)
         {
             Ok(results) => {
-                if results.len() == 1 {
-                    if results[0].used {
-                        Err(Flash::error(Redirect::to("/"), "Link already used."))
-                    } else {
-                        if csrf_matches(input.csrf, csrf_cookie.value()) {
-                            match hash(&input.password, DEFAULT_COST) {
-                                Ok(hashed_password) => match diesel::update(
-                                    users_recover_email.find(results[0].id),
-                                ).set(used.eq(true))
-                                    .execute(&*conn)
-                                {
-                                    Ok(_) => {
-                                        use club_coding::schema::users::dsl::*;
-                                        match diesel::update(users.find(results[0].user_id))
-                                            .set(password.eq(hashed_password))
-                                            .execute(&*conn)
-                                        {
-                                            Ok(_) => Ok(Flash::success(
-                                                Redirect::to("/"),
-                                                "Password updated, please sign in.",
-                                            )),
-                                            Err(_) => Err(Flash::error(
-                                                Redirect::to(&format!("/email/recover/{}", uuid)),
-                                                "An error occured, please try again later.",
-                                            )),
-                                        }
+                if results.used {
+                    Err(Flash::error(Redirect::to("/"), "Link already used."))
+                } else {
+                    if csrf_matches(input.csrf, csrf_cookie.value()) {
+                        match hash(&input.password, DEFAULT_COST) {
+                            Ok(hashed_password) => match diesel::update(
+                                users_recover_email.find(results.id),
+                            ).set(used.eq(true))
+                                .execute(&*conn)
+                            {
+                                Ok(_) => {
+                                    use club_coding::schema::users::dsl::*;
+                                    match diesel::update(users.find(results.user_id))
+                                        .set(password.eq(hashed_password))
+                                        .execute(&*conn)
+                                    {
+                                        Ok(_) => Ok(Flash::success(
+                                            Redirect::to("/"),
+                                            "Password updated, please sign in.",
+                                        )),
+                                        Err(_) => Err(Flash::error(
+                                            Redirect::to(&format!("/email/recover/{}", uuid)),
+                                            "An error occured, please try again later.",
+                                        )),
                                     }
-                                    Err(_) => Err(Flash::error(
-                                        Redirect::to(&format!("/email/recover/{}", uuid)),
-                                        "An error occured, please try again later.",
-                                    )),
-                                },
+                                }
                                 Err(_) => Err(Flash::error(
                                     Redirect::to(&format!("/email/recover/{}", uuid)),
                                     "An error occured, please try again later.",
                                 )),
-                            }
-                        } else {
-                            Err(Flash::error(
+                            },
+                            Err(_) => Err(Flash::error(
                                 Redirect::to(&format!("/email/recover/{}", uuid)),
-                                "CSRF Doesn't match.",
-                            ))
+                                "An error occured, please try again later.",
+                            )),
                         }
+                    } else {
+                        Err(Flash::error(
+                            Redirect::to(&format!("/email/recover/{}", uuid)),
+                            "CSRF Doesn't match.",
+                        ))
                     }
-                } else {
-                    Err(Flash::error(
-                        Redirect::to(&format!("/email/recover/{}", uuid)),
-                        "Link incorrect.",
-                    ))
                 }
             }
             Err(_) => Err(Flash::error(
                 Redirect::to(&format!("/email/recover/{}", uuid)),
-                "An error occured, please try again later.",
+                "Link incorrect.",
             )),
         }
     } else {

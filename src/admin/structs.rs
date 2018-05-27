@@ -31,50 +31,33 @@ impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
                     use club_coding::schema::users_sessions::dsl::*;
 
                     match users_sessions
-                        .filter(token.eq(cookie.value().to_string()))
-                        .limit(1)
-                        .load::<UsersSessions>(&*connection)
+                        .filter(token.eq(cookie.value()))
+                        .first::<UsersSessions>(&*connection)
                     {
                         Ok(results) => {
-                            if results.len() == 1 {
-                                use club_coding::schema::users::dsl::*;
+                            use club_coding::schema::users::dsl::*;
 
-                                match users
-                                    .filter(id.eq(results[0].user_id))
-                                    .limit(1)
-                                    .load::<Users>(&*connection)
-                                {
-                                    Ok(results) => {
-                                        if results.len() == 1 {
-                                            use club_coding::schema::users_group::dsl::*;
+                            match users
+                                .filter(id.eq(results.user_id))
+                                .first::<Users>(&*connection)
+                            {
+                                Ok(results) => {
+                                    use club_coding::schema::users_group::dsl::*;
 
-                                            match users_group
-                                                .filter(user_id.eq(results[0].id))
-                                                .filter(group_id.eq(1))
-                                                .limit(1)
-                                                .load::<UsersGroup>(&*connection)
-                                            {
-                                                Ok(admin) => {
-                                                    if admin.len() == 1 {
-                                                        return Some(Administrator {
-                                                            id: results[0].id,
-                                                            username: results[0].username.clone(),
-                                                            admin: true,
-                                                        });
-                                                    } else {
-                                                        return None;
-                                                    }
-                                                }
-                                                Err(_) => None,
-                                            }
-                                        } else {
-                                            return None;
-                                        }
+                                    match users_group
+                                        .filter(user_id.eq(results.id))
+                                        .filter(group_id.eq(1))
+                                        .first::<UsersGroup>(&*connection)
+                                    {
+                                        Ok(_) => Some(Administrator {
+                                            id: results.id,
+                                            username: results.username.clone(),
+                                            admin: true,
+                                        }),
+                                        Err(_) => None,
                                     }
-                                    Err(_) => None,
                                 }
-                            } else {
-                                return None;
+                                Err(_) => None,
                             }
                         }
                         Err(_) => None,

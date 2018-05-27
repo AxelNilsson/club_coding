@@ -128,16 +128,12 @@ struct EditGroupsContext<'a> {
 fn get_group_by_uuid<'a>(connection: &DbConn, uid: &'a String) -> Option<Groups> {
     use club_coding::schema::groups::dsl::*;
 
-    let result = match groups.filter(uuid.eq(uid)).load::<Groups>(&**connection) {
+    let result: Groups = match groups.filter(uuid.eq(uid)).first(&**connection) {
         Ok(result) => result,
-        Err(_) => None,
+        Err(_) => return None,
     };
 
-    if result.len() == 1 {
-        Some(result[0].clone())
-    } else {
-        None
-    }
+    Some(result.clone())
 }
 
 #[get("/groups/edit/<uuid>")]

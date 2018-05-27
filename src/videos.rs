@@ -30,22 +30,17 @@ pub fn get_videos(connection: &DbConn) -> Vec<Videos> {
 fn get_video_data_from_uuid(connection: &DbConn, uid: &String) -> Result<Videos, Error> {
     use club_coding::schema::videos::dsl::*;
 
-    match videos
+    let result: Videos = match videos
         .filter(uuid.eq(uid))
         .filter(published.eq(true))
         .filter(archived.eq(false))
-        .limit(1)
-        .load::<Videos>(&**connection)
+        .first(&**connection)
     {
-        Ok(result) => {
-            if result.len() == 1 {
-                Ok(result[0].clone())
-            } else {
-                Err(Error::new(ErrorKind::Other, "no video found"))
-            }
-        }
-        Err(_) => Err(Error::new(ErrorKind::Other, "error loading videos")),
-    }
+        Ok(result) => result,
+        Err(_) => return Err(Error::new(ErrorKind::Other, "error loading videos")),
+    };
+
+    Ok(result.clone())
 }
 
 fn get_series_title(connection: &DbConn, uid: Option<i64>) -> Option<String> {
@@ -53,23 +48,20 @@ fn get_series_title(connection: &DbConn, uid: Option<i64>) -> Option<String> {
         Some(uid) => uid,
         None => return None,
     };
+
     use club_coding::schema::series::dsl::*;
 
-    let result = match series
+    let result: Series = match series
         .filter(id.eq(uid))
         .filter(published.eq(true))
         .filter(archived.eq(false))
-        .limit(1)
-        .load::<Series>(&**connection)
+        .first(&**connection)
     {
         Ok(result) => result,
         Err(_) => return None,
     };
-    if result.len() == 1 {
-        Some(result[0].title.clone())
-    } else {
-        None
-    }
+
+    Some(result.title.clone())
 }
 
 fn get_option_series(connection: &DbConn, uid: Option<i64>) -> Option<Series> {
@@ -133,16 +125,14 @@ fn create_new_view(connection: &DbConn, vid: i64, uid: i64) -> Result<(), Error>
     match users_views
         .filter(user_id.eq(uid))
         .filter(video_id.eq(vid))
-        .load::<UsersViews>(&**connection)
+        .first::<UsersViews>(&**connection)
     {
-        Ok(view) => {
-            if view.len() == 0 {
-                let _ = create_new_user_view(&connection, uid, vid)?;
-            }
-        }
-        Err(_) => {}
+        Ok(_) => Ok(()),
+        Err(_) => match create_new_user_view(&connection, uid, vid) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err),
+        },
     }
-    Ok(())
 }
 
 fn user_has_bought(connection: &DbConn, sid: i64, uid: i64) -> bool {
@@ -151,10 +141,9 @@ fn user_has_bought(connection: &DbConn, sid: i64, uid: i64) -> bool {
     match users_series_access
         .filter(user_id.eq(uid))
         .filter(series_id.eq(sid))
-        .limit(1)
-        .load::<UsersSeriesAccess>(&**connection)
+        .first::<UsersSeriesAccess>(&**connection)
     {
-        Ok(series) => series.len() == 1,
+        Ok(_) => true,
         Err(_) => false,
     }
 }
@@ -304,20 +293,16 @@ fn thumbnail(uuid: String) -> Option<NamedFile> {
 fn get_customer(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer> {
     use club_coding::schema::users_stripe_customer::dsl::*;
 
-    let result = match users_stripe_customer
+    let result: UsersStripeCustomer = match users_stripe_customer
         .filter(user_id.eq(uid))
         .limit(1)
-        .load::<UsersStripeCustomer>(&**connection)
+        .first(&**connection)
     {
         Ok(result) => result,
         Err(_) => return None,
     };
 
-    if result.len() == 1 {
-        Some(result[0].clone())
-    } else {
-        None
-    }
+    Some(result.clone())
 }
 
 fn get_serie(connection: &DbConn, sid: i64) -> Option<Series> {

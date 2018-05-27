@@ -38,49 +38,39 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
 
                     match users_sessions
                         .filter(token.eq(cookie.value()))
-                        .limit(1)
-                        .load::<UsersSessions>(&*connection)
+                        .first::<UsersSessions>(&*connection)
                     {
                         Ok(results) => {
-                            if results.len() == 1 {
-                                use club_coding::schema::users::dsl::*;
+                            use club_coding::schema::users::dsl::*;
 
-                                match users
-                                    .filter(id.eq(results[0].user_id))
-                                    .filter(verified.eq(true))
-                                    .limit(1)
-                                    .load::<Users>(&*connection)
-                                {
-                                    Ok(results) => {
-                                        if results.len() == 1 {
-                                            use club_coding::schema::users_group::dsl::*;
+                            match users
+                                .filter(id.eq(results.user_id))
+                                .filter(verified.eq(true))
+                                .first::<Users>(&*connection)
+                            {
+                                Ok(results) => {
+                                    use club_coding::schema::users_group::dsl::*;
 
-                                            match users_group
-                                                .filter(user_id.eq(results[0].id))
-                                                .filter(group_id.eq(1))
-                                                .limit(1)
-                                                .load::<UsersGroup>(&*connection)
-                                            {
-                                                Ok(admin) => {
-                                                    let is_admin = admin.len() == 1;
-
-                                                    Some(User {
-                                                        id: results[0].id,
-                                                        username: results[0].username.clone(),
-                                                        email: results[0].email.clone(),
-                                                        admin: is_admin,
-                                                    })
-                                                }
-                                                Err(_) => None,
-                                            }
-                                        } else {
-                                            None
-                                        }
+                                    match users_group
+                                        .filter(user_id.eq(results.id))
+                                        .filter(group_id.eq(1))
+                                        .first::<UsersGroup>(&*connection)
+                                    {
+                                        Ok(_) => Some(User {
+                                            id: results.id,
+                                            username: results.username.clone(),
+                                            email: results.email.clone(),
+                                            admin: true,
+                                        }),
+                                        Err(_) => Some(User {
+                                            id: results.id,
+                                            username: results.username.clone(),
+                                            email: results.email.clone(),
+                                            admin: false,
+                                        }),
                                     }
-                                    Err(_) => None,
                                 }
-                            } else {
-                                None
+                                Err(_) => None,
                             }
                         }
                         Err(_) => None,

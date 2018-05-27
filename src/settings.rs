@@ -40,19 +40,9 @@ struct Message {
 fn get_password_hash_from_userid(connection: &DbConn, user_id: i64) -> Result<String, Error> {
     use club_coding::schema::users::dsl::*;
 
-    match users
-        .filter(id.eq(user_id))
-        .limit(1)
-        .load::<Users>(&**connection)
-    {
-        Ok(results) => {
-            if results.len() == 1 {
-                Ok(results[0].password.to_string())
-            } else {
-                Err(Error::new(ErrorKind::Other, "No user found"))
-            }
-        }
-        Err(_) => Err(Error::new(ErrorKind::Other, "No user found")),
+    match users.filter(id.eq(user_id)).first::<Users>(&**connection) {
+        Ok(result) => Ok(result.password.clone()),
+        Err(_) => return Err(Error::new(ErrorKind::Other, "No user found")),
     }
 }
 

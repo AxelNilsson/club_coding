@@ -21,9 +21,9 @@ pub fn get_video_watched(connection: &DbConn, uid: i64, vid: i64) -> bool {
     match users_views
         .filter(user_id.eq(uid))
         .filter(video_id.eq(vid))
-        .load::<UsersViews>(&**connection)
+        .first::<UsersViews>(&**connection)
     {
-        Ok(results) => results.len() == 1,
+        Ok(_) => true,
         Err(_) => false,
     }
 }
