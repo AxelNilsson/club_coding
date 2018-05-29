@@ -9,7 +9,7 @@ rocket_codegen = "0.3.7"
 serde_derive = "1.0.37"
 serde = "1.0.37"
 chrono = { version = "0.4", features = ["serde"] }
-diesel = { version = "1.2.0", features = ["mysql", "chrono", "r2d2"] }
+diesel = { version = "1.2", features = ["mysql", "chrono", "r2d2"] }
 rand = "0.4.2"
 time = "0.1"
 bcrypt = "0.2.0"

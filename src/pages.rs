@@ -6,6 +6,7 @@ use series::PublicSeries;
 use series::get_last_10_series;
 use database::DbConn;
 use structs::{Context, LoggedInContext};
+use rocket::response::NamedFile;
 
 #[derive(Serialize)]
 struct IndexLoggedInContext {
@@ -106,6 +107,22 @@ fn privacy_policy_nologin() -> Template {
     Template::render("pages/privacy_policy_nologin", &context)
 }
 
+#[get("/thumbnail/<uuid>")]
+fn thumbnail(uuid: String) -> Option<NamedFile> {
+    match NamedFile::open(format!("thumbnails/{}.png", uuid)) {
+        Ok(file) => Some(file),
+        Err(_) => None,
+    }
+}
+
+#[get("/img/<uuid>")]
+fn images(uuid: String) -> Option<NamedFile> {
+    match NamedFile::open(format!("images/{}", uuid)) {
+        Ok(file) => Some(file),
+        Err(_) => None,
+    }
+}
+
 pub fn endpoints() -> Vec<Route> {
     routes![
         index,
@@ -115,6 +132,8 @@ pub fn endpoints() -> Vec<Route> {
         cookie_policy,
         cookie_policy_nologin,
         privacy_policy,
-        privacy_policy_nologin
+        privacy_policy_nologin,
+        thumbnail,
+        images
     ]
 }

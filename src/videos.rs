@@ -1,6 +1,6 @@
 use rocket::Route;
 use rocket_contrib::Template;
-use rocket::response::{Flash, NamedFile, Redirect};
+use rocket::response::{Flash, Redirect};
 use club_coding::{create_new_user_series_access, create_new_user_view,
                   insert_new_users_stripe_charge};
 use club_coding::models::{Series, UsersSeriesAccess, UsersStripeCustomer, UsersViews, Videos};
@@ -284,14 +284,6 @@ fn watch_nouser(
     }
 }
 
-#[get("/thumbnail/<uuid>")]
-fn thumbnail(uuid: String) -> Option<NamedFile> {
-    match NamedFile::open(format!("thumbnails/{}.png", uuid)) {
-        Ok(file) => Some(file),
-        Err(_) => None,
-    }
-}
-
 fn get_customer(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer> {
     use club_coding::schema::users_stripe_customer::dsl::*;
 
@@ -477,5 +469,5 @@ fn buy_serie(
 }
 
 pub fn endpoints() -> Vec<Route> {
-    routes![thumbnail, watch_as_user, watch_nouser, buy_serie]
+    routes![watch_as_user, watch_nouser, buy_serie]
 }

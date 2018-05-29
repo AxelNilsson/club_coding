@@ -32,7 +32,6 @@ extern crate serde_derive;
 mod authentication;
 mod settings;
 mod pages;
-mod search;
 mod videos;
 mod users;
 mod structs;
@@ -50,7 +49,6 @@ fn main() {
         .mount("/", authentication::endpoints())
         .mount("/", settings::endpoints())
         .mount("/", pages::endpoints())
-        .mount("/", search::endpoints())
         .mount("/", videos::endpoints())
         .mount("/", charge::endpoints())
         .mount("/settings/payment", payment::endpoints())

@@ -17,27 +17,14 @@ footer.footer > div.layout.row.wrap.justify-center > div.flex.xs12.py-3.text-xs-
 </style>
 {% endblock head %}
 {% block content %}
-<v-card style="background-color: #4d545d;">
+<v-card>
 <v-container>
     <v-layout wrap row>
     <v-flex xs3 xl2>
         <h1 class="headline" style="font-weight: 800; color: white; line-height: 56px!important;"><a style="text-decoration: none; color: white;" href="/">CLUB CODING</a></h1>
     </v-flex>
     <v-flex xs0 xl1></v-flex>
-    <v-flex xs6 xl6>
-        <v-card style="padding: 0 8px">
-        <v-layout wrap row>
-            <v-flex xs10>
-            <v-form method="GET" action="/search">
-                <v-text-field style="height: 100%;" name="search_query" prepend-icon="search" solo flat label="WHAT ARE YOU INTERESTED IN?"></v-text-field>
-            </v-form>
-            </v-flex>
-            <v-flex xs2>
-            <v-btn large block style="color: white; background-color: #00b1b3;">SEARCH</v-btn>
-            </v-flex>
-        </v-layout>
-        </v-card>
-    </v-flex>
+    <v-flex xs6 xl6></v-flex>
     <v-flex xs1 xl1></v-flex>
     <v-flex xs2 xl2>
         <v-menu offset-y>
