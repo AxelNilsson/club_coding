@@ -46,12 +46,12 @@
       background-size: cover;
       padding-top: 1em;
     }
-    div.card#main > .container > main > section > div.layout.wrap.row > div.xs6.offset-xs3 > h1.display-3 {
+    div.card#main > .container > main > section > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl6.offset-xl3 > h1.display-3 {
       color: white;
       text-align: center;
       margin-top: 30vh;
     }
-    div.card#main > .container > main > section > div.layout.wrap.row > div.xs6.offset-xs3 > h2.headline {
+    div.card#main > .container > main > section > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl6.offset-xl3 > h2.headline {
       color: white;
       text-align: center;
       font-weight: 200;
@@ -60,15 +60,13 @@
       margin-top:2em;
       padding-right: 1em;
     }
-    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs4.offset-xs1 > h1.display-1 {
+    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs12.lg4.offset-lg1 > h1.display-1 {
       text-align: center;
       margin-top: 96px;
     }
-    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs4.offset-xs1 > p.subheading {
+    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs12.lg4.offset-lg1 > p.subheading {
       font-weight: 200;
       line-height: 25px !important;
-    }
-    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs4.offset-xs1 > p.subheading.first {
       margin-top: 1em;
     }
     div#app > div.application > div.application--wrap > div.card.card--flat {
@@ -161,7 +159,7 @@
       <main>
         <section>
           <v-layout wrap row>
-            <v-flex xs6 offset-xs3>
+            <v-flex xs12 lg10 offset-lg1 xl6 offset-xl3>
               <h1 class="display-3">The Road to Improving Your Career!</h1>
               <h2 class="headline">Learn real, modern development, through real tutorials. These videos are not slow and boring. These are fast and fun. Ready to start?</h2>
             </v-flex>
@@ -178,34 +176,24 @@
       <v-container>
         <section>
           <v-layout wrap row>
-          {% if loop.index is divisibleby(2) %}
-            <v-flex xs6 offset-xs1>
+          {% if loop.index is odd %}
+            <v-flex xs12 lg6 offset-lg1>
               <v-card flat height="100%" href="/series/{{ serie.uuid }}">
                 <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}"></v-card-media>
               </v-card>
             </v-flex>
-            <v-flex xs4 offset-xs1>
-              <h1 class="display-1">{{ serie.title }}</h1>
-              <p class="first subheading">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-              <p class="subheading">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-              <v-layout wrap row>
-                <v-flex xs6 offset-xs3>
-                  <v-btn large block class="white--text" color="orange darken-3" href="/series/{{ serie.uuid }}">Start watching!</v-btn>
-                </v-flex>
-              </v-layout>
-            </v-flex>
-            {% else %}
-            <v-flex xs4 offset-xs1>
-              <h1 class="display-1">{{ serie.title }}</h1>
-              <p class="first subheading">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-              <p class="subheading">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-              <v-layout wrap row>
-                <v-flex xs6 offset-xs3>
-                  <v-btn large block class="white--text" color="orange darken-3" href="/series/{{ serie.uuid }}">Start watching!</v-btn>
-                </v-flex>
-              </v-layout>
-            </v-flex>
-            <v-flex xs6 offset-xs1>
+          {% endif %}
+          <v-flex xs12 lg4 offset-lg1>
+            <h1 class="display-1">{{ serie.title }}</h1>
+            <p class="subheading">{{ serie.description | safe }}</p>
+            <v-layout wrap row>
+              <v-flex xs6 offset-xs3>
+                <v-btn large block class="white--text" color="orange darken-3" href="/series/{{ serie.uuid }}">Start watching!</v-btn>
+              </v-flex>
+            </v-layout>
+          </v-flex>
+          {% if loop.index is even %}
+            <v-flex xs12 lg6 offset-lg1>
               <v-card flat height="100%" href="/series/{{ serie.uuid }}">
                 <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}"></v-card-media>
               </v-card>

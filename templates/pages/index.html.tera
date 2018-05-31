@@ -46,12 +46,12 @@
       background-size: cover;
       padding-top: 1em;
     }
-    div.card#main > .container > main > section > div.layout.wrap.row > div.xs6.offset-xs3 > h1.display-3 {
+    div.card#main > .container > main > section > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl6.offset-xl3 > h1.display-3 {
       color: white;
       text-align: center;
       margin-top: 30vh;
     }
-    div.card#main > .container > main > section > div.layout.wrap.row > div.xs6.offset-xs3 > h2.headline {
+    div.card#main > .container > main > section > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl6.offset-xl3 > h2.headline {
       color: white;
       text-align: center;
       font-weight: 200;
@@ -68,15 +68,13 @@
       margin-top:2em;
       padding-right: 1em;
     }
-    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs4.offset-xs1 > h1.display-1 {
+    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs12.lg4.offset-lg1 > h1.display-1 {
       text-align: center;
       margin-top: 96px;
     }
-    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs4.offset-xs1 > p.subheading {
+    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs12.lg4.offset-lg1 > p.subheading {
       font-weight: 200;
       line-height: 25px !important;
-    }
-    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs4.offset-xs1 > p.subheading.first {
       margin-top: 1em;
     }
     div#app > div.application > div.application--wrap > div.card.card--flat {
@@ -89,29 +87,32 @@
       background-size: cover;
       padding-top: 1em;
     }
-    div.card#newsletter > .container > div.layout.wrap.row > div.xs8.offset-xs2 > div.card {
+    div.card#newsletter > .container > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl8.offset-xl2 > div.card {
       z-index: 100;
       width: 100%;
       padding: 5em;
       margin-top: 12.5vh;
       border-radius: 8px;
     }
-    div.card#newsletter > .container > div.layout.wrap.row > div.xs8.offset-xs2 > div.card > .layout.wrap.row > .xs8.offset-xs2 > h1.display-2 {
+    div.card#newsletter > .container > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl8.offset-xl2 > div.card > .layout.wrap.row > .xs12.xl8.offset-xl2 > h1.display-2 {
       text-align: center;
     }
-    div.card#newsletter > .container > div.layout.wrap.row > div.xs8.offset-xs2 > div.card > .layout.wrap.row > .xs8.offset-xs2 > h2.title {
+    div.card#newsletter > .container > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl8.offset-xl2 > div.card > .layout.wrap.row > .xs12.xl8.offset-xl2 > h2.title {
       text-align: center;
       font-weight: 200;
       margin-top: 4px;
       line-height: 30px !important;
     }
-    div.card#newsletter > .container > div.layout.wrap.row > div.xs8.offset-xs2 > div.card > form {
+    div.card#newsletter > .container > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl8.offset-xl2 > div.card > form {
       margin-top: 2em;
     }
-    div.card#newsletter > .container > div.layout.wrap.row > div.xs8.offset-xs2 > div.card > form > div.layout.row.wrap > .xs2 > button.white--text.btn.btn--block.btn--large.orange.darken-3{
+    div.card#newsletter > .container > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl8.offset-xl2 > div.card > form > div.layout.row.wrap > .xs4.xl2 > button.white--text.btn.btn--block.btn--large.orange.darken-3{
       height: 56px;
       margin-left: 1em;
       margin-top: 1.5em;
+    }
+    div.card.card--flat > .container > nav > .layout.wrap.row > .xs12.hidden-md-and-up > h1 {
+      text-align: center;
     }
   </style>
 {% endblock head %}
@@ -127,10 +128,13 @@
     <v-container>
       <nav>
         <v-layout wrap row>
-          <v-flex xs2>
+          <v-flex xs12 hidden-md-and-up>
+            <h1 class="display-2"><a href="/">club coding</a></h1>
+          </v-flex>
+          <v-flex hidden-sm-and-down lg2>
             <h1 class="display-1"><a href="/">club coding</a></h1>
           </v-flex>
-          <v-flex xs2 offset-xs8>
+          <v-flex hidden-sm-and-down lg2 offset-lg8>
             <ul>
               <li><a href="/signup">Sign up</a></li>
               <li><a href="/login">Sign in</a></li>
@@ -141,7 +145,7 @@
       <main>
         <section>
           <v-layout wrap row>
-            <v-flex xs6 offset-xs3>
+            <v-flex xs12 lg10 offset-lg1 xl6 offset-xl3>
               <h1 class="display-3">The Road to Improving Your Career!</h1>
               <h2 class="headline">Learn real, modern development, through real tutorials. These videos are not slow and boring. These are fast and fun. Ready to start?</h2>
             </v-flex>
@@ -161,34 +165,24 @@
       <v-container>
         <section>
           <v-layout wrap row>
-          {% if loop.index is divisibleby(2) %}
-            <v-flex xs6 offset-xs1>
+          {% if loop.index is odd %}
+            <v-flex xs12 lg6 offset-lg1>
               <v-card flat height="100%" href="/series/{{ serie.uuid }}">
                 <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}"></v-card-media>
               </v-card>
             </v-flex>
-            <v-flex xs4 offset-xs1>
-              <h1 class="display-1">{{ serie.title }}</h1>
-              <p class="first subheading">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-              <p class="subheading">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-              <v-layout wrap row>
-                <v-flex xs6 offset-xs3>
-                  <v-btn large block class="white--text" color="orange darken-3" href="/series/{{ serie.uuid }}">Start watching!</v-btn>
-                </v-flex>
-              </v-layout>
-            </v-flex>
-            {% else %}
-            <v-flex xs4 offset-xs1>
-              <h1 class="display-1">{{ serie.title }}</h1>
-              <p class="first subheading">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-              <p class="subheading">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-              <v-layout wrap row>
-                <v-flex xs6 offset-xs3>
-                  <v-btn large block class="white--text" color="orange darken-3" href="/series/{{ serie.uuid }}">Start watching!</v-btn>
-                </v-flex>
-              </v-layout>
-            </v-flex>
-            <v-flex xs6 offset-xs1>
+          {% endif %}
+          <v-flex xs12 lg4 offset-lg1>
+            <h1 class="display-1">{{ serie.title }}</h1>
+            <p class="subheading">{{ serie.description | safe }}</p>
+            <v-layout wrap row>
+              <v-flex xs6 offset-xs3>
+                <v-btn large block class="white--text" color="orange darken-3" href="/series/{{ serie.uuid }}">Start watching!</v-btn>
+              </v-flex>
+            </v-layout>
+          </v-flex>
+          {% if loop.index is even %}
+            <v-flex xs12 lg6 offset-lg1>
               <v-card flat height="100%" href="/series/{{ serie.uuid }}">
                 <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}"></v-card-media>
               </v-card>
@@ -206,20 +200,20 @@
     <div class="card__hover"></div>
     <v-container>
       <v-layout wrap row>
-        <v-flex xs8 offset-xs2>
+        <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
           <v-card flat color="white">
             <v-layout wrap row>
-              <v-flex xs8 offset-xs2>
+              <v-flex xs12 xl8 offset-xl2>
                 <h1 class="display-2">Subscribe to our Newsletter!</h1>
                 <h2 class="title">Learn real, modern development, through real tutorials. These videos are not slow and boring. These are fast and fun. Ready to start?</h2>
               </v-flex>
             </v-layout>
             <v-form>
               <v-layout wrap row>
-                <v-flex xs6 offset-xs2>
+                <v-flex xs8 xl6 offset-xl2>
                   <v-text-field box label="Your email address..."></v-text-field>
                 </v-flex>
-                <v-flex xs2>
+                <v-flex xs4 xl2>
                   <v-btn large block class="white--text" color="orange darken-3">Subscribe</v-btn>
                 </v-flex>
               </v-layout>
