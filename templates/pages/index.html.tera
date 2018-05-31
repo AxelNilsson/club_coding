@@ -46,15 +46,21 @@
       background-size: cover;
       padding-top: 1em;
     }
-    div.card#main > .container > main > section > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl6.offset-xl3 > h1.display-3 {
+    div.card#main > .container > main > section > div.layout.wrap.row > div.flex > h1.display-3 {
       color: white;
       text-align: center;
+      margin-top: 1em;
+    }
+    div.card#main > .container > main > section > div.layout.wrap.row > div.hidden-sm-and-down.lg10.offset-lg1.xl6.offset-xl3 > h1.display-3 {
       margin-top: 30vh;
     }
-    div.card#main > .container > main > section > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl6.offset-xl3 > h2.headline {
+    div.card#main > .container > main > section > div.layout.wrap.row > div.flex > h2.headline {
       color: white;
       text-align: center;
       font-weight: 200;
+    }
+    div.card#main > .container > main > section > div.layout.wrap.row > .flex.xs12.hidden-md-and-up > .white--text.btn.btn--block.btn--large.orange.darken-3 {
+      margin-top: 2em;
     }
     #left-button {
       margin-top:2em;
@@ -90,7 +96,7 @@
     div.card#newsletter > .container > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl8.offset-xl2 > div.card {
       z-index: 100;
       width: 100%;
-      padding: 5em;
+      padding: 2em;
       margin-top: 12.5vh;
       border-radius: 8px;
     }
@@ -145,14 +151,24 @@
       <main>
         <section>
           <v-layout wrap row>
-            <v-flex xs12 lg10 offset-lg1 xl6 offset-xl3>
+            <v-flex hidden-sm-and-down lg10 offset-lg1 xl6 offset-xl3>
               <h1 class="display-3">The Road to Improving Your Career!</h1>
               <h2 class="headline">Learn real, modern development, through real tutorials. These videos are not slow and boring. These are fast and fun. Ready to start?</h2>
             </v-flex>
-            <v-flex xs2 offset-xs4 id="left-button">
+            <v-flex hidden-sm-and-down lg3 offset-lg3 xl2 offset-xl4 id="left-button">
               <v-btn large block class="white--text" color="orange darken-3" href="/signup">Register</v-btn>
             </v-flex>
-            <v-flex xs2 id="right-button">
+            <v-flex hidden-sm-and-down lg3 xl2 id="right-button">
+              <v-btn outline large block color="orange darken-3" href="/login"><span class="white--text">Login</span></v-btn>
+            </v-flex>
+            <v-flex xs12 hidden-md-and-up>
+              <h1 class="display-3">The Road to Improving Your Career!</h1>
+              <h2 class="headline">Learn real, modern development, through real tutorials. These videos are not slow and boring. These are fast and fun. Ready to start?</h2>
+            </v-flex>
+            <v-flex xs12 hidden-md-and-up>
+              <v-btn large block class="white--text" color="orange darken-3" href="/signup">Register</v-btn>
+            </v-flex>
+            <v-flex xs12 hidden-md-and-up>
               <v-btn outline large block color="orange darken-3" href="/login"><span class="white--text">Login</span></v-btn>
             </v-flex>
           </v-layout>
