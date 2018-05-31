@@ -4,14 +4,18 @@
 {{ super() }}
   <style>
     #main {
-      margin-top: 20vh;
+      margin-top: 10vh;
       padding: 2em;
+      background-color: #fafafa;
     }
     p.body-1 > a {
       color: #000;
       font-weight: 700;
       text-decoration: none;
     }
+  .application .theme--light.input-group--text-field.input-group--text-field-box .input-group__input, .theme--light .input-group--text-field.input-group--text-field-box .input-group__input {
+    background-color: #fafafa !important;
+  }
   </style>
 {% endblock head %}
 {% block content %}
@@ -26,12 +30,12 @@
     <v-layout wrap row>
       <v-flex xs3></v-flex>
       <v-flex xs6>
-        <v-card id="main">
+        <v-card flat id="main">
           <h1 class="display-1">{{ header }}</h1>
           <form method="POST">
             <input type="hidden" name="csrf" value="{{ csrf }}">
-            <v-text-field type="text" name="username" label="Username" required></v-text-field>
-            <v-text-field type="password" name="password" label="Password" required></v-text-field>
+            <v-text-field box color="#fafafa" type="text" name="username" label="Username" required></v-text-field>
+            <v-text-field box color="#fafafa" type="password" name="password" label="Password" required></v-text-field>
             <v-btn block type="submit" color="primary">Login!</v-btn>
           </form>
         </v-card>

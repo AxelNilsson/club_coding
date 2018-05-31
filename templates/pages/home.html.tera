@@ -1,73 +1,251 @@
-{% extends "bases/logged_in" %}
+{% extends "base" %}
 {% block title %}{{ header }}{% endblock title %}
 {% block head %}
-{{ super() }}
+  {{ super() }}
   <style>
-    .application.theme--light {
-      background-color: #FFF;
+    .container > nav > .layout > .flex, .container > main > section > .layout > .flex {
+      z-index: 100;
+    }
+    nav ul {
+      display: flex;
+      justify-content: flex-end;
+      list-style-type: none;
+    }
+    nav ul li {
+      display: inline;
+      font-size: 22px;
+    }
+    nav ul li a, nav .layout .flex h1 a {
+      color: white;
+      text-decoration: none;
+    }
+    nav ul li a:hover, nav > .layout > .flex.xs2 > h1 > a:hover {
+      text-decoration: none !important;
+    }
+    nav ul li:hover {
+      font-weight: 700;
     }
     .card__hover {
       position: absolute;
       top: 0;
       left: 0;
       height: 100%;
-      padding: 25px 25px 20px;
       width: 100%;
       color: #fff;
-      display: -webkit-box;
-      display: -ms-flexbox;
-      display: flex;
-      opacity: 1;
-      -webkit-box-orient: vertical;
-      -webkit-box-direction: normal;
-      -ms-flex-direction: column;
-      flex-direction: column;
-      -webkit-box-align: start;
-      -ms-flex-align: start;
-      align-items: flex-start;
       z-index: 10;
-      -webkit-box-pack: justify;
-      -ms-flex-pack: justify;
-      justify-content: space-between;
-      background: rgba(0,0,0,.7);
-      -webkit-transition: opacity .6s;
-      transition: opacity .6s;
+      background: rgba(0,0,0,0.6);
     }
-    .card__hover:hover {
-      opacity: 0;
+    div#app > div.application > div.application--wrap > div.alert {
+      margin: 0;
+      text-align: center;
+      font-size: 16px;
+    }
+    div#app > div.application > div.application--wrap > div.card#main {
+      min-height: 100vh;
+      background: url('/img/road.jpg');
+      background-size: cover;
+      padding-top: 1em;
+    }
+    div.card#main > .container > main > section > div.layout.wrap.row > div.xs6.offset-xs3 > h1.display-3 {
+      color: white;
+      text-align: center;
+      margin-top: 30vh;
+    }
+    div.card#main > .container > main > section > div.layout.wrap.row > div.xs6.offset-xs3 > h2.headline {
+      color: white;
+      text-align: center;
+      font-weight: 200;
+    }
+    div.card#main > .container > main > section > div.layout.wrap.row > div.xs4.offset-xs4 {
+      margin-top:2em;
+      padding-right: 1em;
+    }
+    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs4.offset-xs1 > h1.display-1 {
+      text-align: center;
+      margin-top: 96px;
+    }
+    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs4.offset-xs1 > p.subheading {
+      font-weight: 200;
+      line-height: 25px !important;
+    }
+    div.card.card--flat > .container > section > div.layout.wrap.row > div.xs4.offset-xs1 > p.subheading.first {
+      margin-top: 1em;
+    }
+    div#app > div.application > div.application--wrap > div.card.card--flat {
+      background-color: white;
+      padding: 10vh 0;
+    }
+    div#app > div.application > div.application--wrap > div.card#newsletter {
+      min-height: 60vh;
+      background: url('/img/newsletter.jpg');
+      background-size: cover;
+      padding-top: 1em;
+    }
+    div.card#newsletter > .container > div.layout.wrap.row > div.xs8.offset-xs2 > div.card {
+      z-index: 100;
+      width: 100%;
+      padding: 5em;
+      margin-top: 12.5vh;
+      border-radius: 8px;
+    }
+    div.card#newsletter > .container > div.layout.wrap.row > div.xs8.offset-xs2 > div.card > .layout.wrap.row > .xs8.offset-xs2 > h1.display-2 {
+      text-align: center;
+    }
+    div.card#newsletter > .container > div.layout.wrap.row > div.xs8.offset-xs2 > div.card > .layout.wrap.row > .xs8.offset-xs2 > h2.title {
+      text-align: center;
+      font-weight: 200;
+      margin-top: 4px;
+      line-height: 30px !important;
+    }
+    div.card#newsletter > .container > div.layout.wrap.row > div.xs8.offset-xs2 > div.card > form {
+      margin-top: 2em;
+    }
+    div.card#newsletter > .container > div.layout.wrap.row > div.xs8.offset-xs2 > div.card > form > div.layout.row.wrap > .xs2 > button.white--text.btn.btn--block.btn--large.orange.darken-3{
+      height: 56px;
+      margin-left: 1em;
+      margin-top: 1.5em;
     }
   </style>
 {% endblock head %}
 {% block content %}
   {% if flash_name == "error" %}
-    <v-alert style="margin: 0; text-align: center; font-size: 16px;" color="error" :value="true">{{ flash_msg }}</v-alert>
+    <v-alert color="error" :value="true">{{ flash_msg }}</v-alert>
   {% endif %}
   {% if flash_name == "success" %}
-    <v-alert style="margin: 0; text-align: center; font-size: 16px;" color="success" :value="true">{{ flash_msg }}</v-alert>
+    <v-alert color="success" :value="true">{{ flash_msg }}</v-alert>
   {% endif %}
-  {{ super() }}
-  <v-container>
-    <v-layout wrap row>
-      <v-flex xs3 xl4></v-flex>
-      <v-flex xs6 xl4>
-        <h3 class="display-2 grey--text text--darken-3" style="text-align: center; margin-top: 1em;">Welcome back!</h3>
-        <p class="title grey--text text--darken-2" style="font-weight: 400; text-align: center; margin: 12px 0 45px; line-height: 1.4 !important;">Want to know what's new at Club Coding? Have a look down here!</p>
-      </v-flex>
-      <v-flex xs3 xl4></v-flex>
-    </v-layout>
-    <v-layout style="padding-bottom: 10vh;">
-      <v-flex xl8 offset-xl2 xs10 offset-xs1>
-        {% for serie in series %}
-          <v-card flat href="/series/{{ serie.uuid }}">
-            <v-card-media src="/thumbnail/{{ serie.uuid }}" height="750px"></v-card-media>
-            <div class="card__hover">
-              <h2 class="display-2" style="color: white; line-height: 700px!important;">{{ serie.title }}</h2>
-            </div>
+  <v-card flat id="main">
+    <div class="card__hover"></div>
+    <v-container>
+      <nav>
+        <v-layout wrap row>
+          <v-flex xs2>
+            <h1 class="display-1 white--text"><a href="/">club coding</a></h1>
+          </v-flex>
+          <v-flex xs2 offset-xs8>
+            <ul>
+              <li>
+                <v-menu offset-y>
+                  <v-btn large outline color="white" slot="activator">{{ user.username }}<v-icon>arrow_drop_down</v-icon></v-btn>
+                  <v-list>
+                    {% if user.admin %}
+                    <v-list-tile href="/admin/users">
+                      <v-list-tile-title>All Users</v-list-tile-title>
+                    </v-list-tile>
+                    <v-list-tile href="/admin/groups">
+                      <v-list-tile-title>All Groups</v-list-tile-title>
+                    </v-list-tile>
+                    <v-list-tile href="/admin/videos">
+                      <v-list-tile-title>All Videos</v-list-tile-title>
+                    </v-list-tile>
+                    <v-list-tile href="/admin/series">
+                      <v-list-tile-title>All Series</v-list-tile-title>
+                    </v-list-tile>
+                    {% endif %}
+                    <v-list-tile href="/settings/payment">
+                      <v-list-tile-title>Payment</v-list-tile-title>
+                    </v-list-tile>
+                    <v-list-tile href="/settings/password">
+                      <v-list-tile-title>Password</v-list-tile-title>
+                    </v-list-tile>
+                    <v-list-tile href="/logout">
+                      <v-list-tile-title>Logout</v-list-tile-title>
+                    </v-list-tile>
+                  </v-list>
+                </v-menu>
+              </li>
+            </ul>
+          </v-flex>
+        </v-layout>
+      </nav>
+      <main>
+        <section>
+          <v-layout wrap row>
+            <v-flex xs6 offset-xs3>
+              <h1 class="display-3">The Road to Improving Your Career!</h1>
+              <h2 class="headline">Learn real, modern development, through real tutorials. These videos are not slow and boring. These are fast and fun. Ready to start?</h2>
+            </v-flex>
+            <v-flex xs4 offset-xs4>
+              <v-btn large block class="white--text" color="orange darken-3" href="/series/9C2D35BB3D02B96AA0D5F994FBDA32B4C4349988A5A531A5">Start watching</v-btn>
+            </v-flex>
+          </v-layout>
+        </section>
+      </main>
+    </v-container>
+  </v-card>
+  {% for serie in series %}
+    <v-card flat>
+      <v-container>
+        <section>
+          <v-layout wrap row>
+          {% if loop.index is divisibleby(2) %}
+            <v-flex xs6 offset-xs1>
+              <v-card flat height="100%" href="/series/{{ serie.uuid }}">
+                <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}"></v-card-media>
+              </v-card>
+            </v-flex>
+            <v-flex xs4 offset-xs1>
+              <h1 class="display-1">{{ serie.title }}</h1>
+              <p class="first subheading">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+              <p class="subheading">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+              <v-layout wrap row>
+                <v-flex xs6 offset-xs3>
+                  <v-btn large block class="white--text" color="orange darken-3" href="/series/{{ serie.uuid }}">Start watching!</v-btn>
+                </v-flex>
+              </v-layout>
+            </v-flex>
+            {% else %}
+            <v-flex xs4 offset-xs1>
+              <h1 class="display-1">{{ serie.title }}</h1>
+              <p class="first subheading">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+              <p class="subheading">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+              <v-layout wrap row>
+                <v-flex xs6 offset-xs3>
+                  <v-btn large block class="white--text" color="orange darken-3" href="/series/{{ serie.uuid }}">Start watching!</v-btn>
+                </v-flex>
+              </v-layout>
+            </v-flex>
+            <v-flex xs6 offset-xs1>
+              <v-card flat height="100%" href="/series/{{ serie.uuid }}">
+                <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}"></v-card-media>
+              </v-card>
+            </v-flex>
+          {% endif %}
+          </v-layout>
+        </section>
+      </v-container>
+    </v-card>
+    {% if series | length != loop.index %}
+    <v-divider></v-divider>
+    {% endif %}
+  {% endfor %}
+  <v-card flat id="newsletter">
+    <div class="card__hover"></div>
+    <v-container>
+      <v-layout wrap row>
+        <v-flex xs8 offset-xs2>
+          <v-card flat color="white">
+            <v-layout wrap row>
+              <v-flex xs8 offset-xs2>
+                <h1 class="display-2">Subscribe to our Newsletter!</h1>
+                <h2 class="title">Learn real, modern development, through real tutorials. These videos are not slow and boring. These are fast and fun. Ready to start?</h2>
+              </v-flex>
+            </v-layout>
+            <v-form>
+              <v-layout wrap row>
+                <v-flex xs6 offset-xs2>
+                  <v-text-field box label="Your email address..."></v-text-field>
+                </v-flex>
+                <v-flex xs2>
+                  <v-btn large block class="white--text" color="orange darken-3">Subscribe</v-btn>
+                </v-flex>
+              </v-layout>
+            </v-form>
           </v-card>
-        {% endfor %}
-      </v-flex>
-    </v-layout>
-  </v-container>
+        </v-flex>
+      </v-layout>
+    </v-container>
+  </v-card>
 {% endblock content %}
 {% block script %}
   {{ super() }}

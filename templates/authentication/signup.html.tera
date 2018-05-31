@@ -4,13 +4,17 @@
 {{ super() }}
   <style>
     #main {
-      margin-top: 5vh;
-      padding: 1em;
+      margin-top: 10vh;
+      padding: 2em;
+      background-color: #fafafa;
     }
     p.body-1 > a {
       color: #000;
       font-weight: 700;
       text-decoration: none;
+    }
+    .application .theme--light.input-group--text-field.input-group--text-field-box .input-group__input, .theme--light .input-group--text-field.input-group--text-field-box .input-group__input {
+      background-color: #fafafa !important;
     }
   </style>
 {% endblock head %}

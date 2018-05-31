@@ -19,6 +19,7 @@
           <v-form method="POST">
             <v-text-field label="Title" name="title" required></v-text-field>
             <v-text-field label="Description" name="description" required></v-text-field>
+            <v-text-field type="number" label="Price" name="price" required></v-text-field>
             <v-layout wrap row>
               <v-flex xs4>
                 <v-btn large block color="error" href="/admin/series">Cancel</v-btn>
