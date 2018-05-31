@@ -73,7 +73,6 @@
         <div id="main">
           <v-layout>
             <v-flex xs10 offset-xs1 style="text-align: center;">
-              <img src="https://laracasts.com/svg-loaders/hearts.svg" style="margin-bottom: 2em;">
               <h1 class="display-2 blue-grey--text text--darken-2" style="text-align: center; font-weight: 400!important;">You're almost there.</h1>
               <v-layout>
                 <v-flex xs8 offset-xs2>
