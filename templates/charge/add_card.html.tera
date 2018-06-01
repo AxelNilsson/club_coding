@@ -56,15 +56,20 @@
         margin-left: 12px;
         margin-top: 28px;
     }
+    div#app > div.application > div.application--wrap > div.alert {
+      margin: 0;
+      text-align: center;
+      font-size: 16px;
+    }
 </style>
 <script src="https://js.stripe.com/v3/"></script>
 {% endblock head %}
 {% block content %}
   {% if flash_name == "error" %}
-    <v-alert style="margin: 0; text-align: center; font-size: 16px;" color="error" :value="true">{{ flash_msg }}</v-alert>
+    <v-alert color="error" :value="true">{{ flash_msg }}</v-alert>
   {% endif %}
   {% if flash_name == "success" %}
-    <v-alert style="margin: 0; text-align: center; font-size: 16px;" color="success" :value="true">{{ flash_msg }}</v-alert>
+    <v-alert color="success" :value="true">{{ flash_msg }}</v-alert>
   {% endif %}
   {{ super() }}
   <v-container>

@@ -8,6 +8,23 @@
     color: #fff;
     padding: 4em 0;
   }
+  #main > div.layout.wrap > div.flex.offset-lg1.xl3.offset-xl3 {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+  #main > div.layout.wrap > div.flex.lg5.xl2.offset-xl1 > div#thumbnail {
+    display: block;
+    height: 400px;
+    width: 400px;
+    border-radius: 100%;
+    border: 5px solid rgba(255, 255, 255, 0.2);
+    background-image: url(/thumbnail/{{ uuid }});
+    background-position: 0 25px;
+    background-repeat: no-repeat;
+    background-size: 400px;
+    text-align: center;
+    background-color: white;
+  }
   #main > div.layout.wrap > div.flex > h1.display-2 {
     font-weight: 400;
   }
@@ -18,10 +35,13 @@
     font-size: 18px !important;
     color: hsla(0,0%,100%,.7);
   }
-  div.flex > .card {
+  div.layout.wrap.row#episodes {
+    padding: 4em 0 2em;
+  }
+  div.layout.wrap.row#episodes > div.flex > .card {
     padding: 4em;
   }
-  div.flex > .card:nth-child(2n) {
+  div.layout.wrap.row#episodes > div.flex > .card:nth-child(2n) {
     background: #f7f7f7;
   }
   .circle {
@@ -55,22 +75,36 @@
     text-decoration: underline;
     color: #00b1b3;
   }
+  div.layout.wrap.row#episodes > div.flex > .card > .layout.wrap.row > .flex.xs8 > h2.headline {
+    color: rgb(77, 84, 93);
+    font-weight: 700;
+  }
+  div.layout.wrap.row#episodes > div.flex > .card > .layout.wrap.row > .flex.xs8 > p.subheading {
+    margin-top: 1em;
+  }
+  #in-development {
+    text-align: center;
+    color: #919499;
+    margin-top: 2em!important;
+    font-weight: 400;
+    font-size: 16px;
+  }
   </style>
 {% endblock head %}
 {% block content %}
   {{ super() }}
   <div id="main">
     <v-layout wrap>
-      <v-flex lg5 offset-lg1 xl3 offset-xl3 style="margin-top: auto; margin-bottom: auto;">
+      <v-flex lg5 offset-lg1 xl3 offset-xl3>
         <h1 class="display-2">{{ title }}</h1>
         <p class="subheading">{{ description | safe }}</p>
       </v-flex>
       <v-flex lg5 xl2 offset-xl1>
-        <div style="display: block; height: 400px; width: 400px; border-radius: 100%; border: 5px solid rgba(255, 255, 255, 0.2); background-image: url(/thumbnail/9C2D35BB3D02B96AA0D5F994FBDA32B4C4349988A5A531A5); background-position: 0 90px; background-repeat: no-repeat; background-size: 400px; text-align: center; background-color: white;"></div>
+        <div id="thumbnail"></div>
       </v-flex>
     </v-layout>
   </div>
-  <v-layout wrap style="padding: 4em 0 2em;">
+  <v-layout wrap row id="episodes">
     <v-flex lg10 offset-lg1 xl6 offset-xl3>
      {% for video in videos %}
       <v-card>
@@ -91,14 +125,14 @@
             </div>
           </v-flex>
           <v-flex xs8>
-            <h2 class="headline" style="color: rgb(77, 84, 93); font-weight: 700;"><a href="/watch/{{ video.uuid }}">{{ video.title }}</a></h2>
-            <p class="subheading" style="margin-top: 1em;">{{ video.description | safe }}</p>
+            <h2 class="headline"><a href="/watch/{{ video.uuid }}">{{ video.title }}</a></h2>
+            <p class="subheading">{{ video.description | safe }}</p>
           </v-flex>
         </v-layout>
       </v-card>
      {% endfor %}
      {% if in_development %}
-     <p style="text-align: center; color: #919499; margin-top: 2em!important; font-weight: 400; font-size: 16px;">*Series still in development. Check back often for updates.</p>
+     <p id="in-development">*Series still in development. Check back often for updates.</p>
      {% endif %}
     </v-flex>
   </v-layout>

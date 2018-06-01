@@ -19,6 +19,26 @@
     h1.headline > a:hover {
       text-decoration: none!important;
     }
+    #toolbar {
+      background-color: #fafafa
+    }
+    div.card > .container > .layout.wrap.row > .flex.xs12.xl2 > h1.headline {
+      font-weight: 800;
+      line-height: 56px!important;
+    }
+    div.card > .container > .layout.wrap.row > .flex.xs12.xl2 > h1.headline > a {
+      text-decoration: none;
+      color: #455a64!important;
+    }
+    div.card > .container > .layout.wrap.row > .flex.xl2 > .layout.wrap.row > .flex.xs4 > a.title {
+      color: #00b1b3!important;
+      line-height: 56px!important;
+      text-decoration: none;
+    }
+    div.card > .container > .layout.wrap.row > .flex.xl2 > .layout.wrap.row > .flex.xs4 > a.title.secondary-title {
+      color: #455a64!important;
+      font-weight: 800;
+    }
     div.layout.row.wrap.justify-center {
       margin-top: 2em;
     }
@@ -28,23 +48,6 @@
     }
     div.layout.row.wrap.justify-center > div.flex.xs12.py-3.text-xs-center {
       color: #8898aa;
-    }
-    div.card > .container > .layout.wrap.row > .flex.xs3 > h1.headline {
-      font-weight: 800;
-      line-height: 56px!important;
-    }
-    div.card > .container > .layout.wrap.row > .flex.xs3 > h1.headline > a {
-      text-decoration: none;
-      color: white;
-    }
-    div.card > .container > .layout.wrap.row > .flex.xs3 > .layout.wrap.row > .flex.xs4 > a.title {
-      color: #FAFAFA;
-      line-height: 56px!important;
-      text-decoration: none;
-    }
-    div.card > .container > .layout.wrap.row > .flex.xs3 > .layout.wrap.row > .flex.xs4 > a.title.secondary-title {
-      color: #00b1b3!important;
-      font-weight: 800;
     }
     [v-cloak] {
       display: none;
@@ -56,16 +59,14 @@
   <div id="app" v-cloak>
     <v-app>
       {% block content %}
-      <v-card flat color="primary">
+      <v-card flat id="toolbar">
         <v-container>
           <v-layout wrap row>
-            <v-flex xs3 xl2>
+            <v-flex xs12 xl2>
               <h1 class="headline"><a href="/">CLUB CODING</a></h1>
             </v-flex>
-            <v-flex xs0 xl1></v-flex>
-            <v-flex xs6 xl6></v-flex>
-            <v-flex xs0 xl1></v-flex>
-            <v-flex xs3 xl2>
+            <v-flex hidden-sm-and-down xl8></v-flex>
+            <v-flex hidden-sm-and-down xl2>
               <v-layout wrap row>
                 <v-flex xs4></v-flex>
                 <v-flex xs4>

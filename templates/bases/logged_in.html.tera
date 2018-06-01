@@ -1,23 +1,38 @@
 {% extends "base" %}
 {% block head %}
 <style>
+* {
+  background-color: #f6f9fc;
+}
 .input-group.input-group--solo label {
   top: 14px;
 }
 h1.headline > a:hover, div.list > div > a.list__tile.list__tile--link:hover {
   text-decoration: none!important;
 }
-footer.footer > div.layout.row.wrap.justify-center > div.flex.xs12.py-3.text-xs-center.white--text > a {
-  color: white;
-  text-decoration: none;
-}    
-div.card > .container > .layout.wrap.row > .flex.xs3 > h1.headline {
+#toolbar {
+  background-color: #fafafa
+}
+div.card#toolbar > .container > .layout.wrap.row > .flex.xs12 > h1.headline {
   font-weight: 800;
   line-height: 56px!important;
 }
-div.card > .container > .layout.wrap.row > .flex.xs3 > h1.headline > a {
+div.card#toolbar > .container > .layout.wrap.row > .flex.xs12 > h1.headline > a {
   text-decoration: none;
-  color: white;
+  color: #455a64!important;
+}
+div.card#toolbar > .container > .layout.wrap.row > .flex.xl2 > div.menu > div.menu__activator > button.btn.btn--large.btn--outline {
+  color: #455a64!important;
+}
+div.layout.row.wrap.justify-center {
+  margin-top: 2em;
+}
+div.layout.row.wrap.justify-center > div.flex.xs2.py-3.text-xs-center > a {
+  color: rgb(136, 152, 170);
+  text-decoration: none;
+}
+div.layout.row.wrap.justify-center > div.flex.xs12.py-3.text-xs-center {
+  color: #8898aa;
 }
 [v-cloak] {
   display: none;
@@ -25,18 +40,16 @@ div.card > .container > .layout.wrap.row > .flex.xs3 > h1.headline > a {
 </style>
 {% endblock head %}
 {% block content %}
-<v-card flat color="primary">
+<v-card flat id="toolbar">
   <v-container>
     <v-layout wrap row>
-      <v-flex xs3 xl2>
+      <v-flex xs12 xl2>
         <h1 class="headline"><a href="/">CLUB CODING</a></h1>
       </v-flex>
-      <v-flex xs0 xl1></v-flex>
-      <v-flex xs6 xl6></v-flex>
-      <v-flex xs1 xl1></v-flex>
-      <v-flex xs2 xl2>
+      <v-flex hidden-sm-and-down xl8></v-flex>
+      <v-flex hidden-sm-and-down xl2>
         <v-menu offset-y>
-          <v-btn large outline color="white" slot="activator">{{ user.username }}<v-icon>arrow_drop_down</v-icon></v-btn>
+          <v-btn large outline slot="activator">{{ user.username }}<v-icon>arrow_drop_down</v-icon></v-btn>
           <v-list>
             {% if user.admin %}
             <v-list-tile href="/admin/users">
