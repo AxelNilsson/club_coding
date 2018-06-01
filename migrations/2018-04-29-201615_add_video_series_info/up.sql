@@ -1,4 +1,4 @@
 ALTER TABLE `videos` ADD (
-  `series` bigint(20) DEFAULT NULL,
-  `episode_number` int(11) DEFAULT NULL
+  `serie_id` bigint(20) NOT NULL,
+  `episode_number` int(11) NOT NULL,
 );

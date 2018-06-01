@@ -1,1 +1,1 @@
-ALTER TABLE `videos` DROP COLUMN `series`, DROP COLUMN `episode-number`;
+ALTER TABLE `videos` DROP COLUMN `serie_id`, DROP COLUMN `episode_number`;
