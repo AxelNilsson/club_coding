@@ -2,7 +2,8 @@ use club_coding::create_new_user_view;
 use club_coding::models::{Series, UsersSeriesAccess, UsersStripeCustomer, UsersViews, VideoJoin,
                           Videos};
 use std::io::{Error, ErrorKind};
-use series::{get_video_watched, PublicVideo};
+use series::database::get_video_watched;
+use series::PublicVideo;
 use database::DbConn;
 use diesel::prelude::*;
 

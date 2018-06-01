@@ -3,7 +3,7 @@ use rocket::request::FlashMessage;
 use rocket_contrib::{Json, Template};
 use users::User;
 use series::PublicSeries;
-use series::get_last_10_series;
+use series::database::get_last_10_series;
 use database::DbConn;
 use structs::{Context, LoggedInContext};
 use rocket::response::NamedFile;

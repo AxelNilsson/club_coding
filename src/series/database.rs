@@ -1,9 +1,7 @@
-use rocket::Route;
-use diesel::prelude::*;
 use club_coding::models::{Series, UsersViews, Videos};
-use rocket_contrib::Template;
 use database::DbConn;
-use users::User;
+use series::{PublicSeries, PublicVideo};
+use diesel::prelude::*;
 
 pub fn get_series(connection: &DbConn) -> Vec<Series> {
     use club_coding::schema::series::dsl::*;
@@ -17,15 +15,6 @@ pub fn get_series(connection: &DbConn) -> Vec<Series> {
         Ok(vec_of_series) => vec_of_series,
         Err(_) => vec![],
     }
-}
-
-#[derive(Serialize)]
-pub struct PublicSeries {
-    uuid: String,
-    title: String,
-    slug: String,
-    description: String,
-    price: i32,
 }
 
 pub fn get_last_10_series(connection: &DbConn) -> Vec<PublicSeries> {
@@ -54,7 +43,7 @@ pub fn get_last_10_series(connection: &DbConn) -> Vec<PublicSeries> {
     }
 }
 
-fn get_serie(connection: &DbConn, uid: &String) -> Option<Series> {
+pub fn get_serie(connection: &DbConn, uid: &String) -> Option<Series> {
     use club_coding::schema::series::dsl::*;
 
     match series
@@ -66,15 +55,6 @@ fn get_serie(connection: &DbConn, uid: &String) -> Option<Series> {
         Ok(serie) => Some(serie),
         Err(_) => None,
     }
-}
-
-#[derive(Serialize)]
-pub struct PublicVideo {
-    pub episode_number: i32,
-    pub uuid: String,
-    pub title: String,
-    pub description: String,
-    pub watched: bool,
 }
 
 pub fn get_video_watched(connection: &DbConn, uid: i64, vid: i64) -> bool {
@@ -90,7 +70,7 @@ pub fn get_video_watched(connection: &DbConn, uid: i64, vid: i64) -> bool {
     }
 }
 
-fn get_videos(connection: &DbConn, uid: i64, sid: i64) -> Vec<PublicVideo> {
+pub fn get_videos(connection: &DbConn, uid: i64, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
     match videos
@@ -117,51 +97,7 @@ fn get_videos(connection: &DbConn, uid: i64, sid: i64) -> Vec<PublicVideo> {
     }
 }
 
-#[derive(Serialize)]
-struct SerieStruct<'a> {
-    header: &'a String,
-    user: &'a User,
-    uuid: String,
-    title: &'a String,
-    description: String,
-    in_development: bool,
-    price: i32,
-    videos: Vec<PublicVideo>,
-}
-
-#[get("/<uuid>")]
-fn serie(conn: DbConn, user: User, uuid: String) -> Option<Template> {
-    match get_serie(&conn, &uuid) {
-        Some(serie) => {
-            let mut description = serie.description;
-            description.retain(|c| c != '\\');
-            let context = SerieStruct {
-                header: &serie.title,
-                user: &user,
-                uuid: uuid,
-                title: &serie.title,
-                description: description,
-                in_development: serie.in_development,
-                price: serie.price,
-                videos: get_videos(&conn, user.id, serie.id),
-            };
-            Some(Template::render("series/series", &context))
-        }
-        None => None,
-    }
-}
-
-#[derive(Serialize)]
-struct SerieNoLogin<'a> {
-    header: &'a String,
-    uuid: String,
-    title: &'a String,
-    description: String,
-    in_development: bool,
-    videos: Vec<PublicVideo>,
-}
-
-fn get_videos_nologin(connection: &DbConn, sid: i64) -> Vec<PublicVideo> {
+pub fn get_videos_nologin(connection: &DbConn, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
     match videos
@@ -186,26 +122,4 @@ fn get_videos_nologin(connection: &DbConn, sid: i64) -> Vec<PublicVideo> {
         }
         Err(_) => vec![],
     }
-}
-
-#[get("/<uuid>", rank = 2)]
-fn serie_nologin(conn: DbConn, uuid: String) -> Option<Template> {
-    match get_serie(&conn, &uuid) {
-        Some(serie) => {
-            let context = SerieNoLogin {
-                header: &serie.title,
-                uuid: uuid,
-                title: &serie.title,
-                description: serie.description,
-                in_development: serie.in_development,
-                videos: get_videos_nologin(&conn, serie.id),
-            };
-            Some(Template::render("series/series_nologin", &context))
-        }
-        None => None,
-    }
-}
-
-pub fn endpoints() -> Vec<Route> {
-    routes![serie, serie_nologin]
 }
