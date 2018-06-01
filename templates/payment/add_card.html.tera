@@ -81,7 +81,7 @@
               <h1 class="display-2 blue-grey--text text--darken-2" style="text-align: center; font-weight: 400!important;">You're almost there.</h1>
               <v-layout>
                 <v-flex xs8 offset-xs2>
-                  <p class="subheading blue-grey--text text--lighten-1" style="letter-spacing: 0.5px!important; margin-top: 1em; line-height: 1.4!important; font-size: 18px!important; font-weight: 400; text-align: center">Joining takes less than a minute, and, if your peers are correct, is a pretty dang good decision. If you're still on the fence, we have a plan called “monthly” - and it’s not like the gym. Seriously - you can cancel in five seconds, if this isn't for you.</p>
+                  <p class="subheading blue-grey--text text--lighten-1" style="letter-spacing: 0.5px!important; margin-top: 1em; line-height: 1.4!important; font-size: 18px!important; font-weight: 400; text-align: center">Adding a card takes less than a minute, and don’t worry, we won’t charge anything until you decide to buy a serie! Seriously - you don’t have to make a decision right now. We don’t store you credit card information so you can be sure that it’s safe!</p>
                 </v-flex>
               </v-layout>
             </v-flex>
