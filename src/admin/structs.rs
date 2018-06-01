@@ -6,8 +6,8 @@ use database::MySqlPool;
 use rocket::State;
 
 #[derive(Serialize)]
-pub struct LoggedInContext {
-    pub header: String,
+pub struct LoggedInContext<'a> {
+    pub header: &'a str,
     pub user: Administrator,
 }
 

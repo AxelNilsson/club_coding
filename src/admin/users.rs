@@ -48,8 +48,8 @@ fn get_all_users(connection: &DbConn) -> Vec<UsersC> {
 }
 
 #[derive(Serialize)]
-struct UsersContext {
-    header: String,
+struct UsersContext<'a> {
+    header: &'a str,
     user: Administrator,
     users: Vec<UsersC>,
 }
@@ -57,7 +57,7 @@ struct UsersContext {
 #[get("/users")]
 pub fn users(conn: DbConn, user: Administrator) -> Template {
     let context = UsersContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
         users: get_all_users(&conn),
     };
@@ -111,7 +111,7 @@ pub struct EditUser {
 
 #[derive(Serialize)]
 struct EditUsersContext<'a> {
-    header: String,
+    header: &'a str,
     user: &'a Administrator,
     uuid: i64,
     user_data: EditUser,
@@ -139,7 +139,7 @@ pub fn edit_users(conn: DbConn, uuid: i64, admin: Administrator) -> Option<Templ
     match get_user(&conn, uuid) {
         Some(user) => {
             let context = EditUsersContext {
-                header: "Club Coding".to_string(),
+                header: "Club Coding",
                 user: &admin,
                 uuid: uuid,
                 groups: get_all_groupsc(&conn),

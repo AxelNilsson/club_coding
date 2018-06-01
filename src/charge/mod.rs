@@ -12,7 +12,7 @@ use charge::customer::charge;
 
 #[derive(Serialize)]
 pub struct ChargeContext<'a> {
-    pub header: String,
+    pub header: &'a str,
     pub user: User,
     pub publishable_key: &'a str,
     pub flash_name: String,
@@ -30,7 +30,7 @@ fn add_card_page(
         None => ("".to_string(), "".to_string()),
     };
     let context = ChargeContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
         publishable_key: &stripe_token.publishable_key,
         flash_name: name,
@@ -51,7 +51,7 @@ fn add_card_uuid_page(
         None => ("".to_string(), "".to_string()),
     };
     let context = ChargeContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
         publishable_key: &stripe_token.publishable_key,
         flash_name: name,

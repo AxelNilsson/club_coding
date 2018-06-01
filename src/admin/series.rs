@@ -25,8 +25,8 @@ pub struct Serie {
 }
 
 #[derive(Serialize)]
-pub struct SeriesContext {
-    pub header: String,
+pub struct SeriesContext<'a> {
+    pub header: &'a str,
     pub user: Administrator,
     pub series: Vec<Serie>,
 }
@@ -84,7 +84,7 @@ pub fn get_all_series(connection: &DbConn) -> Vec<Serie> {
 #[get("/series")]
 pub fn series(conn: DbConn, user: Administrator) -> Template {
     let context = SeriesContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
         series: get_all_series(&conn),
     };
@@ -94,7 +94,7 @@ pub fn series(conn: DbConn, user: Administrator) -> Template {
 #[get("/series/new")]
 pub fn new_series(user: Administrator) -> Template {
     let context = LoggedInContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
     };
     Template::render("admin/new_serie", &context)
@@ -144,7 +144,7 @@ fn get_serie(connection: &DbConn, uid: &str) -> Option<Series> {
 
 #[derive(Serialize)]
 pub struct EditSeries<'a> {
-    header: String,
+    header: &'a str,
     user: Administrator,
     uuid: &'a str,
     title: String,
@@ -160,7 +160,7 @@ pub fn edit_series(conn: DbConn, uuid: String, user: Administrator) -> Option<Te
     match get_serie(&conn, &uuid) {
         Some(serie) => {
             let context = EditSeries {
-                header: "Club Coding".to_string(),
+                header: "Club Coding",
                 user: user,
                 uuid: &uuid,
                 title: serie.title,

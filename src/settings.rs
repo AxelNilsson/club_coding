@@ -14,7 +14,7 @@ use std::io::{Error, ErrorKind};
 #[get("/settings/password")]
 fn password_page(user: User) -> Template {
     let context = LoggedInContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
     };
     Template::render("settings/password", &context)

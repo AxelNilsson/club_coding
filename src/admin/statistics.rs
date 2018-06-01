@@ -7,8 +7,8 @@ use rocket::Route;
 use database::DbConn;
 
 #[derive(Serialize)]
-struct AdminContext {
-    header: String,
+struct AdminContext<'a> {
+    header: &'a str,
     user: Administrator,
     views_today: usize,
     videos_total: usize,
@@ -21,7 +21,7 @@ struct AdminContext {
 #[get("/")]
 pub fn index(conn: DbConn, user: Administrator) -> Template {
     let context = AdminContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
         views_today: 187232,
         videos_total: get_videos(&conn).len(),
@@ -36,7 +36,7 @@ pub fn index(conn: DbConn, user: Administrator) -> Template {
 #[get("/views")]
 pub fn views(user: Administrator) -> Template {
     let context = LoggedInContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
     };
     Template::render("admin/views", &context)

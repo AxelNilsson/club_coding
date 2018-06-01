@@ -23,8 +23,8 @@ pub struct Charge {
 }
 
 #[derive(Serialize)]
-struct PaymentsContext {
-    header: String,
+struct PaymentsContext<'a> {
+    header: &'a str,
     user: User,
     flash_name: String,
     flash_msg: String,
@@ -45,7 +45,7 @@ fn payments_page(
                 None => ("".to_string(), "".to_string()),
             };
             let context = PaymentsContext {
-                header: "Club Coding".to_string(),
+                header: "Club Coding",
                 user: user,
                 flash_name: name,
                 flash_msg: msg,
@@ -68,7 +68,7 @@ fn update_card_page(
         None => ("".to_string(), "".to_string()),
     };
     let context = ChargeContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
         publishable_key: &stripe_token.publishable_key,
         flash_name: name,

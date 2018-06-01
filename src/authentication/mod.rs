@@ -75,8 +75,8 @@ fn login_page_loggedin(_user: UserStruct) -> Redirect {
 }
 
 #[derive(Serialize)]
-struct LoginContext {
-    header: String,
+struct LoginContext<'a> {
+    header: &'a str,
     csrf: String,
     flash_name: String,
     flash_msg: String,
@@ -89,7 +89,7 @@ fn login_page(token: CsrfToken, flash: Option<FlashMessage>) -> Template {
         None => ("".to_string(), "".to_string()),
     };
     let context = LoginContext {
-        header: "Login Page!".to_string(),
+        header: "Login Page!",
         csrf: token.value(),
         flash_name: name,
         flash_msg: msg,
@@ -255,7 +255,7 @@ fn signup_page(token: CsrfToken, flash: Option<FlashMessage>) -> Template {
         None => ("".to_string(), "".to_string()),
     };
     let context = LoginContext {
-        header: "Login Page!".to_string(),
+        header: "Login Page!",
         csrf: token.value(),
         flash_name: name,
         flash_msg: msg,
@@ -323,7 +323,7 @@ fn send_recover_email_page(csrf_token: CsrfToken, flash: Option<FlashMessage>) -
         None => ("".to_string(), "".to_string()),
     };
     let context = LoginContext {
-        header: "recover_email".to_string(),
+        header: "recover_email",
         csrf: csrf_token.value(),
         flash_name: name,
         flash_msg: msg,
@@ -438,7 +438,7 @@ fn recover_email_page(
                     None => ("".to_string(), "".to_string()),
                 };
                 let context = LoginContext {
-                    header: "recover_email".to_string(),
+                    header: "recover_email",
                     csrf: csrf_token.value(),
                     flash_name: name,
                     flash_msg: msg,

@@ -6,6 +6,7 @@
   #main {
     margin-top: 5vh;
     padding: 2em;
+    background-color: #fafafa;
   }
 </style>
 {% endblock head %}

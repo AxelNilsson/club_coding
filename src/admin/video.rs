@@ -29,8 +29,8 @@ struct Video {
 }
 
 #[derive(Serialize)]
-struct VideosContext {
-    header: String,
+struct VideosContext<'a> {
+    header: &'a str,
     user: Administrator,
     videos: Vec<Video>,
 }
@@ -70,7 +70,7 @@ fn get_all_videos(connection: &DbConn) -> Vec<Video> {
 #[get("/videos")]
 pub fn videos(conn: DbConn, user: Administrator) -> Template {
     let context = VideosContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
         videos: get_all_videos(&conn),
     };
@@ -80,7 +80,7 @@ pub fn videos(conn: DbConn, user: Administrator) -> Template {
 #[get("/videos/new")]
 pub fn new_video(conn: DbConn, user: Administrator) -> Template {
     let context = SeriesContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
         series: get_all_series(&conn),
     };
@@ -151,7 +151,7 @@ pub fn insert_new_video(
 
 #[derive(Serialize)]
 struct EditVideo<'a> {
-    header: String,
+    header: &'a str,
     user: Administrator,
     uuid: &'a str,
     series: Vec<Serie>,
@@ -182,7 +182,7 @@ pub fn edit_video(conn: DbConn, uuid: String, user: Administrator) -> Option<Tem
         Some(video) => {
             let serie_title = get_serie_from_video(&conn, video.serie_id);
             let context = EditVideo {
-                header: "Club Coding".to_string(),
+                header: "Club Coding",
                 user: user,
                 uuid: &uuid,
                 series: get_all_series(&conn),

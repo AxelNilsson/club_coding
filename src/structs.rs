@@ -2,14 +2,14 @@ use users::User;
 use rocket::fairing::AdHoc;
 
 #[derive(Serialize)]
-pub struct LoggedInContext {
-    pub header: String,
+pub struct LoggedInContext<'a> {
+    pub header: &'a str,
     pub user: User,
 }
 
 #[derive(Serialize)]
-pub struct Context {
-    pub header: String,
+pub struct Context<'a> {
+    pub header: &'a str,
 }
 
 pub struct StripeToken {

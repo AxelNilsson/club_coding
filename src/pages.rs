@@ -10,8 +10,8 @@ use rocket::response::NamedFile;
 use club_coding::create_new_newsletter_subscriber;
 
 #[derive(Serialize)]
-struct IndexLoggedInContext {
-    header: String,
+struct IndexLoggedInContext<'a> {
+    header: &'a str,
     user: User,
     flash_name: String,
     flash_msg: String,
@@ -19,8 +19,8 @@ struct IndexLoggedInContext {
 }
 
 #[derive(Serialize)]
-struct IndexContext {
-    header: String,
+struct IndexContext<'a> {
+    header: &'a str,
     flash_name: String,
     flash_msg: String,
     series: Vec<PublicSeries>,
@@ -33,7 +33,7 @@ fn index(conn: DbConn, user: User, flash: Option<FlashMessage>) -> Template {
         None => ("".to_string(), "".to_string()),
     };
     let context = IndexLoggedInContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
         flash_name: name,
         flash_msg: msg,
@@ -49,7 +49,7 @@ fn index_nouser(conn: DbConn, flash: Option<FlashMessage>) -> Template {
         None => ("".to_string(), "".to_string()),
     };
     let context = IndexContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         flash_name: name,
         flash_msg: msg,
         series: get_last_10_series(&conn),
@@ -73,7 +73,7 @@ fn subscribe(conn: DbConn, data: Json<NewSubscriber>) -> Result<(), ()> {
 #[get("/terms_of_service")]
 fn terms_of_service(user: User) -> Template {
     let context = LoggedInContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
     };
     Template::render("pages/terms_of_service", &context)
@@ -82,7 +82,7 @@ fn terms_of_service(user: User) -> Template {
 #[get("/terms_of_service", rank = 2)]
 fn terms_of_service_nologin() -> Template {
     let context = Context {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
     };
     Template::render("pages/terms_of_service_nologin", &context)
 }
@@ -90,7 +90,7 @@ fn terms_of_service_nologin() -> Template {
 #[get("/cookie_policy")]
 fn cookie_policy(user: User) -> Template {
     let context = LoggedInContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
     };
     Template::render("pages/cookie_policy", &context)
@@ -99,7 +99,7 @@ fn cookie_policy(user: User) -> Template {
 #[get("/cookie_policy", rank = 2)]
 fn cookie_policy_nologin() -> Template {
     let context = Context {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
     };
     Template::render("pages/cookie_policy_nologin", &context)
 }
@@ -107,7 +107,7 @@ fn cookie_policy_nologin() -> Template {
 #[get("/privacy_policy")]
 fn privacy_policy(user: User) -> Template {
     let context = LoggedInContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
     };
     Template::render("pages/privacy_policy", &context)
@@ -116,7 +116,7 @@ fn privacy_policy(user: User) -> Template {
 #[get("/privacy_policy", rank = 2)]
 fn privacy_policy_nologin() -> Template {
     let context = Context {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
     };
     Template::render("pages/privacy_policy_nologin", &context)
 }

@@ -66,8 +66,8 @@ pub fn get_all_groups(connection: &DbConn) -> Vec<GroupContext> {
 }
 
 #[derive(Serialize)]
-struct GroupsContext {
-    header: String,
+struct GroupsContext<'a> {
+    header: &'a str,
     user: Administrator,
     groups: Vec<GroupContext>,
 }
@@ -75,7 +75,7 @@ struct GroupsContext {
 #[get("/groups")]
 pub fn groups(conn: DbConn, user: Administrator) -> Template {
     let context = GroupsContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
         groups: get_all_groups(&conn),
     };
@@ -85,7 +85,7 @@ pub fn groups(conn: DbConn, user: Administrator) -> Template {
 #[get("/groups/new")]
 pub fn new_group(user: Administrator) -> Template {
     let context = LoggedInContext {
-        header: "Club Coding".to_string(),
+        header: "Club Coding",
         user: user,
     };
     Template::render("admin/new_group", &context)
@@ -119,7 +119,7 @@ pub struct EditGroup {
 
 #[derive(Serialize)]
 struct EditGroupsContext<'a> {
-    header: String,
+    header: &'a str,
     user: Administrator,
     uuid: &'a String,
     group: EditGroup,
@@ -141,7 +141,7 @@ pub fn edit_group(conn: DbConn, uuid: String, user: Administrator) -> Option<Tem
     match get_group_by_uuid(&conn, &uuid) {
         Some(group) => {
             let context = EditGroupsContext {
-                header: "Club Coding".to_string(),
+                header: "Club Coding",
                 user: user,
                 uuid: &uuid,
                 group: EditGroup { name: group.name },
