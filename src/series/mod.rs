@@ -71,11 +71,13 @@ struct SerieNoLogin<'a> {
 fn serie_nologin(conn: DbConn, uuid: String) -> Option<Template> {
     match database::get_serie(&conn, &uuid) {
         Some(serie) => {
+            let mut description = serie.description;
+            description.retain(|c| c != '\\');
             let context = SerieNoLogin {
                 header: &serie.title,
                 uuid: uuid,
                 title: &serie.title,
-                description: serie.description,
+                description: description,
                 in_development: serie.in_development,
                 videos: database::get_videos_nologin(&conn, serie.id),
             };

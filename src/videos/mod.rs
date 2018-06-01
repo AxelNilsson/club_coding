@@ -41,12 +41,14 @@ fn watch_as_user(
                 Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
                 None => ("".to_string(), "".to_string()),
             };
+            let mut description = video.description;
+            description.retain(|c| c != '\\');
             let mut context = WatchContext {
                 uuid: video.uuid,
                 series_title: video.series_title,
                 price: video.price,
                 title: video.title,
-                description: video.description,
+                description: description,
                 user: &user,
                 vimeo_id: video.vimeo_id,
                 videos: videos,
@@ -88,13 +90,15 @@ fn watch_nouser(
                 Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
                 None => ("".to_string(), "".to_string()),
             };
+            let mut description = video.description;
+            description.retain(|c| c != '\\');
             let videos: Vec<PublicVideo> =
                 database::get_videos_of_series_nologin(&conn, video.serie_id);
             let context = WatchNoUser {
                 uuid: video.uuid,
                 series_title: video.series_title,
                 title: video.title,
-                description: video.description,
+                description: description,
                 videos: videos,
                 flash_name: name,
                 flash_msg: msg,

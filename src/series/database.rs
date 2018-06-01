@@ -29,11 +29,13 @@ pub fn get_last_10_series(connection: &DbConn) -> Vec<PublicSeries> {
         Ok(s_eries) => {
             let mut to_return: Vec<PublicSeries> = vec![];
             for serie in s_eries {
+                let mut mut_description = serie.description;
+                mut_description.retain(|c| c != '\\');
                 to_return.push(PublicSeries {
                     uuid: serie.uuid,
                     title: serie.title,
                     slug: serie.slug,
-                    description: serie.description,
+                    description: mut_description,
                     price: serie.price,
                 });
             }
