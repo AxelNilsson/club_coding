@@ -3,18 +3,51 @@
 {% block head %}
 {{ super() }}
 <style>
+  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main {
+    text-align: center;
+    padding: 15vh 0;
+  }
+  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > h2.display-3 {
+    color: #4d545d;
+  }
+  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > p.first.subheading {
+    margin: 1em 0 0;
+  }
+  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > p.subheading {
+    color: rgb(77, 84, 93);
+  }
+  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > .layout.wrap.row > .flex > a {
+    color: #FFF;
+  }
+  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > .layout.wrap.row > .flex.xs2.offset-xs3 > a {
+    background-color: #103b56;
+  }
+  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > .layout.wrap.row > .flex.xs3.offset-xs1 > a {
+    background-color: #ef6733;
+  }
+  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > hr.divider {
+    margin-bottom: 2em;
+  }
 </style>
 {% endblock head %}
 {% block content %}{{ super() }}{% endblock content %}
 {% block player %}
   <v-layout wrap>
-    <v-flex lg8 offset-lg2 xl6 offset-xl3>
-      <div style="text-align: center; padding: 15vh 0;">
-        <h2 class="display-3" style="color: #4d545d;">Back to the Learning!</h2>
-        <p class="subheading" style="margin: 1em 0; color: rgb(77, 84, 93);">It looks like you don't have access to this series at Club Coding.<br />Don't worry, it's an easy fix!</p>
-        <v-btn large style="background-color: #ef6733; color: #FFF" href="/watch/{{ uuid }}/buy">Buy this series for ${{ price/100 }}!</v-btn>
+    <v-flex xs12 lg8 offset-lg2 xl6 offset-xl3>
+      <div id="main">
+        <h2 class="display-3">Start learning today!</h2>
+        <p class="first subheading">It looks like you don't have access to this series at Club Coding.</p>
+        <p class="subheading">Don't worry, it's an easy fix!</p>
+        <v-layout wrap row>
+          <v-flex xs2 offset-xs3>
+            <v-btn large block href="/watch/{{ uuid }}/buy">Buy with crypto!</v-btn>
+          </v-flex>
+          <v-flex xs3 offset-xs1>
+            <v-btn large block href="/watch/{{ uuid }}/buy">Buy with card for ${{ price/100 }}!</v-btn>
+          </v-flex>
+        </v-layout>
       </div>
-      <v-divider style="margin-bottom: 2em;"/>
+      <v-divider />
     </v-flex>
   </v-layout>
 {% endblock player %}

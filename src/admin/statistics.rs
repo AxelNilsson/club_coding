@@ -2,7 +2,7 @@ use rocket_contrib::Template;
 use users::get_users;
 use admin::structs::{Administrator, LoggedInContext};
 use series::get_series;
-use videos::get_videos;
+use videos::database::get_videos;
 use rocket::Route;
 use database::DbConn;
 
