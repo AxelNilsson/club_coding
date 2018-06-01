@@ -39,10 +39,10 @@
         <p class="first subheading">It looks like you don't have access to this series at Club Coding.</p>
         <p class="subheading">Don't worry, it's an easy fix!</p>
         <v-layout wrap row>
-          <v-flex xs2 offset-xs3>
+          <v-flex xs12 lg2 offset-lg3>
             <v-btn large block href="/watch/{{ uuid }}/buy">Buy with crypto!</v-btn>
           </v-flex>
-          <v-flex xs3 offset-xs1>
+          <v-flex xs12 lg3 offset-lg1>
             <v-btn large block href="/watch/{{ uuid }}/buy">Buy with card for ${{ price/100 }}!</v-btn>
           </v-flex>
         </v-layout>

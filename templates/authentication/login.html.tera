@@ -33,8 +33,7 @@
   {{ super() }}
   <v-container>
     <v-layout wrap row>
-      <v-flex xs3></v-flex>
-      <v-flex xs6>
+      <v-flex xs12 lg6 offset-lg3>
         <v-card flat id="main">
           <h1 class="display-1">{{ header }}</h1>
           <form method="POST">

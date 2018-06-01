@@ -27,8 +27,7 @@
   </v-card>
   <v-container>
     <v-layout wrap row>
-      <v-flex xs3></v-flex>
-      <v-flex xs6>
+      <v-flex xs12 lg6 offset-lg3>
         <div id="main">
           <h1 class="display-4">404</h1>
           <h2 class="display-1">Not found</h2>

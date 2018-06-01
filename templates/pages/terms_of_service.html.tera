@@ -14,7 +14,7 @@
 {{ super() }}
 <v-container>
   <v-layout wrap row>
-    <v-flex xs8 offset-xs2>
+    <v-flex xs12 lg8 offset-lg2>
       <v-card flat id="main">
         <h1 class="display-1">Terms and Conditions for Club Coding</h1>
         <h2 class="title">Introduction</h2>

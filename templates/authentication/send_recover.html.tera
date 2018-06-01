@@ -6,6 +6,10 @@
     #main {
       margin-top: 5vh;
       padding: 1em;
+      background-color: #fafafa;
+    }
+    .application .theme--light.input-group--text-field.input-group--text-field-box .input-group__input, .theme--light .input-group--text-field.input-group--text-field-box .input-group__input {
+      background-color: #fafafa !important;
     }
     div#app > div.application > div.application--wrap > div.alert {
       margin: 0;
@@ -24,13 +28,12 @@
   {{ super() }}
   <v-container>
     <v-layout wrap row>
-      <v-flex xs3></v-flex>
-      <v-flex xs6>
+      <v-flex xs12 lg6 offset-lg3>
         <v-card flat id="main">
           <h1 class="display-1">Recover account</h1>
           <form method="POST">
             <input type="hidden" name="csrf" value="{{ csrf }}">
-            <v-text-field box type="email" name="email" label="Email" required></v-text-field>
+            <v-text-field box color="#fafafa" box type="email" name="email" label="Email" required></v-text-field>
             <v-btn large block type="submit" color="primary">Send email!</v-btn>
           </form>
         </v-card>

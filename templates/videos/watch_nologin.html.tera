@@ -53,7 +53,7 @@
 {% block content %}
   {{ super() }}
   <v-layout wrap>
-    <v-flex lg8 offset-lg2 xl6 offset-xl3>
+      <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
       <div style="text-align: center; padding: 15vh 0;">
         <h2 class="display-3" style="color: #4d545d;">Start learning today!</h2>
         <p class="subheading" style="margin: 1em 0; color: rgb(77, 84, 93);">It looks like you're not a member at Club Coding.<br />Don't worry, it's an easy fix!</p>
@@ -63,17 +63,17 @@
     </v-flex>
   </v-layout>
   <v-layout wrap>
-    <v-flex lg10 offset-lg1 xl8 offset-xl2 style="margin-top: 1em;">
+    <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2 style="margin-top: 1em;">
       <h1 class="display-1" style="margin-top: 4px; font-weight:300;">{{ series_title }}: <span style="font-weight: 500">{{ title }}</span></h1>
       <p class="title" style="margin-top: 1em; font-weight:300; line-height: 1.5em !important;">{{ description | safe }}</p>
     </v-flex>
   </v-layout>
   <v-layout wrap style="padding: 4em 0 2em;">
-    <v-flex lg10 offset-lg1 xl8 offset-xl2>
+    <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
      {% for video in videos %}
       <v-card>
         <v-layout wrap row>
-          <v-flex xs2>
+          <v-flex xs12 lg2>
             {% if video.watched %}
             <div class="green--circle circle">
             {% else %}
@@ -88,7 +88,7 @@
               </span>
             </div>
           </v-flex>
-          <v-flex xs8>
+          <v-flex xs12 lg8>
             {% if video.uuid == uuid %}
             <h2 class="headline" style="color: rgb(77, 84, 93); font-weight: 700;">{{ video.title }}</h2>
             {% else %}

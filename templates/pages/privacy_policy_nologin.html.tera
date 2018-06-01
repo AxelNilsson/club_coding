@@ -1,7 +1,6 @@
 {% extends "base" %}
 {% block title %}{{ header }}{% endblock title %}
-{% block head %}
-{{ super() }}
+{% block head %} {{ super() }}
 <style>
   #main {
     margin-top: 5vh;
@@ -14,8 +13,8 @@
 {{ super() }}
 <v-container>
   <v-layout wrap row>
-    <v-flex xs8 offset-xs2>
-      <v-card id="main">
+    <v-flex xs12 lg8 offset-lg2>
+      <v-card flat id="main">
         <h1 class="display-1">Privacy Policy for Club Coding</h1>
         <p class="body-1">This privacy policy has been compiled to better serve those who are concerned with how their 'Personally Identifiable
           Information' (PII) is being used online. PII, as described in US privacy law and information security, is information

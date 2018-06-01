@@ -95,22 +95,22 @@
   {{ super() }}
   <div id="main">
     <v-layout wrap>
-      <v-flex lg5 offset-lg1 xl3 offset-xl3>
+      <v-flex xs12 lg5 offset-lg1 xl3 offset-xl3>
         <h1 class="display-2">{{ title }}</h1>
         <p class="subheading">{{ description | safe }}</p>
         <v-btn outline color="orange darken-1">${{ price/100 }}</v-btn>
       </v-flex>
-      <v-flex lg5 xl2 offset-xl1>
+      <v-flex xs12 lg5 xl2 offset-xl1>
         <div id="thumbnail"></div>
       </v-flex>
     </v-layout>
   </div>
   <v-layout wrap row id="episodes">
-    <v-flex lg10 offset-lg1 xl6 offset-xl3>
+    <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
      {% for video in videos %}
       <v-card>
         <v-layout wrap row>
-          <v-flex xs2>
+          <v-flex xs12 lg2>
             {% if video.watched %}
             <div class="green--circle circle">
             {% else %}
@@ -125,7 +125,7 @@
               </span>
             </div>
           </v-flex>
-          <v-flex xs8>
+          <v-flex xs12 lg8>
             <h2 class="headline"><a href="/watch/{{ video.uuid }}">{{ video.title }}</a></h2>
             <p class="subheading">{{ video.description | safe }}</p>
           </v-flex>

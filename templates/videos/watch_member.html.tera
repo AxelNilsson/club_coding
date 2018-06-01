@@ -23,7 +23,7 @@
 {% block player %}
   <div id="main">
     <v-layout wrap>
-      <v-flex lg10 offset-lg1 xl8 offset-xl2>
+      <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
         <div>
           <iframe src="https://player.vimeo.com/video/{{ vimeo_id }}" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen="" data-ready="true"></iframe>
         </div>

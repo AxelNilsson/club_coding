@@ -74,20 +74,20 @@
   {{ super() }}
   <v-container>
     <v-layout wrap row>
-      <v-flex xs8 offset-xs2>
+      <v-flex xs12 lg8 offset-lg2>
         <div id="main">
           <v-layout>
-            <v-flex xs10 offset-xs1 style="text-align: center;">
+            <v-flex xs12 lg10 offset-lg1 style="text-align: center;">
               <h1 class="display-2 blue-grey--text text--darken-2" style="text-align: center; font-weight: 400!important;">You're almost there.</h1>
               <v-layout>
-                <v-flex xs8 offset-xs2>
+                <v-flex xs12 lg8 offset-lg2>
                   <p class="subheading blue-grey--text text--lighten-1" style="letter-spacing: 0.5px!important; margin-top: 1em; line-height: 1.4!important; font-size: 18px!important; font-weight: 400; text-align: center">Adding a card takes less than a minute, and don’t worry, we won’t charge anything until you decide to buy a serie! Seriously - you don’t have to make a decision right now. We don’t store you credit card information so you can be sure that it’s safe!</p>
                 </v-flex>
               </v-layout>
             </v-flex>
           </v-layout>
           <v-layout style="margin-top: 4em;">
-            <v-flex xs6 offset-xs3>
+            <v-flex xs12 lg6 offset-lg3>
                 <v-card flat style="padding: 2em;">
                 <h2 class="headline">Add a card to your account</h2>
                 <form method="POST" style="margin: 1em 0;" id="payment-form">

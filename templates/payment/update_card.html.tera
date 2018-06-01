@@ -56,26 +56,31 @@
         margin-left: 12px;
         margin-top: 28px;
     }
+    div#app > div.application > div.application--wrap > div.alert {
+      margin: 0;
+      text-align: center;
+      font-size: 16px;
+    }
 </style>
 <script src="https://js.stripe.com/v3/"></script>
 {% endblock head %}
 {% block content %}
   {% if flash_name == "error" %}
-    <v-alert style="margin: 0; text-align: center; font-size: 16px;" color="error" :value="true">{{ flash_msg }}</v-alert>
+    <v-alert color="error" :value="true">{{ flash_msg }}</v-alert>
   {% endif %}
   {% if flash_name == "success" %}
-    <v-alert style="margin: 0; text-align: center; font-size: 16px;" color="success" :value="true">{{ flash_msg }}</v-alert>
+    <v-alert color="success" :value="true">{{ flash_msg }}</v-alert>
   {% endif %}
   {{ super() }}
   <v-container>
     <div id="main">
       <v-layout wrap row>
-        <v-flex xs2>
+        <v-flex xs2 lg2>
           <v-btn href="/settings/payment" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Payments</span></v-btn>
           <v-btn large depressed block dark color="grey lighten-1" style="font-weight: 700;"><span class="title">Update Card</span></v-btn>
           <v-btn @click.stop="cancel_subscription = true" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Remove Card</span></v-btn>
         </v-flex>
-        <v-flex xs6 offset-xs1>
+        <v-flex xs10 lg6 offset-lg1>
           <v-card flat style="padding: 2em;">
             <h2 class="headline">Update the card on your account</h2>
             <form method="post" style="margin: 1em 0;" id="payment-form">
@@ -94,10 +99,10 @@
         <v-card-title><span class="display-1" style="width: 100%; text-align: center;">Are you sure?</span></v-card-title>
         <v-card-actions>
           <v-layout wrap row>
-          <v-flex xs5>
+          <v-flex xs12 lg5>
             <v-btn color="primary" large block @click.stop="cancel_subscription = false">Close</v-btn>
           </v-flex>
-          <v-flex xs6 offset-xs1>
+          <v-flex xs12 lg6 offset-lg1>
             <v-form method="POST" action="/settings/payment/card/delete">
               <v-btn color="green" large block dark type="submit">Yes I'm sure!</v-btn>
             <v-form>
