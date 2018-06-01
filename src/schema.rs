@@ -9,6 +9,16 @@ table! {
 }
 
 table! {
+    newsletter_subscribers (id) {
+        id -> Bigint,
+        email -> Varchar,
+        active -> Bool,
+        created -> Timestamp,
+        updated -> Timestamp,
+    }
+}
+
+table! {
     series (id) {
         id -> Bigint,
         uuid -> Varchar,
@@ -201,8 +211,8 @@ table! {
         membership_only -> Bool,
         created -> Timestamp,
         updated -> Timestamp,
-        series -> Nullable<Bigint>,
-        episode_number -> Nullable<Integer>,
+        serie_id -> Bigint,
+        episode_number -> Integer,
         archived -> Bool,
         vimeo_id -> Varchar,
     }
@@ -210,6 +220,7 @@ table! {
 
 allow_tables_to_appear_in_same_query!(
     groups,
+    newsletter_subscribers,
     series,
     users,
     users_group,

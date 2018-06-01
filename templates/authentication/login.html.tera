@@ -36,10 +36,10 @@
             <input type="hidden" name="csrf" value="{{ csrf }}">
             <v-text-field box color="#fafafa" type="text" name="username" label="Username" required></v-text-field>
             <v-text-field box color="#fafafa" type="password" name="password" label="Password" required></v-text-field>
-            <v-btn block type="submit" color="primary">Login!</v-btn>
+            <v-btn large block type="submit" color="primary">Login!</v-btn>
           </form>
+          <p class="body-1">Forgotten your password? <a href="/recover/email">Recover your account here.</a></p>
         </v-card>
-        <p class="body-1">Forgotten your password? <a href="/recover/email">Recover your account here.</a></p>
       </v-flex>
     </v-layout>
   </v-container>

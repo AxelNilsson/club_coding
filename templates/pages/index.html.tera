@@ -112,7 +112,7 @@
     div.card#newsletter > .container > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl8.offset-xl2 > div.card > form {
       margin-top: 2em;
     }
-    div.card#newsletter > .container > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl8.offset-xl2 > div.card > form > div.layout.row.wrap > .xs4.xl2 > button.white--text.btn.btn--block.btn--large.orange.darken-3{
+    div.card#newsletter > .container > div.layout.wrap.row > div.xs12.lg10.offset-lg1.xl8.offset-xl2 > div.card > form > div.layout.row.wrap > .hidden-sm-and-down.lg2 > button.white--text.btn.btn--block.btn--large.orange.darken-3{
       height: 56px;
       margin-left: 1em;
       margin-top: 1.5em;
@@ -218,6 +218,8 @@
       <v-layout wrap row>
         <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
           <v-card flat color="white">
+            <v-alert :value="success_alert" type="success">You're subscribed!</v-alert>
+            <v-alert :value="error_alert" type="error">Subscription failed, please try again later.</v-alert>
             <v-layout wrap row>
               <v-flex xs12 xl8 offset-xl2>
                 <h1 class="display-2">Subscribe to our Newsletter!</h1>
@@ -226,12 +228,15 @@
             </v-layout>
             <v-form>
               <v-layout wrap row>
-                <v-flex xs8 xl6 offset-xl2>
-                  <v-text-field box label="Your email address..."></v-text-field>
+                <v-flex xs12 lg6 offset-lg2>
+                  <v-text-field box type="email" v-model="email" label="Your email address..."></v-text-field>
                 </v-flex>
-                <v-flex xs4 xl2>
-                  <v-btn large block class="white--text" color="orange darken-3">Subscribe</v-btn>
+                <v-flex hidden-sm-and-down lg2>
+                  <v-btn large block class="white--text" color="orange darken-3" @click.native="subscribe" :loading="loading">Subscribe</v-btn>
                 </v-flex>
+                <v-flex xs12 hidden-md-and-up>
+                  <v-btn large block class="white--text" color="orange darken-3" @click.native="subscribe" :loading="loading">Subscribe</v-btn>
+                </v-flex>                
               </v-layout>
             </v-form>
           </v-card>
@@ -241,5 +246,34 @@
   </v-card>
 {% endblock content %}
 {% block script %}
-  {{ super() }}
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"],
+      data: {
+        success_alert: false,
+        error_alert: false,
+        loading: false,
+        email: ''
+      },
+      methods: {
+        subscribe() {
+          this.success_alert = this.error_alert = false;
+          this.loading = true;
+          axios.post('/subscribe', {
+              email: this.email
+            })
+            .then(response => {
+              this.loading = false;
+              this.success_alert = true;
+            })
+            .catch(error => {
+              this.loading = false;
+              this.error_alert = true;
+            });
+          }
+      }
+    })
+  </script>
 {% endblock script %}

@@ -1,4 +1,4 @@
-use club_coding::models::{Users, UsersGroup, UsersSessions};
+use club_coding::models::{Users, UsersAndSessions, UsersGroup};
 use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
 use database::{DbConn, MySqlPool};
@@ -34,41 +34,33 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
             .get_private("session_token")
             .map(|cookie| match pool.get() {
                 Ok(connection) => {
-                    use club_coding::schema::users_sessions::dsl::*;
+                    use club_coding::schema::{users, users_sessions};
 
-                    match users_sessions
-                        .filter(token.eq(cookie.value()))
-                        .first::<UsersSessions>(&*connection)
+                    match users_sessions::table
+                        .inner_join(users::table.on(users::id.eq(users_sessions::user_id)))
+                        .filter(users_sessions::token.eq(cookie.value()))
+                        .filter(users::verified.eq(true))
+                        .select((users::id, users::username, users::email))
+                        .first::<UsersAndSessions>(&*connection)
                     {
                         Ok(results) => {
-                            use club_coding::schema::users::dsl::*;
+                            use club_coding::schema::users_group::dsl::*;
 
-                            match users
-                                .filter(id.eq(results.user_id))
-                                .filter(verified.eq(true))
-                                .first::<Users>(&*connection)
+                            let is_admin = match users_group
+                                .filter(user_id.eq(results.id))
+                                .filter(group_id.eq(1))
+                                .first::<UsersGroup>(&*connection)
                             {
-                                Ok(results) => {
-                                    use club_coding::schema::users_group::dsl::*;
+                                Ok(_) => true,
+                                Err(_) => false,
+                            };
 
-                                    let is_admin = match users_group
-                                        .filter(user_id.eq(results.id))
-                                        .filter(group_id.eq(1))
-                                        .first::<UsersGroup>(&*connection)
-                                    {
-                                        Ok(_) => true,
-                                        Err(_) => false,
-                                    };
-
-                                    Some(User {
-                                        id: results.id,
-                                        username: results.username,
-                                        email: results.email,
-                                        admin: is_admin,
-                                    })
-                                }
-                                Err(_) => None,
-                            }
+                            Some(User {
+                                id: results.id,
+                                username: results.username,
+                                email: results.email,
+                                admin: is_admin,
+                            })
                         }
                         Err(_) => None,
                     }

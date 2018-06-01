@@ -9,10 +9,10 @@ pub mod schema;
 use diesel::prelude::*;
 use std::io::{Error, ErrorKind};
 
-use self::models::{NewGroup, NewSerie, NewUser, NewUserGroup, NewUserRecoverEmail,
-                   NewUserSeriesAccess, NewUserSession, NewUserStripeCard, NewUserStripeCharge,
-                   NewUserStripeCustomer, NewUserStripeToken, NewUserVerifyEmail, NewUserView,
-                   NewVideo, Users};
+use self::models::{NewGroup, NewNewsletterSubscriber, NewSerie, NewUser, NewUserGroup,
+                   NewUserRecoverEmail, NewUserSeriesAccess, NewUserSession, NewUserStripeCard,
+                   NewUserStripeCharge, NewUserStripeCustomer, NewUserStripeToken,
+                   NewUserVerifyEmail, NewUserView, NewVideo, Users};
 
 pub fn create_new_group(conn: &MysqlConnection, uuid: &str, name: &str) -> Result<(), Error> {
     use schema::groups;
@@ -28,6 +28,23 @@ pub fn create_new_group(conn: &MysqlConnection, uuid: &str, name: &str) -> Resul
     {
         Ok(_) => Ok(()),
         Err(_) => Err(Error::new(ErrorKind::Other, "No group table found")),
+    }
+}
+
+pub fn create_new_newsletter_subscriber(conn: &MysqlConnection, email: &str) -> Result<(), Error> {
+    use schema::newsletter_subscribers;
+
+    let new_group = NewNewsletterSubscriber { email: email };
+
+    match diesel::insert_into(newsletter_subscribers::table)
+        .values(&new_group)
+        .execute(conn)
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "No newsletter subscribers table found",
+        )),
     }
 }
 
@@ -440,8 +457,8 @@ pub fn create_new_video(
     description: &str,
     published: bool,
     membership_only: bool,
-    series: Option<i64>,
-    episode_number: Option<i32>,
+    serie_id: i64,
+    episode_number: i32,
     archived: bool,
     vimeo_id: &str,
 ) -> Result<(), Error> {
@@ -454,7 +471,7 @@ pub fn create_new_video(
         description: description,
         published: published,
         membership_only: membership_only,
-        series: series,
+        serie_id: serie_id,
         episode_number: episode_number,
         archived: archived,
         vimeo_id: vimeo_id,

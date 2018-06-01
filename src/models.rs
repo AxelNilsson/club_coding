@@ -20,6 +20,21 @@ pub struct NewGroup<'a> {
 }
 
 #[derive(Queryable, Clone)]
+pub struct NewsletterSubscribers {
+    pub id: i64,
+    pub email: String,
+    pub active: bool,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name = "newsletter_subscribers"]
+pub struct NewNewsletterSubscriber<'a> {
+    pub email: &'a str,
+}
+
+#[derive(Queryable, Clone)]
 pub struct Series {
     pub id: i64,
     pub uuid: String,
@@ -293,6 +308,13 @@ pub struct UsersSessions {
     pub updated: NaiveDateTime,
 }
 
+#[derive(Queryable)]
+pub struct UsersAndSessions {
+    pub id: i64,
+    pub username: String,
+    pub email: String,
+}
+
 #[derive(Insertable)]
 #[table_name = "users_sessions"]
 pub struct NewUserSession<'a> {
@@ -344,8 +366,8 @@ pub struct Videos {
     pub membership_only: bool,
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
-    pub series: Option<i64>,
-    pub episode_number: Option<i32>,
+    pub serie_id: i64,
+    pub episode_number: i32,
     pub archived: bool,
     pub vimeo_id: String,
 }
@@ -359,8 +381,21 @@ pub struct NewVideo<'a> {
     pub description: &'a str,
     pub published: bool,
     pub membership_only: bool,
-    pub series: Option<i64>,
-    pub episode_number: Option<i32>,
+    pub serie_id: i64,
+    pub episode_number: i32,
     pub archived: bool,
     pub vimeo_id: &'a str,
+}
+
+#[derive(Queryable)]
+pub struct VideoJoin {
+    pub id: i64,
+    pub uuid: String,
+    pub title: String,
+    pub description: String,
+    pub serie_id: i64,
+    pub vimeo_id: String,
+    pub membership_only: bool,
+    pub series_title: String,
+    pub price: i32,
 }

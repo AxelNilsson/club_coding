@@ -3,7 +3,8 @@ use rocket_contrib::Template;
 use rocket::response::{Flash, Redirect};
 use club_coding::{create_new_user_series_access, create_new_user_view,
                   insert_new_users_stripe_charge};
-use club_coding::models::{Series, UsersSeriesAccess, UsersStripeCustomer, UsersViews, Videos};
+use club_coding::models::{Series, UsersSeriesAccess, UsersStripeCustomer, UsersViews, VideoJoin,
+                          Videos};
 use users::User;
 use std::io::{Error, ErrorKind};
 use series::{get_video_watched, PublicVideo};
@@ -29,54 +30,29 @@ pub fn get_videos(connection: &DbConn) -> Vec<Videos> {
     }
 }
 
-fn get_video_data_from_uuid(connection: &DbConn, uid: &String) -> Result<Videos, Error> {
-    use club_coding::schema::videos::dsl::*;
+fn get_video_data_from_uuid(connection: &DbConn, uid: &String) -> Result<VideoJoin, Error> {
+    use club_coding::schema::{series, videos};
 
-    let result: Videos = match videos
-        .filter(uuid.eq(uid))
-        .filter(published.eq(true))
-        .filter(archived.eq(false))
-        .first(&**connection)
+    match videos::table
+        .inner_join(series::table.on(series::id.eq(videos::serie_id)))
+        .filter(videos::uuid.eq(uid))
+        .filter(videos::published.eq(true))
+        .filter(videos::archived.eq(false))
+        .select((
+            videos::id,
+            videos::uuid,
+            videos::title,
+            videos::description,
+            videos::serie_id,
+            videos::vimeo_id,
+            videos::membership_only,
+            series::title,
+            series::price,
+        ))
+        .first::<VideoJoin>(&**connection)
     {
-        Ok(result) => result,
+        Ok(result) => Ok(result),
         Err(_) => return Err(Error::new(ErrorKind::Other, "error loading videos")),
-    };
-
-    Ok(result)
-}
-
-fn get_series_title(connection: &DbConn, uid: Option<i64>) -> Option<String> {
-    let uid: i64 = match uid {
-        Some(uid) => uid,
-        None => return None,
-    };
-
-    use club_coding::schema::series::dsl::*;
-
-    let result: Series = match series
-        .filter(id.eq(uid))
-        .filter(published.eq(true))
-        .filter(archived.eq(false))
-        .first(&**connection)
-    {
-        Ok(result) => result,
-        Err(_) => return None,
-    };
-
-    Some(result.title)
-}
-
-fn get_option_series(connection: &DbConn, uid: Option<i64>) -> Option<Series> {
-    match uid {
-        Some(sid) => {
-            use club_coding::schema::series::dsl::*;
-
-            match series.filter(id.eq(sid)).first(&**connection) {
-                Ok(serie) => Some(serie),
-                Err(_) => None,
-            }
-        }
-        None => None,
     }
 }
 
@@ -84,7 +60,7 @@ fn get_videos_of_series(connection: &DbConn, uid: i64, sid: i64) -> Vec<PublicVi
     use club_coding::schema::videos::dsl::*;
 
     match videos
-        .filter(series.eq(sid))
+        .filter(serie_id.eq(sid))
         .filter(published.eq(true))
         .filter(archived.eq(false))
         .order(episode_number.asc())
@@ -121,7 +97,7 @@ struct WatchContext<'a> {
     flash_msg: String,
 }
 
-fn create_new_view(connection: &DbConn, vid: i64, uid: i64) -> Result<(), Error> {
+fn create_new_view(connection: &DbConn, vid: i64, uid: i64) {
     use club_coding::schema::users_views::dsl::*;
 
     match users_views
@@ -129,10 +105,10 @@ fn create_new_view(connection: &DbConn, vid: i64, uid: i64) -> Result<(), Error>
         .filter(video_id.eq(vid))
         .first::<UsersViews>(&**connection)
     {
-        Ok(_) => Ok(()),
+        Ok(_) => {}
         Err(_) => match create_new_user_view(&connection, uid, vid) {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err),
+            Ok(_) => {}
+            Err(_) => {}
         },
     }
 }
@@ -159,18 +135,15 @@ fn watch_as_user(
 ) -> Result<Template, Redirect> {
     match get_video_data_from_uuid(&conn, &uuid) {
         Ok(video) => {
-            let videos: Vec<PublicVideo> = match video.series {
-                Some(series_id) => get_videos_of_series(&conn, user.id, series_id),
-                None => vec![],
-            };
+            let videos: Vec<PublicVideo> = get_videos_of_series(&conn, user.id, video.serie_id);
             let (name, msg) = match flash {
                 Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
                 None => ("".to_string(), "".to_string()),
             };
             let mut context = WatchContext {
                 uuid: video.uuid,
-                series_title: "".to_string(),
-                price: 0,
+                series_title: video.series_title,
+                price: video.price,
                 title: video.title,
                 description: video.description,
                 user: &user,
@@ -179,33 +152,13 @@ fn watch_as_user(
                 flash_name: name,
                 flash_msg: msg,
             };
-            match get_option_series(&conn, video.series) {
-                Some(serie) => {
-                    context.series_title = serie.title;
-                    context.price = serie.price;
-                }
-                None => {}
-            }
+            create_new_view(&conn, video.id, user.id);
             if video.membership_only {
-                match video.series {
-                    Some(series_id) => {
-                        if user_has_bought(&conn, series_id, user.id) {
-                            match create_new_view(&conn, video.id, user.id) {
-                                Ok(_) => Ok(Template::render("videos/watch_member", &context)),
-                                Err(_) => Ok(Template::render("videos/watch_member", &context)),
-                            }
-                        } else {
-                            Ok(Template::render("videos/watch_nomember", &context))
-                        }
-                    }
-                    None => Ok(Template::render("videos/watch_nomember", &context)),
-                }
-            } else {
-                match create_new_view(&conn, video.id, user.id) {
-                    Ok(_) => Ok(Template::render("videos/watch_member", &context)),
-                    Err(_) => Ok(Template::render("videos/watch_member", &context)),
+                if !user_has_bought(&conn, video.serie_id, user.id) {
+                    return Ok(Template::render("videos/watch_nomember", &context));
                 }
             }
+            Ok(Template::render("videos/watch_member", &context))
         }
         Err(_video_not_found) => Err(Redirect::to("/")),
     }
@@ -215,7 +168,7 @@ fn get_videos_of_series_nologin(connection: &DbConn, sid: i64) -> Vec<PublicVide
     use club_coding::schema::videos::dsl::*;
 
     match videos
-        .filter(series.eq(sid))
+        .filter(serie_id.eq(sid))
         .filter(published.eq(true))
         .filter(archived.eq(false))
         .order(episode_number.asc())
@@ -261,17 +214,10 @@ fn watch_nouser(
                 Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
                 None => ("".to_string(), "".to_string()),
             };
-            let videos: Vec<PublicVideo> = match video.series {
-                Some(series_id) => get_videos_of_series_nologin(&conn, series_id),
-                None => vec![],
-            };
-            let series_title = match get_series_title(&conn, video.series) {
-                Some(title) => title,
-                None => "".to_string(),
-            };
+            let videos: Vec<PublicVideo> = get_videos_of_series_nologin(&conn, video.serie_id);
             let context = WatchNoUser {
                 uuid: video.uuid,
-                series_title: series_title,
+                series_title: video.series_title,
                 title: video.title,
                 description: video.description,
                 videos: videos,
@@ -435,35 +381,32 @@ fn buy_serie(
     uuid: String,
 ) -> Result<Flash<Redirect>, Redirect> {
     match get_video_data_from_uuid(&conn, &uuid) {
-        Ok(video) => match video.series {
-            Some(series_id) => {
-                if !user_has_bought(&conn, series_id, user.id) {
-                    match get_customer(&conn, user.id) {
-                        Some(stripe_customer) => match charge(
-                            &conn,
-                            &stripe_token.secret_key,
-                            &postmark_token.0,
-                            series_id,
-                            &user,
-                            &stripe_customer,
-                        ) {
-                            Ok(_) => Ok(Flash::success(
-                                Redirect::to(&format!("/watch/{}", uuid)),
-                                "Series unlocked! Congratulations!",
-                            )),
-                            Err(_) => Ok(Flash::error(
-                                Redirect::to(&format!("/watch/{}", uuid)),
-                                "An error occured, please try again later.",
-                            )),
-                        },
-                        None => Err(Redirect::to(&format!("/card/add/{}", uuid))),
-                    }
-                } else {
-                    Err(Redirect::to(&format!("/watch/{}", uuid)))
+        Ok(video) => {
+            if !user_has_bought(&conn, video.serie_id, user.id) {
+                match get_customer(&conn, user.id) {
+                    Some(stripe_customer) => match charge(
+                        &conn,
+                        &stripe_token.secret_key,
+                        &postmark_token.0,
+                        video.serie_id,
+                        &user,
+                        &stripe_customer,
+                    ) {
+                        Ok(_) => Ok(Flash::success(
+                            Redirect::to(&format!("/watch/{}", uuid)),
+                            "Series unlocked! Congratulations!",
+                        )),
+                        Err(_) => Ok(Flash::error(
+                            Redirect::to(&format!("/watch/{}", uuid)),
+                            "An error occured, please try again later.",
+                        )),
+                    },
+                    None => Err(Redirect::to(&format!("/card/add/{}", uuid))),
                 }
+            } else {
+                Err(Redirect::to(&format!("/watch/{}", uuid)))
             }
-            None => Err(Redirect::to("/")),
-        },
+        }
         Err(_video_not_found) => Err(Redirect::to("/")),
     }
 }

@@ -21,7 +21,7 @@ struct Video {
     name: String,
     views: u64,
     comments: u64,
-    serie: Option<String>,
+    serie: String,
     membership: bool,
     published: bool,
     created: NaiveDateTime,
@@ -43,22 +43,10 @@ fn get_all_videos(connection: &DbConn) -> Vec<Video> {
             let mut ret: Vec<Video> = vec![];
 
             for video in result {
-                let series_name: Option<String> = match video.series {
-                    Some(serie_id) => {
-                        use club_coding::schema::series::dsl::*;
-
-                        let serie: Option<Series> = match series.find(serie_id).first(&**connection)
-                        {
-                            Ok(serie) => Some(serie),
-                            Err(_) => None,
-                        };
-
-                        match serie {
-                            Some(serie) => Some(serie.title),
-                            None => None,
-                        }
-                    }
-                    None => None,
+                use club_coding::schema::series::dsl::*;
+                let series_name = match series.find(video.serie_id).first::<Series>(&**connection) {
+                    Ok(serie) => serie.title,
+                    Err(_) => "".to_string(),
                 };
 
                 ret.push(Video {
@@ -104,52 +92,29 @@ pub struct NewVideo {
     title: String,
     description: String,
     vimeo_id: String,
-    serie: Option<String>,
+    serie: String,
     membership_only: bool,
 }
 
-fn get_series_from_uuid(connection: &DbConn, uid: Option<String>) -> Option<i64> {
-    match uid {
-        Some(uid) => {
-            use club_coding::schema::series::dsl::*;
+fn get_series_from_uuid(connection: &DbConn, uid: String) -> i64 {
+    use club_coding::schema::series::dsl::*;
 
-            let serie: Option<Series> = match series.filter(uuid.eq(uid)).first(&**connection) {
-                Ok(serie) => Some(serie),
-                Err(_) => None,
-            };
-
-            match serie {
-                Some(serie) => Some(serie.id),
-                None => None,
-            }
-        }
-        None => None,
+    match series.filter(uuid.eq(uid)).first::<Series>(&**connection) {
+        Ok(serie) => serie.id,
+        Err(_) => 0,
     }
 }
 
-fn get_highest_episode_from_series(connection: &DbConn, series_id: Option<i64>) -> Option<i32> {
-    match series_id {
-        Some(series_id) => {
-            use club_coding::schema::videos::dsl::*;
+fn get_highest_episode_from_series(connection: &DbConn, sid: i64) -> i32 {
+    use club_coding::schema::videos::dsl::*;
 
-            let video: Option<Videos> = match videos
-                .filter(series.eq(series_id))
-                .order(episode_number.desc())
-                .first(&**connection)
-            {
-                Ok(video) => Some(video),
-                Err(_) => None,
-            };
-
-            match video {
-                Some(video) => match video.episode_number {
-                    Some(episode) => Some(episode + 1),
-                    None => None,
-                },
-                None => None,
-            }
-        }
-        None => None,
+    match videos
+        .filter(serie_id.eq(sid))
+        .order(episode_number.desc())
+        .first::<Videos>(&**connection)
+    {
+        Ok(video) => video.episode_number + 1,
+        Err(_) => 1,
     }
 }
 
@@ -161,8 +126,8 @@ pub fn insert_new_video(
 ) -> Result<Redirect, Redirect> {
     let new_video: NewVideo = video.into_inner();
     let slug = create_slug(&new_video.title);
-    let series: Option<i64> = get_series_from_uuid(&conn, new_video.serie);
-    let episode_number: Option<i32> = get_highest_episode_from_series(&conn, series);
+    let series: i64 = get_series_from_uuid(&conn, new_video.serie);
+    let episode_number: i32 = get_highest_episode_from_series(&conn, series);
     match generate_token(24) {
         Ok(uuid) => match create_new_video(
             &conn,
@@ -202,22 +167,12 @@ fn get_video(connection: &DbConn, uid: &str) -> Option<Videos> {
     }
 }
 
-fn get_serie_from_video(connection: &DbConn, series_id: Option<i64>) -> Option<String> {
-    match series_id {
-        Some(sid) => {
-            use club_coding::schema::series::dsl::*;
+fn get_serie_from_video(connection: &DbConn, sid: i64) -> String {
+    use club_coding::schema::series::dsl::*;
 
-            let serie: Option<Series> = match series.find(sid).first(&**connection) {
-                Ok(serie) => Some(serie),
-                Err(_) => None,
-            };
-
-            match serie {
-                Some(serie) => Some(serie.uuid),
-                None => None,
-            }
-        }
-        None => None,
+    match series.find(sid).first::<Series>(&**connection) {
+        Ok(serie) => serie.uuid,
+        Err(_) => "".to_string(),
     }
 }
 
@@ -225,7 +180,7 @@ fn get_serie_from_video(connection: &DbConn, series_id: Option<i64>) -> Option<S
 pub fn edit_video(conn: DbConn, uuid: String, user: Administrator) -> Option<Template> {
     match get_video(&conn, &uuid) {
         Some(video) => {
-            let serie_title = get_serie_from_video(&conn, video.series);
+            let serie_title = get_serie_from_video(&conn, video.serie_id);
             let context = EditVideo {
                 header: "Club Coding".to_string(),
                 user: user,
@@ -253,7 +208,7 @@ pub struct UpdateVideo {
     vimeo_id: String,
     membership: bool,
     published: bool,
-    serie: Option<String>,
+    serie: String,
 }
 
 #[post("/videos/edit/<uid>", format = "application/json", data = "<data>")]

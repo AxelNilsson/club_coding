@@ -25,7 +25,7 @@ div.card > .container > .layout.wrap.row > .flex.xs3 > h1.headline > a {
 </style>
 {% endblock head %}
 {% block content %}
-<v-card flat color="blue darken-3">
+<v-card flat color="primary">
   <v-container>
     <v-layout wrap row>
       <v-flex xs3 xl2>

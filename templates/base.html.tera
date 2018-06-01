@@ -56,7 +56,7 @@
   <div id="app" v-cloak>
     <v-app>
       {% block content %}
-      <v-card flat color="blue darken-3">
+      <v-card flat color="primary">
         <v-container>
           <v-layout wrap row>
             <v-flex xs3 xl2>

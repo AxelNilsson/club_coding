@@ -34,8 +34,7 @@ pub fn get_last_10_series(connection: &DbConn) -> Vec<PublicSeries> {
     match series
         .filter(published.eq(true))
         .filter(archived.eq(false))
-        .limit(10)
-        .order(updated.asc())
+        .order(id.asc())
         .load::<Series>(&**connection)
     {
         Ok(s_eries) => {
@@ -71,7 +70,7 @@ fn get_serie(connection: &DbConn, uid: &String) -> Option<Series> {
 
 #[derive(Serialize)]
 pub struct PublicVideo {
-    pub episode_number: Option<i32>,
+    pub episode_number: i32,
     pub uuid: String,
     pub title: String,
     pub description: String,
@@ -95,7 +94,7 @@ fn get_videos(connection: &DbConn, uid: i64, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
     match videos
-        .filter(series.eq(sid))
+        .filter(serie_id.eq(sid))
         .filter(published.eq(true))
         .filter(archived.eq(false))
         .order(episode_number.asc())
@@ -166,7 +165,7 @@ fn get_videos_nologin(connection: &DbConn, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
     match videos
-        .filter(series.eq(sid))
+        .filter(serie_id.eq(sid))
         .filter(published.eq(true))
         .filter(archived.eq(false))
         .order(episode_number.asc())

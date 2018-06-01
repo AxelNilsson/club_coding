@@ -17,6 +17,9 @@ pub struct StripeToken {
     pub secret_key: String,
 }
 
+/// Returns a AdHoc Fairing with two Stripe Tokens
+/// Will panic if no Stripe Tokens are set in
+/// Rocket.toml File
 pub fn stripe_token_fairing() -> rocket::fairing::AdHoc {
     AdHoc::on_attach(|rocket| {
         let config = rocket.config().clone();
@@ -38,6 +41,9 @@ pub fn stripe_token_fairing() -> rocket::fairing::AdHoc {
 
 pub struct PostmarkToken(pub String);
 
+/// Returns a AdHoc Fairing with the Postmark Token
+/// Will panic if no Postmark Token is set in
+/// Rocket.toml File
 pub fn postmark_token_fairing() -> rocket::fairing::AdHoc {
     AdHoc::on_attach(|rocket| {
         let config = rocket.config().clone();

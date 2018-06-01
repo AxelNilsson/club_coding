@@ -1,12 +1,13 @@
 use rocket::Route;
 use rocket::request::FlashMessage;
-use rocket_contrib::Template;
+use rocket_contrib::{Json, Template};
 use users::User;
 use series::PublicSeries;
 use series::get_last_10_series;
 use database::DbConn;
 use structs::{Context, LoggedInContext};
 use rocket::response::NamedFile;
+use club_coding::create_new_newsletter_subscriber;
 
 #[derive(Serialize)]
 struct IndexLoggedInContext {
@@ -54,6 +55,19 @@ fn index_nouser(conn: DbConn, flash: Option<FlashMessage>) -> Template {
         series: get_last_10_series(&conn),
     };
     Template::render("pages/index", &context)
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct NewSubscriber {
+    email: String,
+}
+
+#[post("/subscribe", format = "application/json", data = "<data>")]
+fn subscribe(conn: DbConn, data: Json<NewSubscriber>) -> Result<(), ()> {
+    match create_new_newsletter_subscriber(&*conn, &data.0.email) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(()),
+    }
 }
 
 #[get("/terms_of_service")]
@@ -127,6 +141,7 @@ pub fn endpoints() -> Vec<Route> {
     routes![
         index,
         index_nouser,
+        subscribe,
         terms_of_service,
         terms_of_service_nologin,
         cookie_policy,
