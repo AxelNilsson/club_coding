@@ -18,7 +18,7 @@
     width: 400px;
     border-radius: 100%;
     border: 5px solid rgba(255, 255, 255, 0.2);
-    background-image: url(/thumbnail/{{ uuid }});
+    background-image: url(/thumbnail/{{ uuid }}.png);
     background-position: 0 25px;
     background-repeat: no-repeat;
     background-size: 400px;

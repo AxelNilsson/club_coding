@@ -123,7 +123,7 @@ fn privacy_policy_nologin() -> Template {
 
 #[get("/thumbnail/<uuid>")]
 fn thumbnail(uuid: String) -> Option<NamedFile> {
-    match NamedFile::open(format!("thumbnails/{}.png", uuid)) {
+    match NamedFile::open(format!("thumbnails/{}", uuid)) {
         Ok(file) => Some(file),
         Err(_) => None,
     }

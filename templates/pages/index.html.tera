@@ -184,7 +184,7 @@
           {% if loop.index is odd %}
             <v-flex xs12 lg6 offset-lg1>
               <v-card flat height="100%" href="/series/{{ serie.uuid }}">
-                <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}"></v-card-media>
+                <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}.png"></v-card-media>
               </v-card>
             </v-flex>
           {% endif %}
@@ -200,7 +200,7 @@
           {% if loop.index is even %}
             <v-flex xs12 lg6 offset-lg1>
               <v-card flat height="100%" href="/series/{{ serie.uuid }}">
-                <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}"></v-card-media>
+                <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}.png"></v-card-media>
               </v-card>
             </v-flex>
           {% endif %}
