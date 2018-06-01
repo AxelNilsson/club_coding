@@ -36,7 +36,7 @@ fn add_card_page(
         flash_name: name,
         flash_msg: msg,
     };
-    Template::render("charge/add_card", &context)
+    Template::render("payment/add_card", &context)
 }
 
 #[get("/card/add/<_uuid>")]
@@ -57,7 +57,7 @@ fn add_card_uuid_page(
         flash_name: name,
         flash_msg: msg,
     };
-    Template::render("charge/add_card", &context)
+    Template::render("payment/add_card", &context)
 }
 
 #[derive(Debug, FromForm)]
