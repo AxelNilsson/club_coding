@@ -126,10 +126,13 @@
     <v-container>
       <nav>
         <v-layout wrap row>
-          <v-flex xs2>
-            <h1 class="display-1 white--text"><a href="/">club coding</a></h1>
+          <v-flex xs12 hidden-md-and-up>
+            <h1 class="display-2"><a href="/">club coding</a></h1>
           </v-flex>
-          <v-flex xs2 offset-xs8>
+          <v-flex hidden-sm-and-down lg2>
+            <h1 class="display-1"><a href="/">club coding</a></h1>
+          </v-flex>
+          <v-flex hidden-sm-and-down lg2 offset-lg8>
             <ul>
               <li>
                 <v-menu offset-y>
