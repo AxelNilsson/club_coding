@@ -67,19 +67,19 @@
     margin: auto;
     font-weight: 700;
   }
-  .xs8 > h2.headline > a {
+  .lg8 > h2.headline > a {
     color: inherit;
     text-decoration: none;
   }
-  .xs8 > h2.headline > a:hover {
+  .lg8 > h2.headline > a:hover {
     text-decoration: underline;
     color: #00b1b3;
   }
-  div.layout.wrap.row#episodes > div.flex > .card > .layout.wrap.row > .flex.xs8 > h2.headline {
+  div.layout.wrap.row#episodes > div.flex > .card > .layout.wrap.row > .flex.xs12.lg8 > h2.headline {
     color: rgb(77, 84, 93);
     font-weight: 700;
   }
-  div.layout.wrap.row#episodes > div.flex > .card > .layout.wrap.row > .flex.xs8 > p.subheading {
+  div.layout.wrap.row#episodes > div.flex > .card > .layout.wrap.row > .flex.xs12.lg8 > p.subheading {
     margin-top: 1em;
   }
   #in-development {
@@ -100,7 +100,7 @@
         <p class="subheading">{{ description | safe }}</p>
         <v-btn outline color="orange darken-1">${{ price/100 }}</v-btn>
       </v-flex>
-      <v-flex xs12 lg5 xl2 offset-xl1>
+      <v-flex xs12 lg5 offset-lg1 xl2 offset-xl1>
         <div id="thumbnail"></div>
       </v-flex>
     </v-layout>
