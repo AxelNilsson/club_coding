@@ -5,20 +5,39 @@ use diesel::prelude::*;
 use database::MySqlPool;
 use rocket::State;
 
+/// Context for rendering tera templates
+/// for administrator endpoints.
 #[derive(Serialize)]
 pub struct LoggedInContext<'a> {
+    /// Header used in tera templates.
+    /// Mainly used for the title.
     pub header: &'a str,
+    /// The administrator struct used by templates.
+    /// For example the username for the toolbar.
     pub user: Administrator,
 }
 
+/// The Administrator Struct is used for all endpoints that requires
+/// that the administrator is logged in and an administrator.
+/// The difference between the user struct and the administrator
+/// struct is that the administrator struct requires the user
+/// is an administrator aswell, otherwise it's going to
+/// forward the request.
 #[derive(Serialize)]
 pub struct Administrator {
+    /// The id of the administrator.
     pub id: i64,
+    /// The username of the administrator.
     pub username: String,
+    /// The email of the administrator.
     pub email: String,
+    /// A boolean representing if the user
+    /// is an administrator or not.
     pub admin: bool,
 }
 
+/// Request guard making sure that the user is logged in
+/// and an administrator.
 impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
     type Error = ();
 

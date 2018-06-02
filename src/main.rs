@@ -12,6 +12,7 @@ extern crate futures;
 extern crate hyper_tls;
 extern crate r2d2;
 extern crate rand;
+extern crate regex;
 extern crate rocket;
 extern crate rocket_contrib;
 extern crate serde;
@@ -58,6 +59,8 @@ fn main() {
         .attach(database::fairing())
         .attach(structs::stripe_token_fairing())
         .attach(structs::postmark_token_fairing())
+        .attach(structs::email_regex_fairing())
+        .attach(structs::password_regex_fairing())
         .catch(errors::endpoints())
         .launch();
 }

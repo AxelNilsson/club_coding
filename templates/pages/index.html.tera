@@ -142,8 +142,8 @@
           </v-flex>
           <v-flex hidden-sm-and-down lg2 offset-lg8>
             <ul>
-              <li><a href="/signup">Sign up</a></li>
               <li><a href="/login">Sign in</a></li>
+              <li><a href="/signup">Sign up</a></li>
             </ul>
           </v-flex>
         </v-layout>

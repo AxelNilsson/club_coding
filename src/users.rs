@@ -3,9 +3,11 @@ use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
 use database::{DbConn, MySqlPool};
 use rocket::State;
-
 use diesel::prelude::*;
 
+/// Gets all of the users from the database.
+/// Ordered by their creation date in an
+/// ascending order.
 pub fn get_users(connection: &DbConn) -> Vec<Users> {
     use club_coding::schema::users::dsl::*;
 
@@ -15,14 +17,22 @@ pub fn get_users(connection: &DbConn) -> Vec<Users> {
     }
 }
 
+/// The User Struct is used for all endpoints that requires
+/// that the user is logged in.
 #[derive(Serialize)]
 pub struct User {
+    /// The id of the user.
     pub id: i64,
+    /// The username of the user.
     pub username: String,
+    /// The email of the user.
     pub email: String,
+    /// A boolean representing if the user
+    /// is an administrator or not.
     pub admin: bool,
 }
 
+/// Request guard making sure that the user is logged in.
 impl<'a, 'r> FromRequest<'a, 'r> for User {
     type Error = ();
 

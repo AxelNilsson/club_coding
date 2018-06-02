@@ -16,6 +16,7 @@ use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
 use std::io::{Error, ErrorKind};
 use structs::PostmarkToken;
 use rocket::State;
+use structs::EmailRegex;
 use diesel::prelude::*;
 
 #[derive(FromForm)]
@@ -196,16 +197,22 @@ pub fn send_verify_email(
 #[post("/signup", data = "<user>")]
 fn register_user(
     conn: DbConn,
+    email_regex: State<EmailRegex>,
     postmark_token: State<PostmarkToken>,
     csrf_cookie: CsrfCookie,
     user: Form<UserRegistration>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input: UserRegistration = user.into_inner();
-    if input.password == input.confirm_password {
-        if csrf_matches(input.csrf, csrf_cookie.value()) {
-            match hash(&input.password, DEFAULT_COST) {
-                Ok(hashed_password) => {
-                    match create_new_user(&*conn, &input.username, &hashed_password, &input.email) {
+    if email_regex.regex.is_match(&input.email) {
+        if input.password == input.confirm_password {
+            if csrf_matches(input.csrf, csrf_cookie.value()) {
+                match hash(&input.password, DEFAULT_COST) {
+                    Ok(hashed_password) => match create_new_user(
+                        &*conn,
+                        &input.username,
+                        &hashed_password,
+                        &input.email,
+                    ) {
                         Ok(new_user) => match send_verify_email(
                             &*conn,
                             &postmark_token.0,
@@ -225,21 +232,23 @@ fn register_user(
                             Redirect::to("/signup"),
                             "An error occured, please try again later.",
                         )),
-                    }
+                    },
+                    Err(_) => Err(Flash::error(
+                        Redirect::to("/signup"),
+                        "An error occured, please try again later.",
+                    )),
                 }
-                Err(_) => Err(Flash::error(
-                    Redirect::to("/signup"),
-                    "An error occured, please try again later.",
-                )),
+            } else {
+                Err(Flash::error(Redirect::to("/signup"), "CSRF Failed."))
             }
         } else {
-            Err(Flash::error(Redirect::to("/signup"), "CSRF Failed."))
+            Err(Flash::error(
+                Redirect::to("/signup"),
+                "Passwords don't match.",
+            ))
         }
     } else {
-        Err(Flash::error(
-            Redirect::to("/signup"),
-            "Passwords don't match.",
-        ))
+        Err(Flash::error(Redirect::to("/signup"), "Email is not valid."))
     }
 }
 
@@ -372,41 +381,49 @@ struct RecoverAccount {
 #[post("/recover/email", data = "<user>", rank = 2)]
 fn send_recover_email(
     conn: DbConn,
+    email_regex: State<EmailRegex>,
     postmark_token: State<PostmarkToken>,
     csrf_cookie: CsrfCookie,
     user: Form<RecoverAccount>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input: RecoverAccount = user.into_inner();
-    if csrf_matches(input.csrf, csrf_cookie.value()) {
-        match get_user_id_from_email(&conn, &input.email) {
-            Some(user_id) => {
-                let token = generate_token(30);
-                match send_recover_mail(&postmark_token.0, &token, input.email) {
-                    Ok(_) => match create_new_users_recover_email(&conn, user_id, &token) {
-                        Ok(_) => Ok(Flash::success(
-                            Redirect::to("/"),
-                            "Email sent. Please check your inbox.",
-                        )),
+    if email_regex.regex.is_match(&input.email) {
+        if csrf_matches(input.csrf, csrf_cookie.value()) {
+            match get_user_id_from_email(&conn, &input.email) {
+                Some(user_id) => {
+                    let token = generate_token(30);
+                    match send_recover_mail(&postmark_token.0, &token, input.email) {
+                        Ok(_) => match create_new_users_recover_email(&conn, user_id, &token) {
+                            Ok(_) => Ok(Flash::success(
+                                Redirect::to("/"),
+                                "Email sent. Please check your inbox.",
+                            )),
+                            Err(_) => Err(Flash::error(
+                                Redirect::to("/recover/email"),
+                                "An error occured, please try again later.",
+                            )),
+                        },
                         Err(_) => Err(Flash::error(
                             Redirect::to("/recover/email"),
                             "An error occured, please try again later.",
                         )),
-                    },
-                    Err(_) => Err(Flash::error(
-                        Redirect::to("/recover/email"),
-                        "An error occured, please try again later.",
-                    )),
+                    }
                 }
+                None => Err(Flash::error(
+                    Redirect::to("/recover/email"),
+                    "Email not found.",
+                )),
             }
-            None => Err(Flash::error(
+        } else {
+            Err(Flash::error(
                 Redirect::to("/recover/email"),
-                "Email not found.",
-            )),
+                "CSRF Doesn't match.",
+            ))
         }
     } else {
         Err(Flash::error(
             Redirect::to("/recover/email"),
-            "CSRF Doesn't match.",
+            "Email is not valid.",
         ))
     }
 }
