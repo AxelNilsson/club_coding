@@ -7,34 +7,66 @@ use users::User;
 
 #[derive(Serialize)]
 pub struct PublicSeries {
+    /// UUID of the series.
     uuid: String,
-    title: String,
+    /// Title of the series.
+    title: &'a String,
+    /// Slug of the series
     slug: String,
+    /// Description of the series.
     description: String,
+    /// The price of the series defined
+    /// by USD * 100 and therefor not a float.
     price: i32,
 }
 
 #[derive(Serialize)]
 pub struct PublicVideo {
+    /// Episode number of the Video.
     pub episode_number: i32,
+    /// UUID of the Video.
     pub uuid: String,
+    /// Title of the Video.
     pub title: String,
+    /// Description of the video.
     pub description: String,
+    /// Boolean of whether the user
+    /// has watched the video or not.
     pub watched: bool,
 }
 
 #[derive(Serialize)]
 struct SerieStruct<'a> {
+    /// Header used in tera templates.
+    /// Mainly used for the title.
     header: &'a String,
+    /// The user struct used by templates.
+    /// For example the username for the toolbar.
     user: &'a User,
+    /// UUID of the series.
     uuid: String,
+    /// Title of the series.
     title: &'a String,
+    /// Description of the series.
     description: String,
+    /// Boolean of if the series is
+    /// in development or not.
     in_development: bool,
+    /// The price of the series defined
+    /// by USD * 100 and therefor not a float.
     price: i32,
+    /// A Vector of the Videos in the series
     videos: Vec<PublicVideo>,
 }
 
+/// GET Endpoint for the page of
+/// a series. Endpoints checks if the
+/// user is logged in by using the
+/// user request guard. If the user
+/// is not logged in it forwards
+/// the request.
+/// Responds with the Series Template in
+/// the series folder.
 #[get("/<uuid>")]
 fn serie(conn: DbConn, user: User, uuid: String) -> Option<Template> {
     match database::get_serie(&conn, &uuid) {
@@ -59,14 +91,27 @@ fn serie(conn: DbConn, user: User, uuid: String) -> Option<Template> {
 
 #[derive(Serialize)]
 struct SerieNoLogin<'a> {
+    /// Header used in tera templates.
+    /// Mainly used for the title.
     header: &'a String,
+    /// UUID of the series.
     uuid: String,
+    /// Title of the series.
     title: &'a String,
+    /// Description of the series.
     description: String,
+    /// Boolean of if the series is
+    /// in development or not.
     in_development: bool,
+    /// A Vector of the Videos in the series
     videos: Vec<PublicVideo>,
 }
 
+/// GET Endpoint for the page of
+/// a series. This endpoint will kick
+/// in if the user is not logged in.
+/// Responds with the Series No Login
+/// Template in the series folder.
 #[get("/<uuid>", rank = 2)]
 fn serie_nologin(conn: DbConn, uuid: String) -> Option<Template> {
     match database::get_serie(&conn, &uuid) {

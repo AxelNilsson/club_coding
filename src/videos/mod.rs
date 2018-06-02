@@ -12,20 +12,54 @@ use structs::{PostmarkToken, StripeToken};
 use rocket::State;
 use videos::charge::charge_card;
 
+/// Context for rendering tera templates
+/// for logged in watch endpoints.
 #[derive(Serialize)]
 struct WatchContext<'a> {
+    /// UUID of the video being watched.
     uuid: String,
+    /// Title of the series being watched.
     series_title: String,
+    /// Price of the series.
     price: i32,
+    /// Title of the Video.
     title: String,
+    /// Description of the Video.
     description: String,
+    /// The user struct used by templates.
+    /// For example the username for the toolbar.
     user: &'a User,
+    /// The Vimeo ID of the video being watched.
     vimeo_id: String,
+    /// A Vector of the Videos in the same series
+    /// as the one currently watched.
     videos: Vec<PublicVideo>,
+    /// Flash name if the request is redirected
+    /// with one.
     flash_name: String,
+    /// Flash message if the request is redirected
+    /// with one.
     flash_msg: String,
 }
 
+/// GET Endpoint for the page to watch
+/// a video. Endpoints checks if the
+/// user is logged in by using the
+/// user request guard. If the user
+/// is not logged in it forwards
+/// the request.
+/// Takes in an optional FlashMessage
+/// incase there is one.
+/// The endpoint checks if the video
+/// requires that the series is bought and if
+/// it requires that it will check if the user
+/// has the permission. If the user does not
+/// have the persmission it will respond with a
+/// buy page (Watch No Member in the videos folder).
+/// If the user does have the persmission or the
+/// series does not require it, it will respond
+/// with the Watch Member Template in the videos
+/// folder.
 #[get("/watch/<uuid>")]
 fn watch_as_user(
     conn: DbConn,
@@ -41,6 +75,9 @@ fn watch_as_user(
                 Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
                 None => ("".to_string(), "".to_string()),
             };
+            // Javascript needs double backslashes for edit pages.
+            // That's the way it's stored in the DB so we need to
+            // remove it here.
             let mut description = video.description;
             description.retain(|c| c != '\\');
             let mut context = WatchContext {
@@ -69,15 +106,32 @@ fn watch_as_user(
 
 #[derive(Serialize)]
 struct WatchNoUser {
+    /// UUID of the video being watched.
     uuid: String,
+    /// Title of the series being watched.
     series_title: String,
+    /// Title of the Video.
     title: String,
+    /// Description of the Video.
     description: String,
+    /// A Vector of the Videos in the same series
+    /// as the one currently watched.
     videos: Vec<PublicVideo>,
+    /// Flash name if the request is redirected
+    /// with one.
     flash_name: String,
+    /// Flash message if the request is redirected
+    /// with one.
     flash_msg: String,
 }
 
+/// GET Endpoint for the page to watch
+/// a video. This endpoint will kick in
+/// if the user is not logged in.
+/// Takes in an optional FlashMessage
+/// incase there is one.
+/// Responds with the Watch No Login
+/// Template in the videos folder.
 #[get("/watch/<uuid>", rank = 2)]
 fn watch_nouser(
     conn: DbConn,
@@ -90,6 +144,9 @@ fn watch_nouser(
                 Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
                 None => ("".to_string(), "".to_string()),
             };
+            // Javascript needs double backslashes for edit pages.
+            // That's the way it's stored in the DB so we need to
+            // remove it here.
             let mut description = video.description;
             description.retain(|c| c != '\\');
             let videos: Vec<PublicVideo> =
@@ -109,6 +166,20 @@ fn watch_nouser(
     }
 }
 
+/// GET Endpoint to buy a certain series as
+/// defined by the video the series is in
+/// specified by the UUID. Endpoints checks
+/// if the user is logged in by using the
+/// user request guard. If the user
+/// is not logged in it forwards
+/// the request. The endpoint
+/// checks if the user already has bought it
+/// to avoid double purchases. If the series is already
+/// bought it will redirect to the watch page for the
+/// video. If the user doesn't have a card, it will redirect
+/// to the add card page. If the user has a card and
+/// has not already bought the series, it will perform
+/// the purchase and redirect to the video.
 #[get("/watch/<uuid>/buy")]
 fn buy_serie(
     conn: DbConn,

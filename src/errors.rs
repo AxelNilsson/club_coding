@@ -1,23 +1,38 @@
 use rocket::Catcher;
 use rocket_contrib::Template;
 
+/// Context for rendering tera templates
+/// for not logged in endpoints. Mainly
+/// the error endpoints.
 #[derive(Serialize)]
-struct Context<'a> {
-    header: &'a str,
+pub struct Context<'a> {
+    /// Header used in tera templates.
+    /// Mainly used for the title.
+    pub header: &'a str,
 }
 
+/// 404 - Not found endpoint.
+/// This endpoint will kick in
+/// if the requested page doesn't exist.
+/// Responds with the 404
+/// Template in the Errors folder.
 #[error(404)]
 fn not_found() -> Template {
     let context = Context {
-        header: "Club Coding",
+        header: "404 - Not Found",
     };
     Template::render("errors/404", &context)
 }
 
+/// 500 - Internal server error endpoint.
+/// This endpoint will kick in
+/// if the requested page doesn't compute.
+/// Responds with the 500
+/// Template in the Errors folder.
 #[error(500)]
 fn internal_error() -> Template {
     let context = Context {
-        header: "Club Coding",
+        header: "500 - Internal Server Error",
     };
     Template::render("errors/500", &context)
 }

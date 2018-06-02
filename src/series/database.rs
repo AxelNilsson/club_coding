@@ -3,6 +3,11 @@ use database::DbConn;
 use series::{PublicSeries, PublicVideo};
 use diesel::prelude::*;
 
+/// Gets all of the videos in the
+/// database that are published and
+/// not archived by the order of
+/// their update date in an ascending
+/// order.
 pub fn get_series(connection: &DbConn) -> Vec<Series> {
     use club_coding::schema::series::dsl::*;
 
@@ -17,6 +22,11 @@ pub fn get_series(connection: &DbConn) -> Vec<Series> {
     }
 }
 
+/// Gets the last 10 series in the
+/// database that are published and
+/// not archived by the order of
+/// their id in an ascending
+/// order.
 pub fn get_last_10_series(connection: &DbConn) -> Vec<PublicSeries> {
     use club_coding::schema::series::dsl::*;
 
@@ -45,6 +55,11 @@ pub fn get_last_10_series(connection: &DbConn) -> Vec<PublicSeries> {
     }
 }
 
+/// Gets a specific serie in the
+/// database specified by the UUID.
+/// Returns some Series if it is
+/// found and otherwise returns
+/// None.
 pub fn get_serie(connection: &DbConn, uid: &String) -> Option<Series> {
     use club_coding::schema::series::dsl::*;
 
@@ -59,6 +74,12 @@ pub fn get_serie(connection: &DbConn, uid: &String) -> Option<Series> {
     }
 }
 
+/// Checks if the user defined by
+/// the user_id has watched the video
+/// defined by the video id. Returns
+/// a boolean True if the user has watched
+/// the video  and false if the user has
+/// not watched the video.
 pub fn get_video_watched(connection: &DbConn, uid: i64, vid: i64) -> bool {
     use club_coding::schema::users_views::dsl::*;
 
@@ -72,6 +93,9 @@ pub fn get_video_watched(connection: &DbConn, uid: i64, vid: i64) -> bool {
     }
 }
 
+/// Gets all of the videos that belong
+/// to a specific series and checks if
+/// the user has watched the videos.
 pub fn get_videos(connection: &DbConn, uid: i64, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
@@ -99,6 +123,9 @@ pub fn get_videos(connection: &DbConn, uid: i64, sid: i64) -> Vec<PublicVideo> {
     }
 }
 
+/// Gets all of the videos that belong
+/// to a specific series and sets watched
+/// of every video to false
 pub fn get_videos_nologin(connection: &DbConn, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 

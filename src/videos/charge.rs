@@ -12,6 +12,8 @@ struct VerifyEmail<'a> {
     token: &'a str,
 }
 
+/// Sends an email if the purchase
+/// of a series is succesful.
 fn send_bought_email(postmark_token: &str, email: &str) -> Result<(), Error> {
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: "" };
@@ -39,6 +41,10 @@ fn send_bought_email(postmark_token: &str, email: &str) -> Result<(), Error> {
     }
 }
 
+/// Charges the card that is sent in through the
+/// Stripe Customer by the amount the series costs
+/// as specified in the MySQL Database.
+/// Returns an OK or the error.
 pub fn charge_card(
     conn: &DbConn,
     stripe_secret: &str,

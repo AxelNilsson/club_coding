@@ -7,6 +7,11 @@ use series::PublicVideo;
 use database::DbConn;
 use diesel::prelude::*;
 
+/// Gets all of the videos in the
+/// database that are published and
+/// not archived by the order of
+/// their creation date in an ascending
+/// order.
 pub fn get_videos(connection: &DbConn) -> Vec<Videos> {
     use club_coding::schema::videos::dsl::*;
 
@@ -21,6 +26,8 @@ pub fn get_videos(connection: &DbConn) -> Vec<Videos> {
     }
 }
 
+/// Gets video data and related series
+/// data that the watch endpoint requres.
 pub fn get_video_data_from_uuid(connection: &DbConn, uid: &String) -> Result<VideoJoin, Error> {
     use club_coding::schema::{series, videos};
 
@@ -47,6 +54,9 @@ pub fn get_video_data_from_uuid(connection: &DbConn, uid: &String) -> Result<Vid
     }
 }
 
+/// Gets all of the videos that belong
+/// to a specific series and checks if
+/// the user has watched the videos.
 pub fn get_videos_of_series(connection: &DbConn, uid: i64, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
@@ -74,6 +84,9 @@ pub fn get_videos_of_series(connection: &DbConn, uid: i64, sid: i64) -> Vec<Publ
     }
 }
 
+/// Creates a new view in the database if
+/// the user does not already have it.
+/// The view is specified by video and user.
 pub fn create_new_view(connection: &DbConn, vid: i64, uid: i64) {
     use club_coding::schema::users_views::dsl::*;
 
@@ -90,6 +103,9 @@ pub fn create_new_view(connection: &DbConn, vid: i64, uid: i64) {
     }
 }
 
+/// Checks if a user has bought a series.
+/// Returns a boolean of if the user has
+/// bought the series or not.
 pub fn user_has_bought(connection: &DbConn, sid: i64, uid: i64) -> bool {
     use club_coding::schema::users_series_access::dsl::*;
 
@@ -103,6 +119,10 @@ pub fn user_has_bought(connection: &DbConn, sid: i64, uid: i64) -> bool {
     }
 }
 
+/// Gets all of the videos of a series as
+/// a vector of the PublicVideo struct which
+/// means that it can be serialized which the
+/// Videos struct can not.
 pub fn get_videos_of_series_nologin(connection: &DbConn, sid: i64) -> Vec<PublicVideo> {
     use club_coding::schema::videos::dsl::*;
 
@@ -130,6 +150,10 @@ pub fn get_videos_of_series_nologin(connection: &DbConn, sid: i64) -> Vec<Public
     }
 }
 
+/// Gets a Option Stripe Customer as specified
+/// by the User ID. Returns either Some Stripe
+/// Customer or None if the customer does not
+/// exist.
 pub fn get_customer(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer> {
     use club_coding::schema::users_stripe_customer::dsl::*;
 
@@ -145,6 +169,9 @@ pub fn get_customer(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer
     Some(result)
 }
 
+/// Gets a serie.
+/// Returns either Some Series or None
+/// if the series does not exist.
 pub fn get_serie(connection: &DbConn, sid: i64) -> Option<Series> {
     use club_coding::schema::series::dsl::*;
 
