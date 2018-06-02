@@ -19,10 +19,7 @@
   .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > .layout.wrap.row > .flex > a {
     color: #FFF;
   }
-  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > .layout.wrap.row > .flex.xs12.lg2.offset-lg3 > a {
-    background-color: #103b56;
-  }
-  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > .layout.wrap.row > .flex.xs12.lg3.offset-lg1 > a {
+  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > .layout.wrap.row > .flex.xs12.lg6.offset-lg3 > a {
     background-color: #ef6733;
   }
   .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > hr.divider {
@@ -39,10 +36,7 @@
         <p class="first subheading">It looks like you don't have access to this series at Club Coding.</p>
         <p class="subheading">Don't worry, it's an easy fix!</p>
         <v-layout wrap row>
-          <v-flex xs12 lg2 offset-lg3>
-            <v-btn large block href="/watch/{{ uuid }}/buy">Buy with crypto!</v-btn>
-          </v-flex>
-          <v-flex xs12 lg3 offset-lg1>
+          <v-flex xs12 lg6 offset-lg3>
             <v-btn large block href="/watch/{{ uuid }}/buy">Buy with card for ${{ price/100 }}!</v-btn>
           </v-flex>
         </v-layout>

@@ -4,20 +4,8 @@ use chrono::NaiveDateTime;
 use payment::Charge;
 use diesel::prelude::*;
 
-pub fn customer_exists(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer> {
-    use club_coding::schema::users_stripe_customer::dsl::*;
-
-    let result: UsersStripeCustomer = match users_stripe_customer
-        .filter(user_id.eq(uid))
-        .first(&**connection)
-    {
-        Ok(result) => result,
-        Err(_) => return None,
-    };
-
-    Some(result)
-}
-
+/// Returns vector of charges belonging to
+/// user specified by user id.
 pub fn get_charges(connection: &DbConn, uid: i64) -> Vec<Charge> {
     use club_coding::schema::users_stripe_charge::dsl::*;
 
@@ -55,18 +43,24 @@ pub fn get_charges(connection: &DbConn, uid: i64) -> Vec<Charge> {
     }
 }
 
+/// Checks if the Stripe Customer Exists and
+/// returns either Some Stripe Customer or
+/// None.
 pub fn get_customer(connection: &DbConn, uid: i64) -> Option<UsersStripeCustomer> {
     use club_coding::schema::users_stripe_customer::dsl::*;
 
     match users_stripe_customer
         .filter(user_id.eq(uid))
-        .first(&**connection)
+        .first::<UsersStripeCustomer>(&**connection)
     {
         Ok(user) => Some(user),
         Err(_) => None,
     }
 }
 
+/// Gets the first card belonging
+/// to a user and deletes it.
+/// Returns the card_id for the card.
 pub fn delete_and_get_card(connection: &DbConn, uid: i64) -> Option<String> {
     use club_coding::schema::users_stripe_card::dsl::*;
 
@@ -80,7 +74,7 @@ pub fn delete_and_get_card(connection: &DbConn, uid: i64) -> Option<String> {
 
     match card {
         Some(card) => {
-            match diesel::delete(users_stripe_card.find(card.id)).execute(&**connection) {
+            match diesel::delete(users_stripe_card.filter(user_id.eq(uid))).execute(&**connection) {
                 Ok(_) => card.card_id,
                 Err(_) => None,
             }

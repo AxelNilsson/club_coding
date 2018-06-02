@@ -5,6 +5,9 @@ use database::DbConn;
 use std::io::{Error, ErrorKind};
 use charge::Stripe;
 
+/// Function creates a user at
+/// Stripe and returns it or, if
+/// it fails, returns an error.
 fn create_customer(
     client: &stripe::Client,
     email: &str,
@@ -29,11 +32,20 @@ fn create_customer(
     }
 }
 
+/// Struct for emails, not used
+/// for updated card email but we
+/// still need an empty struct
+/// to use tera.
 #[derive(Serialize)]
 struct VerifyEmail<'a> {
+    /// Verify email token
+    /// to be rendered using tera.
     token: &'a str,
 }
 
+/// Function to send email to
+/// the user when a card has
+/// been added to the user.
 fn send_card_added_mail(postmark_token: &str, email: String) -> Result<(), Error> {
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: "" };
@@ -61,6 +73,9 @@ fn send_card_added_mail(postmark_token: &str, email: String) -> Result<(), Error
     }
 }
 
+/// Function to insert new card for
+/// user and create the customer with
+/// the new card at Stripe.
 pub fn charge(
     connection: &DbConn,
     stripe_secret: &str,

@@ -10,7 +10,7 @@ pub struct PublicSeries {
     /// UUID of the series.
     uuid: String,
     /// Title of the series.
-    title: &'a String,
+    title: String,
     /// Slug of the series
     slug: String,
     /// Description of the series.

@@ -10,7 +10,7 @@ use admin::group::get_all_groupsc;
 use admin::series::get_all_seriesc;
 use admin::series::SerieC;
 use admin::group::GroupC;
-use authentication::send_verify_email;
+use authentication::verify::send_verify_email;
 use rocket::Route;
 use structs::PostmarkToken;
 use rocket::State;

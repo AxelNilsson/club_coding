@@ -6,6 +6,8 @@ use std::io::{Error, ErrorKind};
 use charge::Stripe;
 use payment::database::{delete_and_get_card, get_customer};
 
+/// Updates the customer with a
+/// new card.
 pub fn update_customer(
     client: &stripe::Client,
     customer_id: &str,
@@ -28,11 +30,20 @@ pub fn update_customer(
     )
 }
 
+/// Struct for emails, not used
+/// for updated card email but we
+/// still need an empty struct
+/// to use tera.
 #[derive(Serialize)]
 struct VerifyEmail<'a> {
+    /// Verify email token
+    /// to be rendered using tera.
     token: &'a str,
 }
 
+/// Function to send email to
+/// the user when the users
+/// card has been updated.
 pub fn send_card_updated_mail(postmark_token: &str, email: String) -> Result<(), Error> {
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: "" };
@@ -60,6 +71,9 @@ pub fn send_card_updated_mail(postmark_token: &str, email: String) -> Result<(),
     }
 }
 
+/// Function to insert new card for
+/// user and update the customer with
+/// the new card at Stripe.
 pub fn charge(
     connection: &DbConn,
     stripe_secret: &str,
@@ -124,6 +138,8 @@ pub fn charge(
     }
 }
 
+/// Function to send card deleted
+/// email to the user.
 pub fn send_card_deleted_mail(postmark_token: &str, email: String) -> Result<(), Error> {
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: "" };
@@ -151,6 +167,10 @@ pub fn send_card_deleted_mail(postmark_token: &str, email: String) -> Result<(),
     }
 }
 
+/// Function to delete card and send deleted
+/// card email. If there's an error with sending
+/// the email the function will return an error.
+/// Otherwise it will return OK.
 pub fn delete(
     connection: &DbConn,
     postmark_token: &str,

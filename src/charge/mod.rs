@@ -12,13 +12,31 @@ use charge::customer::charge;
 
 #[derive(Serialize)]
 pub struct ChargeContext<'a> {
+    /// Header used in tera templates.
+    /// Mainly used for the title.
     pub header: &'a str,
+    /// The user struct used by templates.
+    /// For example the username for the toolbar.
     pub user: User,
+    /// Stripe Publishable Key for use with the
+    /// Stripe JS Library.
     pub publishable_key: &'a str,
+    /// Flash name if the request is redirected
+    /// with one.
     pub flash_name: String,
+    /// Flash message if the request is redirected
+    /// with one.
     pub flash_msg: String,
 }
 
+/// GET Endpoint for the page of
+/// adding a card. Endpoints checks if the
+/// user is logged in by using the
+/// user request guard. If the user
+/// is not logged in it forwards
+/// the request.
+/// Responds with the Add Card Template
+/// in the series folder.
 #[get("/card/add")]
 fn add_card_page(
     user: User,
@@ -30,7 +48,7 @@ fn add_card_page(
         None => ("".to_string(), "".to_string()),
     };
     let context = ChargeContext {
-        header: "Club Coding",
+        header: "Add card",
         user: user,
         publishable_key: &stripe_token.publishable_key,
         flash_name: name,
@@ -39,6 +57,16 @@ fn add_card_page(
     Template::render("payment/add_card", &context)
 }
 
+/// GET Endpoint for the page of
+/// adding a card. Endpoints checks if the
+/// user is logged in by using the
+/// user request guard. If the user
+/// is not logged in it forwards
+/// the request. The UUID is used to
+/// send the user back to the video
+/// after payment has been made.
+/// Responds with the Add Card Template
+/// in the series folder.
 #[get("/card/add/<_uuid>")]
 fn add_card_uuid_page(
     user: User,
@@ -51,7 +79,7 @@ fn add_card_uuid_page(
         None => ("".to_string(), "".to_string()),
     };
     let context = ChargeContext {
-        header: "Club Coding",
+        header: "Add card",
         user: user,
         publishable_key: &stripe_token.publishable_key,
         flash_name: name,
@@ -60,39 +88,86 @@ fn add_card_uuid_page(
     Template::render("payment/add_card", &context)
 }
 
+/// Struct for all of the data that we
+/// recieve from Stripe when using the
+/// Stripe JS Library.
 #[derive(Debug, FromForm)]
 pub struct Stripe {
+    // Card Address City
     pub card_address_city: Option<String>,
+    /// Card Address Country
     pub card_address_country: Option<String>,
+    /// Card Address Line 1
     pub card_address_line1: Option<String>,
+    /// Card Address Line 1 check
     pub card_address_line1_check: Option<String>,
+    /// Card Address Line 2
     pub card_address_line2: Option<String>,
+    /// Card Address state.
     pub card_address_state: Option<String>,
+    /// Card Address ZIP.
     pub card_address_zip: Option<String>,
+    /// Address ZIP check of the card
     pub card_address_zip_check: Option<String>,
+    /// Brand of the card
     pub card_brand: String,
+    /// Country of the card
     pub card_country: String,
+    /// CVC check of the card
     pub card_cvc_check: Option<String>,
+    /// Last four numbers of the card.
     pub card_dynamic_last4: Option<String>,
+    /// Month the card expires.
     pub card_exp_month: i32,
+    /// Year the card expires.
     pub card_exp_year: i32,
+    /// Card Funding
     pub card_funding: Option<String>,
+    /// String ID of the card
     pub card_id: Option<String>,
+    /// Last four numbers of the card.
     pub card_last4: String,
+    /// Meta data of the Card.
     pub card_metadata: Option<String>,
+    /// Name of the Card.
     pub card_name: Option<String>,
+    /// Card Object.
     pub card_object: Option<String>,
+    /// Card Tokenization Method
     pub card_tokenization_method: Option<String>,
+    /// IP of the user sending the
+    /// request.
     pub client_ip: String,
+    /// Unix timestamp of when the
+    /// card was created.
     pub created: i64,
+    /// String ID of the Token.
     pub id: String,
+    /// Boolean showing if we are
+    /// using livemode or testmode.
     pub livemode: bool,
+    /// The object
     pub object: Option<String>,
+    /// Type of Payment
     #[form(field = "type")]
     pub type_of_payment: Option<String>,
+    /// Boolean indicating if the
+    /// card has been used or not.
     pub used: bool,
 }
 
+/// POST Endpoint for the page to add a
+/// card to your account. Endpoints checks
+/// if the  user is logged in by using the
+/// user request guard. If the user
+/// is not logged in it forwards
+/// the request.
+/// It requires some of the parameters in the
+/// Stripe struct submitted as a form.
+/// If everything is successful, it will add
+/// a card to the user and redirect the user
+/// to the index. Otherwise it will redirect
+/// the user back to the card add page.
 #[post("/card/add", data = "<form_data>")]
 fn add_card(
     conn: DbConn,
@@ -121,6 +196,19 @@ fn add_card(
     }
 }
 
+/// POST Endpoint for the page to add a
+/// card to your account. Endpoints checks
+/// if the  user is logged in by using the
+/// user request guard. If the user
+/// is not logged in it forwards
+/// the request.
+/// It requires some of the parameters in the
+/// Stripe struct submitted as a form.
+/// If everything is successful, it will add
+/// a card to the user and redirect the user
+/// to the watch video page for the UUID.
+/// Otherwise it will redirect the user back
+/// to the card add page.
 #[post("/card/add/<uuid>", data = "<form_data>")]
 fn add_card_uuid(
     conn: DbConn,
