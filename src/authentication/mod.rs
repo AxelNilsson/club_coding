@@ -203,7 +203,7 @@ fn register_user(
     user: Form<UserRegistration>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input: UserRegistration = user.into_inner();
-    if email_regex.regex.is_match(&input.email) {
+    if email_regex.0.is_match(&input.email) {
         if input.password == input.confirm_password {
             if csrf_matches(input.csrf, csrf_cookie.value()) {
                 match hash(&input.password, DEFAULT_COST) {
@@ -387,7 +387,7 @@ fn send_recover_email(
     user: Form<RecoverAccount>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input: RecoverAccount = user.into_inner();
-    if email_regex.regex.is_match(&input.email) {
+    if email_regex.0.is_match(&input.email) {
         if csrf_matches(input.csrf, csrf_cookie.value()) {
             match get_user_id_from_email(&conn, &input.email) {
                 Some(user_id) => {
@@ -559,6 +559,10 @@ fn logout(mut cookies: Cookies) -> Redirect {
     Redirect::to("/")
 }
 
+/// Assembles all of the endpoints.
+/// The upside of assembling all of the endpoints here
+/// is that we don't have to update the main function but
+/// instead we can keep all of the changes in here.
 pub fn endpoints() -> Vec<Route> {
     routes![
         login_page,

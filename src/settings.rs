@@ -98,6 +98,10 @@ fn update_password(
     }
 }
 
+/// Assembles all of the endpoints.
+/// The upside of assembling all of the endpoints here
+/// is that we don't have to update the main function but
+/// instead we can keep all of the changes in here.
 pub fn endpoints() -> Vec<Route> {
     routes![password_page, password_page_nouser, update_password]
 }

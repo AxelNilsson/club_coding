@@ -2,19 +2,39 @@ use users::User;
 use rocket::fairing::AdHoc;
 use regex::Regex;
 
+/// Context for rendering tera templates
+/// for logged in endpoints.
 #[derive(Serialize)]
 pub struct LoggedInContext<'a> {
+    /// Header used in tera templates.
+    /// Mainly used for the title.
     pub header: &'a str,
+    /// The user struct used by templates.
+    /// For example the username for the toolbar.
     pub user: User,
 }
 
+/// Context for rendering tera templates
+/// for not logged in endpoints.
 #[derive(Serialize)]
 pub struct Context<'a> {
+    /// Header used in tera templates.
+    /// Mainly used for the title.
     pub header: &'a str,
 }
 
+/// Struct for Stripe States.
+/// Used in endpoints that requires the
+/// stripe keys.
 pub struct StripeToken {
+    /// Publishable Key that you can
+    /// show in public, for example in
+    /// an HTML File for the JavaScript
+    /// Stripe Library.
     pub publishable_key: String,
+    /// Secret Key that you can not
+    /// show in public. Only to be used
+    /// in Rust code.
     pub secret_key: String,
 }
 
@@ -40,6 +60,11 @@ pub fn stripe_token_fairing() -> rocket::fairing::AdHoc {
     })
 }
 
+/// Struct for Postmark Token.
+/// Used in endpoints that requires the
+/// postmark token. It is a Secret Key
+/// that you can not show in public.
+/// Only to be used in Rust code.
 pub struct PostmarkToken(pub String);
 
 /// Returns a AdHoc Fairing with the Postmark Token
@@ -57,36 +82,19 @@ pub fn postmark_token_fairing() -> rocket::fairing::AdHoc {
     })
 }
 
-pub struct EmailRegex {
-    pub regex: regex::Regex,
-}
+/// Struct for E-Mail Regex.
+/// By using an fairing we do not
+/// have to make a new Regex each
+/// time we are going to use it.
+pub struct EmailRegex(pub regex::Regex);
 
-/// Returns a AdHoc Fairing with the Postmark Token
-/// Will panic if no Postmark Token is set in
-/// Rocket.toml File
+/// Returns a AdHoc Fairing with the E-Mail Regex
+/// Will panic if the Regex is not valid.
 pub fn email_regex_fairing() -> rocket::fairing::AdHoc {
     AdHoc::on_attach(|rocket| {
         let email_regex = Regex::new(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
             .expect("email regex not valid");
 
-        Ok(rocket.manage(EmailRegex { regex: email_regex }))
-    })
-}
-
-pub struct PasswordRegex {
-    pub regex: regex::Regex,
-}
-
-/// Returns a AdHoc Fairing with the Postmark Token
-/// Will panic if no Postmark Token is set in
-/// Rocket.toml File
-pub fn password_regex_fairing() -> rocket::fairing::AdHoc {
-    AdHoc::on_attach(|rocket| {
-        let password_regex = Regex::new(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
-            .expect("password regex not valid");
-
-        Ok(rocket.manage(PasswordRegex {
-            regex: password_regex,
-        }))
+        Ok(rocket.manage(EmailRegex(email_regex)))
     })
 }

@@ -60,7 +60,6 @@ fn main() {
         .attach(structs::stripe_token_fairing())
         .attach(structs::postmark_token_fairing())
         .attach(structs::email_regex_fairing())
-        .attach(structs::password_regex_fairing())
         .catch(errors::endpoints())
         .launch();
 }

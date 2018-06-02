@@ -147,6 +147,10 @@ fn add_card_uuid(
     }
 }
 
+/// Assembles all of the endpoints.
+/// The upside of assembling all of the endpoints here
+/// is that we don't have to update the main function but
+/// instead we can keep all of the changes in here.
 pub fn endpoints() -> Vec<Route> {
     routes![add_card_page, add_card, add_card_uuid_page, add_card_uuid]
 }
