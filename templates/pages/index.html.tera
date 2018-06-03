@@ -120,6 +120,15 @@
     div.card.card--flat > .container > nav > .layout.wrap.row > .xs12.hidden-md-and-up > h1 {
       text-align: center;
     }
+    @media (min-width: 0) and (max-width: 414px){
+      div.card.card--flat > .container > section > div.layout.wrap.row > div.xs12.lg4.offset-lg1 {
+        text-align: center;
+      }
+      div.card.card--flat > .container > section > div.layout.wrap.row > div.xs12.hidden-md-and-up > a.card.card--flat > div.card__media {
+        width: auto;
+        height: 214px !important;
+      }
+    }
   </style>
 {% endblock head %}
 {% block content %}
@@ -181,8 +190,13 @@
       <v-container>
         <section>
           <v-layout wrap row>
+          <v-flex xs12 hidden-md-and-up>
+            <v-card flat height="100%" href="/series/{{ serie.uuid }}">
+              <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}.png"></v-card-media>
+            </v-card>
+          </v-flex>
           {% if loop.index is odd %}
-            <v-flex xs12 lg6 offset-lg1>
+            <v-flex hidden-sm-and-down lg6 offset-lg1>
               <v-card flat height="100%" href="/series/{{ serie.uuid }}">
                 <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}.png"></v-card-media>
               </v-card>
@@ -198,7 +212,7 @@
             </v-layout>
           </v-flex>
           {% if loop.index is even %}
-            <v-flex xs12 lg6 offset-lg1>
+            <v-flex hidden-sm-and-down lg6 offset-lg1>
               <v-card flat height="100%" href="/series/{{ serie.uuid }}">
                 <v-card-media contain height="100%" src="/thumbnail/{{ serie.uuid }}.png"></v-card-media>
               </v-card>

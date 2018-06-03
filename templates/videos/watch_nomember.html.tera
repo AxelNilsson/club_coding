@@ -3,26 +3,26 @@
 {% block head %}
 {{ super() }}
 <style>
-  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main {
+  .layout.wrap > .flex.xs10.lg8.offset-lg2.xl6.offset-xl3 > div#main {
     text-align: center;
     padding: 15vh 0;
   }
-  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > h2.display-3 {
+  .layout.wrap > .flex.xs10.lg8.offset-lg2.xl6.offset-xl3 > div#main > h2.display-3 {
     color: #4d545d;
   }
-  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > p.first.subheading {
+  .layout.wrap > .flex.xs10.lg8.offset-lg2.xl6.offset-xl3 > div#main > p.first.subheading {
     margin: 1em 0 0;
   }
-  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > p.subheading {
+  .layout.wrap > .flex.xs10.lg8.offset-lg2.xl6.offset-xl3 > div#main > p.subheading {
     color: rgb(77, 84, 93);
   }
-  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > .layout.wrap.row > .flex > a {
+  .layout.wrap > .flex.xs10.lg8.offset-lg2.xl6.offset-xl3 > div#main > .layout.wrap.row > .flex > a {
     color: #FFF;
   }
-  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > div#main > .layout.wrap.row > .flex.xs12.lg6.offset-lg3 > a {
+  .layout.wrap > .flex.xs10.lg8.offset-lg2.xl6.offset-xl3 > div#main > .layout.wrap.row > .flex.xs12.lg6.offset-lg3 > a {
     background-color: #ef6733;
   }
-  .layout.wrap > .flex.xs12.lg8.offset-lg2.xl6.offset-xl3 > hr.divider {
+  .layout.wrap > .flex.xs10.lg8.offset-lg2.xl6.offset-xl3 > hr.divider {
     margin-bottom: 2em;
   }
 </style>
@@ -30,7 +30,7 @@
 {% block content %}{{ super() }}{% endblock content %}
 {% block player %}
   <v-layout wrap>
-    <v-flex xs12 lg8 offset-lg2 xl6 offset-xl3>
+    <v-flex xs10 offset-xs1 lg8 offset-lg2 xl6 offset-xl3>
       <div id="main">
         <h2 class="display-3">Start learning today!</h2>
         <p class="first subheading">It looks like you don't have access to this series at Club Coding.</p>

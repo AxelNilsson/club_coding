@@ -16,26 +16,26 @@
     a:hover {
       text-decoration: underline !important;
     }
-    h1.headline > a:hover {
+    h1 > a:hover {
       text-decoration: none!important;
     }
     #toolbar {
       background-color: #fafafa
     }
-    div.card > .container > .layout.wrap.row > .flex.xs12.xl2 > h1.headline {
+    div.card#toolbar > .container > .layout.wrap.row > .flex > h1 {
       font-weight: 800;
       line-height: 56px!important;
     }
-    div.card > .container > .layout.wrap.row > .flex.xs12.xl2 > h1.headline > a {
+    div.card#toolbar > .container > .layout.wrap.row > .flex > h1 > a {
       text-decoration: none;
       color: #455a64!important;
     }
-    div.card > .container > .layout.wrap.row > .flex.xl2 > .layout.wrap.row > .flex.xs4 > a.title {
+    div.card#toolbar > .container > .layout.wrap.row > .flex.lg2 > .layout.wrap.row > .flex.xs4 > a.title {
       color: #00b1b3!important;
       line-height: 56px!important;
       text-decoration: none;
     }
-    div.card > .container > .layout.wrap.row > .flex.xl2 > .layout.wrap.row > .flex.xs4 > a.title.secondary-title {
+    div.card#toolbar > .container > .layout.wrap.row > .flex.lg2 > .layout.wrap.row > .flex.xs4 > a.title.secondary-title {
       color: #455a64!important;
       font-weight: 800;
     }
@@ -48,6 +48,11 @@
     }
     div.layout.row.wrap.justify-center > div.flex.xs12.py-3.text-xs-center {
       color: #8898aa;
+    }
+    @media (min-width: 0) and (max-width: 414px){
+      #toolbar > .container > .layout.wrap.row > .flex.xs12.hidden-md-and-up {
+        text-align: center;
+      }
     }
     [v-cloak] {
       display: none;
@@ -62,11 +67,14 @@
       <v-card flat id="toolbar">
         <v-container>
           <v-layout wrap row>
-            <v-flex xs12 xl2>
-              <h1 class="headline"><a href="/">CLUB CODING</a></h1>
+            <v-flex xs12 hidden-md-and-up>
+              <h1 class="display-2"><a href="/">club coding</a></h1>
             </v-flex>
-            <v-flex hidden-sm-and-down xl8></v-flex>
-            <v-flex hidden-sm-and-down xl2>
+            <v-flex hidden-sm-and-down lg2>
+              <h1 class="headline"><a href="/">club coding</a></h1>
+            </v-flex>
+            <v-flex hidden-sm-and-down lg8></v-flex>
+            <v-flex hidden-sm-and-down lg2>
               <v-layout wrap row>
                 <v-flex xs4></v-flex>
                 <v-flex xs4>

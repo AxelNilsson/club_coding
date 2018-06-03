@@ -13,14 +13,14 @@ h1.headline > a:hover, div.list > div > a.list__tile.list__tile--link:hover {
 #toolbar {
   background-color: #fafafa
 }
-div.card#toolbar > .container > .layout.wrap.row > .flex.xs12 > h1.display-1, div.card#toolbar > .container > .layout.wrap.row > .flex.lg2.hidden-sm-and-down > h1.headline  {
+div.card#toolbar > .container > .layout.wrap.row > .flex > h1  {
   font-weight: 800;
   line-height: 56px!important;
 }
-div.card#toolbar > .container > .layout.wrap.row > .flex.xs12.hidden-md-and-up > h1.display-1 {
+div.card#toolbar > .container > .layout.wrap.row > .flex > h1.display-2 {
   text-align: center;
 }
-div.card#toolbar > .container > .layout.wrap.row > .flex.xs12 > h1.display-1 > a, div.card#toolbar > .container > .layout.wrap.row > .flex.lg2.hidden-sm-and-down > h1.headline > a {
+div.card#toolbar > .container > .layout.wrap.row > .flex > h1 > a {
   text-decoration: none;
   color: #455a64!important;
 }
@@ -47,7 +47,7 @@ div.layout.row.wrap.justify-center > div.flex.xs12.py-3.text-xs-center {
   <v-container>
     <v-layout wrap row>
       <v-flex xs12 hidden-md-and-up>
-        <h1 class="display-1"><a href="/">CLUB CODING</a></h1>
+        <h1 class="display-2"><a href="/">CLUB CODING</a></h1>
       </v-flex>
       <v-flex hidden-sm-and-down lg2>
         <h1 class="headline"><a href="/">CLUB CODING</a></h1>

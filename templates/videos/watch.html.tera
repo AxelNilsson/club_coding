@@ -3,14 +3,14 @@
 {% block head %}
 {{ super() }}
   <style>
-    p.title > a {
-      text-decoration: none;
-      color: rgba(0,0,0,.87) !important;
-      font-weight: 500;
-    }
-    p.title > a:hover {
-      font-weight: bold;
-    }
+  p.title > a {
+    text-decoration: none;
+    color: rgba(0,0,0,.87) !important;
+    font-weight: 500;
+  }
+  p.title > a:hover {
+    font-weight: bold;
+  }
   div.flex > .card {
     padding: 4em;
   }
@@ -48,6 +48,11 @@
     text-decoration: underline;
     color: #00b1b3;
   }
+  @media (min-width: 0) and (max-width: 414px){
+    .layout.wrap > .flex {
+      text-align: center;
+    }
+  }
   </style>
 {% endblock head %}
 {% block content %}
@@ -66,7 +71,7 @@
     </v-flex>
   </v-layout>
   <v-layout wrap style="padding: 4em 0 2em;">
-    <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
+    <v-flex xs10 offset-xs1 lg10 offset-lg1 xl8 offset-xl2>
      {% for video in videos %}
       <v-card>
         <v-layout wrap row>

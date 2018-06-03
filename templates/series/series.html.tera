@@ -89,13 +89,21 @@
     font-weight: 400;
     font-size: 16px;
   }
+  @media (min-width: 0) and (max-width: 414px){
+    #main > .layout.wrap > .flex.xs10.offset-xs1.lg5.offset-lg1.xl3.offset-xl3, div.layout.wrap.row#episodes > div.flex > .card > .layout.wrap.row > .flex.xs12.lg8 {
+      text-align: center;
+    }
+    #main > .layout.wrap > .flex.xs12.lg5.offset-lg1.xl2.offset-xl1 > #thumbnail {
+      margin: auto;
+    }
+  }
   </style>
 {% endblock head %}
 {% block content %}
   {{ super() }}
   <div id="main">
     <v-layout wrap>
-      <v-flex xs12 lg5 offset-lg1 xl3 offset-xl3>
+      <v-flex xs10 offset-xs1 lg5 offset-lg1 xl3 offset-xl3>
         <h1 class="display-2">{{ title }}</h1>
         <p class="subheading">{{ description | safe }}</p>
         <v-btn outline color="orange darken-1">${{ price/100 }}</v-btn>
@@ -106,7 +114,7 @@
     </v-layout>
   </div>
   <v-layout wrap row id="episodes">
-    <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
+    <v-flex xs10 offset-xs1 lg10 offset-lg1 xl8 offset-xl2>
      {% for video in videos %}
       <v-card>
         <v-layout wrap row>

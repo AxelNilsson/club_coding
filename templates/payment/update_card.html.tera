@@ -75,12 +75,12 @@
   <v-container>
     <div id="main">
       <v-layout wrap row>
-        <v-flex xs2 lg2>
+        <v-flex xs12 lg2>
           <v-btn href="/settings/payment" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Payments</span></v-btn>
           <v-btn large depressed block dark color="grey lighten-1" style="font-weight: 700;"><span class="title">Update Card</span></v-btn>
           <v-btn @click.stop="cancel_subscription = true" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Remove Card</span></v-btn>
         </v-flex>
-        <v-flex xs10 lg6 offset-lg1>
+        <v-flex xs12 lg6 offset-lg1>
           <v-card flat style="padding: 2em;">
             <h2 class="headline">Update the card on your account</h2>
             <form method="post" style="margin: 1em 0;" id="payment-form">

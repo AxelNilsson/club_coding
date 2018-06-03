@@ -13,12 +13,12 @@
   <v-container>
     <div id="main">
       <v-layout wrap row>
-        <v-flex xs2>
+        <v-flex xs12>
           <v-btn large depressed block dark color="grey lighten-1" style="font-weight: 700;"><span class="title">Payments</span></v-btn>
           <v-btn href="/settings/payment/card/update" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Update Card</span></v-btn>
           <v-btn @click.stop="cancel_subscription = true" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Remove Card</span></v-btn>
         </v-flex>
-        <v-flex xs9 offset-xs1>
+        <v-flex xs12 offset-xs1>
           <div>
             <h2 class="headline" style="font-weight: 400; color: #4d545d;">Charges</h2>
             <h2 class="title" style="font-weight: 400; color: #4d545d;">These are all of the charges we have made.</h2>
