@@ -398,4 +398,5 @@ pub struct VideoJoin {
     pub membership_only: bool,
     pub series_title: String,
     pub price: i32,
+    pub in_development: bool,
 }

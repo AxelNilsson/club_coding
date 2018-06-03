@@ -11,8 +11,11 @@
   p.title > a:hover {
     font-weight: bold;
   }
-  div.flex > .card {
+  div.layout.wrap.row#episodes > div.flex > .card {
     padding: 4em;
+  }
+  div.layout.wrap.row#episodes {
+    padding: 4em 0 2em;
   }
   div.flex > .card:nth-child(2n) {
     background: #f7f7f7;
@@ -40,13 +43,60 @@
     margin: auto;
     font-weight: 700;
   }
+  .lg8 > h2.headline {
+    color: rgb(77, 84, 93);
+    font-weight: 700;
+  }
   .lg8 > h2.headline > a {
-    color: inherit;
+    color: rgb(77, 84, 93);
+    font-weight: 400;
     text-decoration: none;
   }
   .lg8 > h2.headline > a:hover {
-    text-decoration: underline;
-    color: #00b1b3;
+    font-weight: 700;
+  }
+  .lg8 > p.subheading {
+    margin-top: 1em;
+  }
+  #in-development {
+    text-align: center;
+    color: #919499;
+    margin-top: 2em!important;
+    font-weight: 400;
+    font-size: 16px;
+  }
+  .layout.wrap > .flex.xs12.lg10.offset-lg1.xl8.offset-xl2 > #main {
+    text-align: center;
+    padding: 15vh 0;
+  }
+  .layout.wrap > .flex.xs12.lg10.offset-lg1.xl8.offset-xl2 > #main > h2.display-3 {
+    color: #4d545d;
+  }
+  .layout.wrap > .flex.xs12.lg10.offset-lg1.xl8.offset-xl2 > #main > p.subheading {
+    margin: 1em 0;
+    color: rgb(77, 84, 93);
+  }
+  .layout.wrap > .flex.xs12.lg10.offset-lg1.xl8.offset-xl2 > #main > a.btn.btn--large {
+    background-color: #ef6733;
+    color: #FFF
+  }
+  .layout.wrap > .flex.xs12.lg10.offset-lg1.xl8.offset-xl2 > hr.divider {
+    margin-bottom: 2em;
+  }
+  .layout.wrap > .flex.xs12.lg10.offset-lg1.xl8.offset-xl2 {
+    margin-top: 1em;
+  }
+  .layout.wrap > .xs12.lg10.offset-lg1.xl8.offset-xl2 > h1.display-1 {
+    margin-top: 4px;
+    font-weight:300;
+  }
+  .layout.wrap > .xs12.lg10.offset-lg1.xl8.offset-xl2 > h1.display-1 > span {
+    font-weight: 500
+  }
+  .layout.wrap > .xs12.lg10.offset-lg1.xl8.offset-xl2 > p.title {
+    margin-top: 1em;
+    font-weight:300;
+    line-height: 1.5em !important;
   }
   @media (min-width: 0) and (max-width: 414px){
     .layout.wrap > .flex {
@@ -58,22 +108,22 @@
 {% block content %}
   {{ super() }}
   <v-layout wrap>
-      <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
-      <div style="text-align: center; padding: 15vh 0;">
-        <h2 class="display-3" style="color: #4d545d;">Start learning today!</h2>
-        <p class="subheading" style="margin: 1em 0; color: rgb(77, 84, 93);">It looks like you're not a member at Club Coding.<br />Don't worry, it's an easy fix!</p>
-        <v-btn large style="background-color: #ef6733; color: #FFF" href="/signup">SIGN UP TODAY</v-btn>
+    <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
+      <div id="main">
+        <h2 class="display-3">Start learning today!</h2>
+        <p class="subheading">It looks like you're not a member at Club Coding.<br />Don't worry, it's an easy fix!</p>
+        <v-btn large href="/signup">SIGN UP TODAY</v-btn>
       </div>
-      <v-divider style="margin-bottom: 2em;"/>
+      <v-divider />
     </v-flex>
   </v-layout>
   <v-layout wrap>
-    <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2 style="margin-top: 1em;">
-      <h1 class="display-1" style="margin-top: 4px; font-weight:300;">{{ series_title }}: <span style="font-weight: 500">{{ title }}</span></h1>
-      <p class="title" style="margin-top: 1em; font-weight:300; line-height: 1.5em !important;">{{ description | safe }}</p>
+    <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
+      <h1 class="display-1">{{ series_title }}: <span>{{ title }}</span></h1>
+      <p class="title">{{ description | safe }}</p>
     </v-flex>
   </v-layout>
-  <v-layout wrap style="padding: 4em 0 2em;">
+  <v-layout wrap row id="episodes">
     <v-flex xs10 offset-xs1 lg10 offset-lg1 xl8 offset-xl2>
      {% for video in videos %}
       <v-card>
@@ -95,16 +145,18 @@
           </v-flex>
           <v-flex xs12 lg8>
             {% if video.uuid == uuid %}
-            <h2 class="headline" style="color: rgb(77, 84, 93); font-weight: 700;">{{ video.title }}</h2>
+            <h2 class="headline">{{ video.title }}</h2>
             {% else %}
-            <h2 class="headline" style="color: rgb(77, 84, 93); font-weight: 400;"><a href="/watch/{{ video.uuid }}">{{ video.title }}</a></h2>
+            <h2 class="headline"><a href="/watch/{{ video.uuid }}">{{ video.title }}</a></h2>
             {% endif %}
-            <p class="subheading" style="margin-top: 1em;">{{ video.description | safe }}</p>
+            <p class="subheading">{{ video.description | safe }}</p>
           </v-flex>
         </v-layout>
       </v-card>
      {% endfor %}
-     <p style="text-align: center; color: #919499; margin-top: 2em!important; font-weight: 400; font-size: 16px;">*Series still in development. Check back often for updates.</p>
+     {% if in_development %}
+     <p id="in-development">*Series still in development. Check back often for updates.</p>
+     {% endif %}
     </v-flex>
   </v-layout>
 {% endblock content %}

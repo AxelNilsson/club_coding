@@ -7,8 +7,14 @@ use database::DbConn;
 use videos::database;
 use email::{EmailBody, PostmarkClient};
 
+/// Struct for emails, not used
+/// for updated card email but we
+/// still need an empty struct
+/// to use tera.
 #[derive(Serialize)]
 struct VerifyEmail<'a> {
+    /// Verify email token
+    /// to be rendered using tera.
     token: &'a str,
 }
 

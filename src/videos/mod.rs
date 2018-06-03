@@ -31,6 +31,9 @@ struct WatchContext<'a> {
     user: &'a User,
     /// The Vimeo ID of the video being watched.
     vimeo_id: String,
+    /// Boolean of if the series is
+    /// in development or not.
+    in_development: bool,
     /// A Vector of the Videos in the same series
     /// as the one currently watched.
     videos: Vec<PublicVideo>,
@@ -88,6 +91,7 @@ fn watch_as_user(
                 description: description,
                 user: &user,
                 vimeo_id: video.vimeo_id,
+                in_development: video.in_development,
                 videos: videos,
                 flash_name: name,
                 flash_msg: msg,
@@ -114,6 +118,9 @@ struct WatchNoUser {
     title: String,
     /// Description of the Video.
     description: String,
+    /// Boolean of if the series is
+    /// in development or not.
+    in_development: bool,
     /// A Vector of the Videos in the same series
     /// as the one currently watched.
     videos: Vec<PublicVideo>,
@@ -156,6 +163,7 @@ fn watch_nouser(
                 series_title: video.series_title,
                 title: video.title,
                 description: description,
+                in_development: video.in_development,
                 videos: videos,
                 flash_name: name,
                 flash_msg: msg,

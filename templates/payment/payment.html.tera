@@ -6,6 +6,28 @@
   #main {
     margin-top: 2.5vh;
   }
+  .container > div#main > .layout.wrap.row > .flex.xs12.lg2 > .btn.btn--block.btn--flat.btn--large {
+    color: #4d545d;
+  }
+  .container > div#main > .layout.wrap.row > .flex.xs12.lg2 > a {
+    font-weight: 700;
+  }
+  .container > div#main > .layout.wrap.row > .flex.xs12.lg6.offset-lg1 > div > * {
+    font-weight: 400;
+    color: #4d545d;
+  }
+  .container > div#main > .layout.wrap.row > .flex.xs12.lg6.offset-lg1 > div.elevation-1 {
+    margin: 2em 0
+  }
+  .dialog > .card > .card__title > span.display-1 {
+    width: 100%;
+    text-align: center;
+  }
+  @media (min-width: 0) and (max-width: 414px){
+    .container > div#main > .layout.wrap.row > .flex.xs12.lg6.offset-lg1 > div > * {
+      text-align: center;
+    }
+  }
 </style>
 {% endblock head %}
 {% block content %}
@@ -13,17 +35,17 @@
   <v-container>
     <div id="main">
       <v-layout wrap row>
-        <v-flex xs12>
-          <v-btn large depressed block dark color="grey lighten-1" style="font-weight: 700;"><span class="title">Payments</span></v-btn>
-          <v-btn href="/settings/payment/card/update" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Update Card</span></v-btn>
-          <v-btn @click.stop="cancel_subscription = true" large flat block style="font-weight: 700; color: #4d545d;"><span class="title">Remove Card</span></v-btn>
+        <v-flex xs12 lg2>
+          <v-btn large depressed block dark color="grey lighten-1"><span class="title">Payments</span></v-btn>
+          <v-btn href="/settings/payment/card/update" large flat block><span class="title">Update Card</span></v-btn>
+          <v-btn @click.stop="cancel_subscription = true" large flat block><span class="title">Remove Card</span></v-btn>
         </v-flex>
-        <v-flex xs12 offset-xs1>
+        <v-flex xs12 lg6 offset-lg1>
           <div>
-            <h2 class="headline" style="font-weight: 400; color: #4d545d;">Charges</h2>
-            <h2 class="title" style="font-weight: 400; color: #4d545d;">These are all of the charges we have made.</h2>
+            <h2 class="headline">Charges</h2>
+            <h2 class="title">These are all of the charges we have made.</h2>
           </div>
-          <v-data-table style="margin: 2em 0" :headers="headers" :items="charges" :pagination.sync="pagination" select-all hide-actions item-key="name" class="elevation-1">
+          <v-data-table :headers="headers" :items="charges" :pagination.sync="pagination" select-all hide-actions item-key="name" class="elevation-1">
             <template slot="headers" slot-scope="props">
               <tr>
                 <th class="text-xs-left">Series</th>
@@ -42,19 +64,23 @@
               <td class="text-xs-right">${ new Date(props.item.date).toDateString() }</td>
             </template>
           </v-data-table>
-          <v-btn large dark color="orange darken-2" href="/">Get back to learning</v-btn>
+          <v-layout wrap row>
+            <v-flex xs12 lg4>
+              <v-btn large dark block color="orange darken-2" href="/">Get back to learning</v-btn>
+            </v-flex>
+          </v-layout>
         </v-flex>
       </v-layout>
     </div>
     <v-dialog v-model="cancel_subscription" max-width="500px">
       <v-card>
-        <v-card-title><span class="display-1" style="width: 100%; text-align: center;">Are you sure?</span></v-card-title>
+        <v-card-title><span class="display-1">Are you sure?</span></v-card-title>
         <v-card-actions>
           <v-layout wrap row>
-          <v-flex xs5>
+          <v-flex xs12 lg5>
             <v-btn color="primary" large block @click.stop="cancel_subscription = false">Close</v-btn>
           </v-flex>
-          <v-flex xs6 offset-xs1>
+          <v-flex xs12 lg6 offset-lg1>
             <v-form method="POST" action="/settings/payment/card/delete">
               <v-btn color="green" large block dark type="submit">Yes I'm sure!</v-btn>
             <v-form>

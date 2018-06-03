@@ -46,6 +46,7 @@ pub fn get_video_data_from_uuid(connection: &DbConn, uid: &String) -> Result<Vid
             videos::membership_only,
             series::title,
             series::price,
+            series::in_development,
         ))
         .first::<VideoJoin>(&**connection)
     {
