@@ -1,5 +1,5 @@
 use database::DbConn;
-use club_coding::models::{Users, UsersVerifyEmail};
+use club_coding::models::{Users, UsersRecoverEmail, UsersVerifyEmail};
 use std::io::{Error, ErrorKind};
 use diesel::prelude::*;
 
@@ -94,5 +94,47 @@ pub fn invalidate_token_and_verify_user(
     {
         Ok(_) => Ok(()),
         Err(_) => Err(Error::new(ErrorKind::Other, "Could not verify user.")),
+    }
+}
+
+/// Gets the UsersVerifyEmail struct
+/// from the verification token
+pub fn get_recovery_by_token(connection: &DbConn, uuid_token: &str) -> Option<UsersRecoverEmail> {
+    use club_coding::schema::users_recover_email::dsl::*;
+
+    match users_recover_email
+        .filter(token.eq(uuid_token))
+        .first::<UsersRecoverEmail>(&**connection)
+    {
+        Ok(result) => Some(result),
+        Err(_) => None,
+    }
+}
+
+/// Gets the UsersVerifyEmail struct
+/// from the verification token
+pub fn invalidate_token_and_update_password(
+    connection: &DbConn,
+    recover_id: i64,
+    user_id: i64,
+    hashed_password: &str,
+) -> Result<(), Error> {
+    use club_coding::schema::users_recover_email;
+
+    match diesel::update(users_recover_email::table.find(recover_id))
+        .set(users_recover_email::used.eq(true))
+        .execute(&**connection)
+    {
+        Ok(_) => {}
+        Err(_) => return Err(Error::new(ErrorKind::Other, "Could not verify user.")),
+    }
+
+    use club_coding::schema::users;
+    match diesel::update(users::table.find(user_id))
+        .set(users::password.eq(hashed_password))
+        .execute(&**connection)
+    {
+        Ok(_) => Ok(()),
+        Err(_) => return Err(Error::new(ErrorKind::Other, "Could not verify user.")),
     }
 }

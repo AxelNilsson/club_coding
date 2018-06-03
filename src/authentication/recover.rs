@@ -7,7 +7,6 @@ use database::DbConn;
 use rocket::Route;
 use users::User as UserStruct;
 use email::{EmailBody, PostmarkClient};
-use club_coding::models::UsersRecoverEmail;
 use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
 use std::io::{Error, ErrorKind};
 use structs::PostmarkToken;
@@ -15,7 +14,6 @@ use rocket::State;
 use structs::EmailRegex;
 use authentication;
 use authentication::verify::VerifyEmail;
-use diesel::prelude::*;
 
 /// GET Endpoint for the recover email
 /// page. Endpoints checks if
@@ -54,14 +52,14 @@ fn recover_email_page(csrf_token: CsrfToken, flash: Option<FlashMessage>) -> Tem
 /// Function to send verification
 /// email to the user when the user
 /// has registered.
-fn send_recover_mail(postmark_token: &str, token: &String, email: String) -> Result<(), Error> {
+fn send_recover_mail(postmark_token: &str, token: &str, email: &str) -> Result<(), Error> {
     let tera = compile_templates!("templates/emails/**/*");
     let verify = VerifyEmail { token: token };
     match tera.render("recover_account.html.tera", &verify) {
         Ok(html_body) => {
             let body = EmailBody {
                 from: "axel@clubcoding.com".to_string(),
-                to: email,
+                to: email.to_string(),
                 subject: Some("Recover your account".to_string()),
                 html_body: Some(html_body),
                 cc: None,
@@ -103,6 +101,31 @@ struct RecoverAccount {
     csrf: String,
 }
 
+/// Generates a random token.
+/// Inserts that token into the database.
+/// Sends a recover account email to the
+/// user with that token.
+fn creates_and_sends_recover_email(
+    connection: &DbConn,
+    postmark_token: &str,
+    user_id: i64,
+    email: &str,
+) -> Result<(), Error> {
+    let token = authentication::generate_token(30);
+    match create_new_users_recover_email(connection, user_id, &token) {
+        Ok(_) => match send_recover_mail(postmark_token, &token, email) {
+            Ok(_) => Ok(()),
+            Err(_) => return Err(Error::new(ErrorKind::Other, "Could send recover email.")),
+        },
+        Err(_) => {
+            return Err(Error::new(
+                ErrorKind::Other,
+                "Could not insert recovery data to database.",
+            ))
+        }
+    }
+}
+
 /// POST Endpoint for the recover email
 /// page. This endpoint will kick in
 /// if the user is not logged in.
@@ -123,44 +146,38 @@ fn send_recover_email(
     user: Form<RecoverAccount>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input: RecoverAccount = user.into_inner();
-    if email_regex.0.is_match(&input.email) {
-        if csrf_matches(input.csrf, csrf_cookie.value()) {
-            match authentication::database::get_user_id_from_email(&conn, &input.email) {
-                Some(user_id) => {
-                    let token = authentication::generate_token(30);
-                    match send_recover_mail(&postmark_token.0, &token, input.email) {
-                        Ok(_) => match create_new_users_recover_email(&conn, user_id, &token) {
-                            Ok(_) => Ok(Flash::success(
-                                Redirect::to("/"),
-                                "Email sent. Please check your inbox.",
-                            )),
-                            Err(_) => Err(Flash::error(
-                                Redirect::to("/recover/email"),
-                                "An error occured, please try again later.",
-                            )),
-                        },
-                        Err(_) => Err(Flash::error(
-                            Redirect::to("/recover/email"),
-                            "An error occured, please try again later.",
-                        )),
-                    }
-                }
-                None => Err(Flash::error(
-                    Redirect::to("/recover/email"),
-                    "Email not found.",
-                )),
-            }
-        } else {
-            Err(Flash::error(
-                Redirect::to("/recover/email"),
-                "CSRF Doesn't match.",
-            ))
-        }
-    } else {
-        Err(Flash::error(
+    if !email_regex.0.is_match(&input.email) {
+        return Err(Flash::error(
             Redirect::to("/recover/email"),
             "Email is not valid.",
-        ))
+        ));
+    }
+    if !csrf_matches(input.csrf, csrf_cookie.value()) {
+        return Err(Flash::error(
+            Redirect::to("/recover/email"),
+            "CSRF Doesn't match.",
+        ));
+    }
+
+    let user_id: i64 = match authentication::database::get_user_id_from_email(&conn, &input.email) {
+        Some(user_id) => user_id,
+        None => {
+            return Err(Flash::error(
+                Redirect::to("/recover/email"),
+                "Email not found.",
+            ))
+        }
+    };
+
+    match creates_and_sends_recover_email(&conn, &postmark_token.0, user_id, &input.email) {
+        Ok(_) => Ok(Flash::success(
+            Redirect::to("/"),
+            "Email sent. Please check your inbox.",
+        )),
+        Err(_) => Err(Flash::error(
+            Redirect::to("/recover/email"),
+            "An error occured, please try again later.",
+        )),
     }
 }
 
@@ -192,31 +209,27 @@ fn update_password_page(
     flash: Option<FlashMessage>,
     uuid: String,
 ) -> Result<Template, Flash<Redirect>> {
-    use club_coding::schema::users_recover_email::dsl::*;
+    let result = match authentication::database::get_recovery_by_token(&conn, &uuid) {
+        Some(result) => result,
+        None => return Err(Flash::error(Redirect::to("/"), "Link incorrect.")),
+    };
 
-    match users_recover_email
-        .filter(token.eq(&uuid))
-        .first::<UsersRecoverEmail>(&*conn)
-    {
-        Ok(result) => {
-            if result.used {
-                Err(Flash::error(Redirect::to("/"), "Link already used."))
-            } else {
-                let (name, msg) = match flash {
-                    Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
-                    None => ("".to_string(), "".to_string()),
-                };
-                let context = authentication::login::LoginContext {
-                    header: "recover_email",
-                    csrf: csrf_token.value(),
-                    flash_name: name,
-                    flash_msg: msg,
-                };
-                Ok(Template::render("authentication/recover_email", &context))
-            }
-        }
-        Err(_) => Err(Flash::error(Redirect::to("/"), "Link incorrect.")),
+    if result.used {
+        return Err(Flash::error(Redirect::to("/"), "Link already used."));
     }
+
+    let (name, msg) = match flash {
+        Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
+        None => ("".to_string(), "".to_string()),
+    };
+
+    let context = authentication::login::LoginContext {
+        header: "Recover Email",
+        csrf: csrf_token.value(),
+        flash_name: name,
+        flash_msg: msg,
+    };
+    Ok(Template::render("authentication/recover_email", &context))
 }
 
 /// POST Endpoint for the recover email
@@ -266,69 +279,53 @@ fn update_password(
     user: Form<UpdatePassword>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input: UpdatePassword = user.into_inner();
-    if input.password == input.confirm_password {
-        use club_coding::schema::users_recover_email::dsl::*;
-
-        match users_recover_email
-            .filter(token.eq(&uuid))
-            .limit(1)
-            .first::<UsersRecoverEmail>(&*conn)
-        {
-            Ok(results) => {
-                if results.used {
-                    Err(Flash::error(Redirect::to("/"), "Link already used."))
-                } else {
-                    if csrf_matches(input.csrf, csrf_cookie.value()) {
-                        match hash(&input.password, DEFAULT_COST) {
-                            Ok(hashed_password) => match diesel::update(
-                                users_recover_email.find(results.id),
-                            ).set(used.eq(true))
-                                .execute(&*conn)
-                            {
-                                Ok(_) => {
-                                    use club_coding::schema::users::dsl::*;
-                                    match diesel::update(users.find(results.user_id))
-                                        .set(password.eq(hashed_password))
-                                        .execute(&*conn)
-                                    {
-                                        Ok(_) => Ok(Flash::success(
-                                            Redirect::to("/"),
-                                            "Password updated, please sign in.",
-                                        )),
-                                        Err(_) => Err(Flash::error(
-                                            Redirect::to(&format!("/email/recover/{}", uuid)),
-                                            "An error occured, please try again later.",
-                                        )),
-                                    }
-                                }
-                                Err(_) => Err(Flash::error(
-                                    Redirect::to(&format!("/email/recover/{}", uuid)),
-                                    "An error occured, please try again later.",
-                                )),
-                            },
-                            Err(_) => Err(Flash::error(
-                                Redirect::to(&format!("/email/recover/{}", uuid)),
-                                "An error occured, please try again later.",
-                            )),
-                        }
-                    } else {
-                        Err(Flash::error(
-                            Redirect::to(&format!("/email/recover/{}", uuid)),
-                            "CSRF Doesn't match.",
-                        ))
-                    }
-                }
-            }
-            Err(_) => Err(Flash::error(
-                Redirect::to(&format!("/email/recover/{}", uuid)),
-                "Link incorrect.",
-            )),
-        }
-    } else {
-        Err(Flash::error(
+    if !(input.password == input.confirm_password) {
+        return Err(Flash::error(
             Redirect::to(&format!("/email/recover/{}", uuid)),
             "Passwords not matching.",
-        ))
+        ));
+    }
+
+    let result = match authentication::database::get_recovery_by_token(&conn, &uuid) {
+        Some(result) => result,
+        None => return Err(Flash::error(Redirect::to("/"), "Link incorrect.")),
+    };
+
+    if result.used {
+        return Err(Flash::error(Redirect::to("/"), "Link already used."));
+    }
+
+    if !csrf_matches(input.csrf, csrf_cookie.value()) {
+        return Err(Flash::error(
+            Redirect::to(&format!("/email/recover/{}", uuid)),
+            "CSRF Doesn't match.",
+        ));
+    }
+
+    let hashed_password = match hash(&input.password, DEFAULT_COST) {
+        Ok(hashed_password) => hashed_password,
+        Err(_) => {
+            return Err(Flash::error(
+                Redirect::to(&format!("/email/recover/{}", uuid)),
+                "An error occured, please try again later.",
+            ))
+        }
+    };
+
+    match authentication::database::invalidate_token_and_update_password(
+        &conn,
+        result.id,
+        result.user_id,
+        &hashed_password,
+    ) {
+        Ok(_) => Ok(Flash::success(
+            Redirect::to("/"),
+            "Password updated, please sign in.",
+        )),
+        Err(_) => Err(Flash::error(
+            Redirect::to(&format!("/email/recover/{}", uuid)),
+            "An error occured, please try again later.",
+        )),
     }
 }
 
