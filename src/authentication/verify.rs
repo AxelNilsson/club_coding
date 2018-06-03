@@ -4,7 +4,6 @@ use database::DbConn;
 use rocket::Route;
 use users::User as UserStruct;
 use email::{EmailBody, PostmarkClient};
-use club_coding::models::UsersVerifyEmail;
 use std::io::{Error, ErrorKind};
 use authentication;
 use diesel::prelude::*;
@@ -27,7 +26,7 @@ pub fn send_verify_email(
     connection: &MysqlConnection,
     postmark_token: &str,
     user_id: i64,
-    email: String,
+    email: &str,
 ) -> Result<(), Error> {
     let token = authentication::generate_token(30);
     create_new_users_verify_email(connection, user_id, &token)?;
@@ -37,7 +36,7 @@ pub fn send_verify_email(
         Ok(html_body) => {
             let body = EmailBody {
                 from: "axel@clubcoding.com".to_string(),
-                to: email,
+                to: email.to_string(),
                 subject: Some("Welcome to ClubCoding!".to_string()),
                 html_body: Some(html_body),
                 cc: None,
@@ -81,44 +80,27 @@ fn verify_email_loggedin(_uuid: String, _userid: UserStruct) -> Redirect {
 /// with an appropriate error message.
 #[get("/email/verify/<uuid>", rank = 2)]
 fn verify_email(conn: DbConn, uuid: String) -> Result<Flash<Redirect>, Flash<Redirect>> {
-    use club_coding::schema::users_verify_email::dsl::*;
-
-    match users_verify_email
-        .filter(token.eq(uuid))
-        .first::<UsersVerifyEmail>(&*conn)
-    {
-        Ok(result) => {
-            if result.used {
-                Err(Flash::error(Redirect::to("/"), "Link already used."))
-            } else {
-                match diesel::update(users_verify_email.find(result.id))
-                    .set(used.eq(true))
-                    .execute(&*conn)
-                {
-                    Ok(_) => {
-                        use club_coding::schema::users::dsl::*;
-                        match diesel::update(users.find(result.user_id))
-                            .set(verified.eq(true))
-                            .execute(&*conn)
-                        {
-                            Ok(_) => Ok(Flash::success(
-                                Redirect::to("/"),
-                                "Email verified, please sign in.",
-                            )),
-                            Err(_) => Err(Flash::error(
-                                Redirect::to("/"),
-                                "An error occured, please try again later.",
-                            )),
-                        }
-                    }
-                    Err(_) => Err(Flash::error(
-                        Redirect::to("/"),
-                        "An error occured, please try again later.",
-                    )),
-                }
-            }
+    let result = match authentication::database::get_verify_email_by_token(&conn, &uuid) {
+        Some(result) => result,
+        None => return Err(Flash::error(Redirect::to("/"), "Link incorrect.")),
+    };
+    if result.used {
+        Err(Flash::error(Redirect::to("/"), "Link already used."))
+    } else {
+        match authentication::database::invalidate_token_and_verify_user(
+            &conn,
+            result.id,
+            result.user_id,
+        ) {
+            Ok(_) => Ok(Flash::success(
+                Redirect::to("/"),
+                "Email verified, please sign in.",
+            )),
+            Err(_) => Err(Flash::error(
+                Redirect::to("/"),
+                "An error occured, please try again later.",
+            )),
         }
-        Err(_) => Err(Flash::error(Redirect::to("/"), "Link incorrect.")),
     }
 }
 

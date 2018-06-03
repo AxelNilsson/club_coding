@@ -172,7 +172,7 @@ fn resend_confirmation_email(
                 .execute(&**connection)
             {
                 Ok(_) => {
-                    send_verify_email(connection, postmark_token, user.id, user.email)?;
+                    send_verify_email(connection, postmark_token, user.id, &user.email)?;
                     Ok(())
                 }
                 Err(_) => Err(Error::new(

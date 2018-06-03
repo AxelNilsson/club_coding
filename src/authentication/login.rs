@@ -89,47 +89,45 @@ fn login(
     user: Form<User>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input_data: User = user.into_inner();
-    if csrf_matches(input_data.csrf, csrf_cookie.value()) {
-        match authentication::database::get_password_hash_from_username(&conn, &input_data.username)
-        {
-            Ok(password_hash) => match verify(&input_data.password, &password_hash) {
-                Ok(passwords_match) => {
-                    if passwords_match {
-                        let session_token = authentication::generate_token(64);
-                        match authentication::database::get_user_id_from_username(
-                            &conn,
-                            &input_data.username,
-                        ) {
-                            Ok(user_id) => match create_new_user_session(
-                                &*conn,
-                                user_id,
-                                &session_token,
-                            ) {
-                                Ok(_) => {
-                                    let mut c = Cookie::new("session_token", session_token);
-                                    c.set_max_age(Duration::hours(24));
-                                    cookies.add_private(c);
-                                    Ok(Flash::success(Redirect::to("/"), "You're now logged in."))
-                                }
-                                Err(_) => Err(Flash::error(
-                                    Redirect::to("/login"),
-                                    "An error occured, please try again later.",
-                                )),
-                            },
-                            Err(_) => {
-                                Err(Flash::error(Redirect::to("/login"), "User not verified"))
-                            }
-                        }
-                    } else {
-                        Err(Flash::error(Redirect::to("/login"), "Password incorrect"))
-                    }
-                }
-                Err(_) => Err(Flash::error(Redirect::to("/login"), "An error occurred")),
-            },
-            Err(_) => Err(Flash::error(Redirect::to("/login"), "No user found")),
+    if !csrf_matches(input_data.csrf, csrf_cookie.value()) {
+        return Err(Flash::error(Redirect::to("/login"), "CSRF Failed."));
+    }
+
+    let password_hash: String = match authentication::database::get_password_hash_from_username(
+        &conn,
+        &input_data.username,
+    ) {
+        Ok(password_hash) => password_hash,
+        Err(_) => return Err(Flash::error(Redirect::to("/login"), "No user found")),
+    };
+
+    let passwords_match: bool = match verify(&input_data.password, &password_hash) {
+        Ok(passwords_match) => passwords_match,
+        Err(_) => return Err(Flash::error(Redirect::to("/login"), "An error occurred")),
+    };
+
+    if !passwords_match {
+        return Err(Flash::error(Redirect::to("/login"), "Password incorrect"));
+    }
+
+    let user_id =
+        match authentication::database::get_user_id_from_username(&conn, &input_data.username) {
+            Ok(user_id) => user_id,
+            Err(_) => return Err(Flash::error(Redirect::to("/login"), "User not verified")),
+        };
+
+    let session_token = authentication::generate_token(64);
+    match create_new_user_session(&*conn, user_id, &session_token) {
+        Ok(_) => {
+            let mut c = Cookie::new("session_token", session_token);
+            c.set_max_age(Duration::hours(24));
+            cookies.add_private(c);
+            Ok(Flash::success(Redirect::to("/"), "You're now logged in."))
         }
-    } else {
-        Err(Flash::error(Redirect::to("/login"), "CSRF Failed."))
+        Err(_) => Err(Flash::error(
+            Redirect::to("/login"),
+            "An error occured, please try again later.",
+        )),
     }
 }
 

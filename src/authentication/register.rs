@@ -10,6 +10,7 @@ use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
 use structs::PostmarkToken;
 use structs::EmailRegex;
 use authentication::{login, verify};
+use std::io::{Error, ErrorKind};
 
 /// GET Endpoint to signup to the site.
 /// Endpoints checks if the user is
@@ -60,6 +61,36 @@ struct UserRegistration {
     csrf: String,
 }
 
+/// Hashes the password.
+/// Inserts the user to the database.
+/// Emails verification token to the
+/// new user.
+fn hash_and_create_user(
+    connection: &DbConn,
+    postmark_token: &str,
+    username: &str,
+    email: &str,
+    password: &str,
+) -> Result<(), Error> {
+    let hashed_password: String = match hash(password, DEFAULT_COST) {
+        Ok(hashed_password) => hashed_password,
+        Err(_) => return Err(Error::new(ErrorKind::Other, "Could not hash password.")),
+    };
+
+    let new_user = match create_new_user(&**connection, username, &hashed_password, email) {
+        Ok(new_user) => new_user,
+        Err(_) => return Err(Error::new(ErrorKind::Other, "Could not create new user.")),
+    };
+
+    match verify::send_verify_email(&**connection, postmark_token, new_user.id, email) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "Could not send verification email.",
+        )),
+    }
+}
+
 /// POST Endpoint for the page to signup.
 /// It requires all of the parameters in the
 /// UserRegistration struct to be submitted as
@@ -76,52 +107,36 @@ fn register_user(
     user: Form<UserRegistration>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input: UserRegistration = user.into_inner();
-    if email_regex.0.is_match(&input.email) {
-        if input.password == input.confirm_password {
-            if csrf_matches(input.csrf, csrf_cookie.value()) {
-                match hash(&input.password, DEFAULT_COST) {
-                    Ok(hashed_password) => match create_new_user(
-                        &*conn,
-                        &input.username,
-                        &hashed_password,
-                        &input.email,
-                    ) {
-                        Ok(new_user) => match verify::send_verify_email(
-                            &*conn,
-                            &postmark_token.0,
-                            new_user.id,
-                            input.email,
-                        ) {
-                            Ok(_) => Ok(Flash::success(
-                                Redirect::to("/"),
-                                "Registration successful! Please check your email.",
-                            )),
-                            Err(_) => Err(Flash::error(
-                                Redirect::to("/signup"),
-                                "An error occured, please try again later.",
-                            )),
-                        },
-                        Err(_) => Err(Flash::error(
-                            Redirect::to("/signup"),
-                            "An error occured, please try again later.",
-                        )),
-                    },
-                    Err(_) => Err(Flash::error(
-                        Redirect::to("/signup"),
-                        "An error occured, please try again later.",
-                    )),
-                }
-            } else {
-                Err(Flash::error(Redirect::to("/signup"), "CSRF Failed."))
-            }
-        } else {
-            Err(Flash::error(
-                Redirect::to("/signup"),
-                "Passwords don't match.",
-            ))
-        }
-    } else {
-        Err(Flash::error(Redirect::to("/signup"), "Email is not valid."))
+    if !email_regex.0.is_match(&input.email) {
+        return Err(Flash::error(Redirect::to("/signup"), "Email is not valid."));
+    }
+
+    if !(input.password == input.confirm_password) {
+        return Err(Flash::error(
+            Redirect::to("/signup"),
+            "Passwords don't match.",
+        ));
+    }
+
+    if !csrf_matches(input.csrf, csrf_cookie.value()) {
+        return Err(Flash::error(Redirect::to("/signup"), "CSRF Failed."));
+    }
+
+    match hash_and_create_user(
+        &conn,
+        &postmark_token.0,
+        &input.username,
+        &input.email,
+        &input.password,
+    ) {
+        Ok(_) => Ok(Flash::success(
+            Redirect::to("/"),
+            "Registration successful! Please check your email.",
+        )),
+        Err(_) => Err(Flash::error(
+            Redirect::to("/signup"),
+            "An error occured, please try again later.",
+        )),
     }
 }
 
