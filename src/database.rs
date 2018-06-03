@@ -5,6 +5,7 @@ use rocket::http::Status;
 use rocket::request::{self, FromRequest};
 use rocket::{Outcome, Request, State};
 use rocket::fairing::AdHoc;
+use r2d2_redis::RedisConnectionManager;
 
 /// Redefines MySQLPool as an r2d2 pool with
 /// a connection manager to a MySQL connection.
@@ -14,7 +15,7 @@ pub type MySqlPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 /// to the MySQL database.
 /// Will panic if no MySQL credentials are set
 /// in Rocket.toml File
-pub fn fairing() -> rocket::fairing::AdHoc {
+pub fn mysql_fairing() -> rocket::fairing::AdHoc {
     AdHoc::on_attach(|rocket| {
         let config = rocket.config().clone();
 
@@ -44,7 +45,7 @@ pub fn fairing() -> rocket::fairing::AdHoc {
         );
 
         let manager = ConnectionManager::<MysqlConnection>::new(database_url);
-        let pool = r2d2::Pool::new(manager).expect("db pool");
+        let pool = r2d2::Pool::new(manager).expect("db pool failed");
 
         Ok(rocket.manage(pool))
     })
@@ -73,6 +74,62 @@ impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
 /// &DbConn as an &MysqlConnection.
 impl Deref for DbConn {
     type Target = MysqlConnection;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+// Pool initiation.
+// Call it starting an app and store a pul as a rocket managed state.
+pub fn redis_fairing() -> rocket::fairing::AdHoc {
+    AdHoc::on_attach(|rocket| {
+        let config = rocket.config().clone();
+
+        let redis_url = config.get_str("redis").expect("redis not specified");
+
+        let manager = RedisConnectionManager::new(&format!("redis://{}/", redis_url) as &str)
+            .expect("redis coult not open connection");
+
+        let pool: RedisPool = r2d2::Pool::new(manager).expect("db pool");
+
+        Ok(rocket.manage(pool))
+    })
+}
+
+// Pool initiation.
+// Call it starting an app and store a pul as a rocket managed state.
+
+// Rocket guard type: a wrapper around an r2d2 pool.
+// In conjunction with
+// `impl<'a, 'r> request::FromRequest<'a, 'r> for RedisConnection` (see below)
+// it allows code like:
+//   ```
+//   #[post("/<item>")]
+//   fn create(item: &RawStr, connection: RedisConnection) -> ...
+//
+pub struct RedisConnection(pub r2d2::PooledConnection<RedisConnectionManager>);
+
+// An alias to the type for a pool of redis connections.
+pub type RedisPool = r2d2::Pool<RedisConnectionManager>;
+
+// Retrieving a single connection from the managed database pool.
+impl<'a, 'r> request::FromRequest<'a, 'r> for RedisConnection {
+    type Error = ();
+
+    fn from_request(request: &'a request::Request<'r>) -> request::Outcome<RedisConnection, ()> {
+        let pool = request.guard::<State<RedisPool>>()?;
+        match pool.get() {
+            Ok(conn) => Outcome::Success(RedisConnection(conn)),
+            Err(_) => Outcome::Failure((Status::ServiceUnavailable, ())),
+        }
+    }
+}
+
+/// For the convenience of using an
+/// RedisConnection as an &RedisConnection.
+impl Deref for RedisConnection {
+    type Target = r2d2::PooledConnection<RedisConnectionManager>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

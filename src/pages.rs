@@ -4,7 +4,7 @@ use rocket_contrib::{Json, Template};
 use users::User;
 use series::PublicSeries;
 use series::database::get_last_10_series;
-use database::DbConn;
+use database::{DbConn, RedisConnection};
 use structs::{Context, LoggedInContext};
 use rocket::response::NamedFile;
 use club_coding::create_new_newsletter_subscriber;
@@ -56,7 +56,12 @@ struct IndexContext<'a> {
 /// Responds with the Home Template
 /// in the pages folder.
 #[get("/")]
-fn index(conn: DbConn, user: User, flash: Option<FlashMessage>) -> Template {
+fn index(
+    mysql_conn: DbConn,
+    redis_conn: RedisConnection,
+    user: User,
+    flash: Option<FlashMessage>,
+) -> Template {
     let (name, msg) = match flash {
         Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
         None => ("".to_string(), "".to_string()),
@@ -66,7 +71,7 @@ fn index(conn: DbConn, user: User, flash: Option<FlashMessage>) -> Template {
         user: user,
         flash_name: name,
         flash_msg: msg,
-        series: get_last_10_series(&conn),
+        series: get_last_10_series(&mysql_conn, redis_conn),
     };
     Template::render("pages/home", &context)
 }
@@ -79,7 +84,11 @@ fn index(conn: DbConn, user: User, flash: Option<FlashMessage>) -> Template {
 /// Responds with the Index Template
 /// in the pages folder.
 #[get("/", rank = 2)]
-fn index_nouser(conn: DbConn, flash: Option<FlashMessage>) -> Template {
+fn index_nouser(
+    mysql_conn: DbConn,
+    redis_conn: RedisConnection,
+    flash: Option<FlashMessage>,
+) -> Template {
     let (name, msg) = match flash {
         Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
         None => ("".to_string(), "".to_string()),
@@ -88,7 +97,7 @@ fn index_nouser(conn: DbConn, flash: Option<FlashMessage>) -> Template {
         header: "Club Coding",
         flash_name: name,
         flash_msg: msg,
-        series: get_last_10_series(&conn),
+        series: get_last_10_series(&mysql_conn, redis_conn),
     };
     Template::render("pages/index", &context)
 }

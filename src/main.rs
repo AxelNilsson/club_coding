@@ -11,7 +11,9 @@ extern crate diesel;
 extern crate futures;
 extern crate hyper_tls;
 extern crate r2d2;
+extern crate r2d2_redis;
 extern crate rand;
+extern crate redis;
 extern crate regex;
 extern crate rocket;
 extern crate rocket_contrib;
@@ -56,7 +58,8 @@ fn main() {
         .mount("/series", series::endpoints())
         .mount("/admin", admin::endpoints())
         .attach(rocket_contrib::Template::fairing())
-        .attach(database::fairing())
+        .attach(database::mysql_fairing())
+        .attach(database::redis_fairing())
         .attach(structs::stripe_token_fairing())
         .attach(structs::postmark_token_fairing())
         .attach(structs::email_regex_fairing())

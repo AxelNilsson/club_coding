@@ -7,10 +7,11 @@ use rocket::response::{Flash, Redirect};
 use users::User;
 use series::PublicVideo;
 use rocket::request::FlashMessage;
-use database::DbConn;
+use database::{DbConn, RedisConnection};
 use structs::{PostmarkToken, StripeToken};
 use rocket::State;
 use videos::charge::charge_card;
+use series;
 
 /// Context for rendering tera templates
 /// for logged in watch endpoints.
@@ -65,15 +66,16 @@ struct WatchContext<'a> {
 /// folder.
 #[get("/watch/<uuid>")]
 fn watch_as_user(
-    conn: DbConn,
+    mysql_conn: DbConn,
+    redis_conn: RedisConnection,
     user: User,
     flash: Option<FlashMessage>,
     uuid: String,
 ) -> Result<Template, Redirect> {
-    match database::get_video_data_from_uuid(&conn, &uuid) {
+    match database::get_video_data_from_uuid(&mysql_conn, &uuid) {
         Ok(video) => {
             let videos: Vec<PublicVideo> =
-                database::get_videos_of_series(&conn, user.id, video.serie_id);
+                series::database::get_videos(&mysql_conn, redis_conn, user.id, video.serie_id);
             let (name, msg) = match flash {
                 Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
                 None => ("".to_string(), "".to_string()),
@@ -96,9 +98,9 @@ fn watch_as_user(
                 flash_name: name,
                 flash_msg: msg,
             };
-            database::create_new_view(&conn, video.id, user.id);
+            database::create_new_view(&mysql_conn, video.id, user.id);
             if video.membership_only {
-                if !database::user_has_bought(&conn, video.serie_id, user.id) {
+                if !database::user_has_bought(&mysql_conn, video.serie_id, user.id) {
                     return Ok(Template::render("videos/watch_nomember", &context));
                 }
             }
@@ -141,11 +143,12 @@ struct WatchNoUser {
 /// Template in the videos folder.
 #[get("/watch/<uuid>", rank = 2)]
 fn watch_nouser(
-    conn: DbConn,
+    mysql_conn: DbConn,
+    redis_conn: RedisConnection,
     flash: Option<FlashMessage>,
     uuid: String,
 ) -> Result<Template, Redirect> {
-    match database::get_video_data_from_uuid(&conn, &uuid) {
+    match database::get_video_data_from_uuid(&mysql_conn, &uuid) {
         Ok(video) => {
             let (name, msg) = match flash {
                 Some(flash) => (flash.name().to_string(), flash.msg().to_string()),
@@ -157,7 +160,7 @@ fn watch_nouser(
             let mut description = video.description;
             description.retain(|c| c != '\\');
             let videos: Vec<PublicVideo> =
-                database::get_videos_of_series_nologin(&conn, video.serie_id);
+                series::database::get_videos_nologin(&mysql_conn, redis_conn, video.serie_id);
             let context = WatchNoUser {
                 uuid: video.uuid,
                 series_title: video.series_title,

@@ -2,8 +2,6 @@ use club_coding::create_new_user_view;
 use club_coding::models::{Series, UsersSeriesAccess, UsersStripeCustomer, UsersViews, VideoJoin,
                           Videos};
 use std::io::{Error, ErrorKind};
-use series::database::get_video_watched;
-use series::PublicVideo;
 use database::DbConn;
 use diesel::prelude::*;
 
@@ -55,36 +53,6 @@ pub fn get_video_data_from_uuid(connection: &DbConn, uid: &String) -> Result<Vid
     }
 }
 
-/// Gets all of the videos that belong
-/// to a specific series and checks if
-/// the user has watched the videos.
-pub fn get_videos_of_series(connection: &DbConn, uid: i64, sid: i64) -> Vec<PublicVideo> {
-    use club_coding::schema::videos::dsl::*;
-
-    match videos
-        .filter(serie_id.eq(sid))
-        .filter(published.eq(true))
-        .filter(archived.eq(false))
-        .order(episode_number.asc())
-        .load::<Videos>(&**connection)
-    {
-        Ok(v_ideos) => {
-            let mut to_return: Vec<PublicVideo> = vec![];
-            for video in v_ideos {
-                to_return.push(PublicVideo {
-                    episode_number: video.episode_number,
-                    uuid: video.uuid,
-                    title: video.title,
-                    description: video.description,
-                    watched: get_video_watched(connection, uid, video.id),
-                });
-            }
-            to_return
-        }
-        Err(_) => vec![],
-    }
-}
-
 /// Creates a new view in the database if
 /// the user does not already have it.
 /// The view is specified by video and user.
@@ -117,37 +85,6 @@ pub fn user_has_bought(connection: &DbConn, sid: i64, uid: i64) -> bool {
     {
         Ok(_) => true,
         Err(_) => false,
-    }
-}
-
-/// Gets all of the videos of a series as
-/// a vector of the PublicVideo struct which
-/// means that it can be serialized which the
-/// Videos struct can not.
-pub fn get_videos_of_series_nologin(connection: &DbConn, sid: i64) -> Vec<PublicVideo> {
-    use club_coding::schema::videos::dsl::*;
-
-    match videos
-        .filter(serie_id.eq(sid))
-        .filter(published.eq(true))
-        .filter(archived.eq(false))
-        .order(episode_number.asc())
-        .load::<Videos>(&**connection)
-    {
-        Ok(v_ideos) => {
-            let mut to_return: Vec<PublicVideo> = vec![];
-            for video in v_ideos {
-                to_return.push(PublicVideo {
-                    episode_number: video.episode_number,
-                    uuid: video.uuid,
-                    title: video.title,
-                    description: video.description,
-                    watched: false,
-                });
-            }
-            to_return
-        }
-        Err(_) => vec![],
     }
 }
 

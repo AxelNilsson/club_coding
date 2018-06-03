@@ -4,12 +4,12 @@ version = "0.1.0"
 authors = ["Axel Nilsson"]
 
 [dependencies]
-rocket = { version = "0.3.11", features = ["tls"] }
+rocket = "0.3.11"
 rocket_codegen = "0.3.7"
 serde_derive = "1.0.37"
 serde = "1.0.37"
 chrono = { version = "0.4", features = ["serde"] }
-diesel = { version = "1.2", features = ["mysql", "chrono", "r2d2"] }
+diesel = { version = "~1.2", features = ["mysql", "chrono", "r2d2"] }
 rand = "0.4.2"
 time = "0.1"
 bcrypt = "0.2.0"
@@ -24,6 +24,8 @@ serde_json = "1.0.17"
 tera = "0.11"
 r2d2 = "0.8.2"
 regex = "1.0.0"
+redis = "0.8.0"
+r2d2_redis = "0.7.0"
 
 [dependencies.rocket_contrib]
 version = "*"

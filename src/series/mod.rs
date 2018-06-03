@@ -2,10 +2,10 @@ pub mod database;
 
 use rocket::Route;
 use rocket_contrib::Template;
-use database::DbConn;
+use database::{DbConn, RedisConnection};
 use users::User;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct PublicSeries {
     /// UUID of the series.
     uuid: String,
@@ -20,8 +20,11 @@ pub struct PublicSeries {
     price: i32,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct PublicVideo {
+    /// Unique ID of the Video in
+    /// the database.
+    pub id: i64,
     /// Episode number of the Video.
     pub episode_number: i32,
     /// UUID of the Video.
@@ -68,8 +71,13 @@ struct SerieStruct<'a> {
 /// Responds with the Series Template in
 /// the series folder.
 #[get("/<uuid>")]
-fn serie(conn: DbConn, user: User, uuid: String) -> Option<Template> {
-    match database::get_serie(&conn, &uuid) {
+fn serie(
+    mysql_conn: DbConn,
+    redis_conn: RedisConnection,
+    user: User,
+    uuid: String,
+) -> Option<Template> {
+    match database::get_serie(&mysql_conn, &uuid) {
         Some(serie) => {
             let mut description = serie.description;
             description.retain(|c| c != '\\');
@@ -81,7 +89,7 @@ fn serie(conn: DbConn, user: User, uuid: String) -> Option<Template> {
                 description: description,
                 in_development: serie.in_development,
                 price: serie.price,
-                videos: database::get_videos(&conn, user.id, serie.id),
+                videos: database::get_videos(&mysql_conn, redis_conn, user.id, serie.id),
             };
             Some(Template::render("series/series", &context))
         }
@@ -113,8 +121,12 @@ struct SerieNoLogin<'a> {
 /// Responds with the Series No Login
 /// Template in the series folder.
 #[get("/<uuid>", rank = 2)]
-fn serie_nologin(conn: DbConn, uuid: String) -> Option<Template> {
-    match database::get_serie(&conn, &uuid) {
+fn serie_nologin(
+    mysql_conn: DbConn,
+    redis_conn: RedisConnection,
+    uuid: String,
+) -> Option<Template> {
+    match database::get_serie(&mysql_conn, &uuid) {
         Some(serie) => {
             let mut description = serie.description;
             description.retain(|c| c != '\\');
@@ -124,7 +136,7 @@ fn serie_nologin(conn: DbConn, uuid: String) -> Option<Template> {
                 title: &serie.title,
                 description: description,
                 in_development: serie.in_development,
-                videos: database::get_videos_nologin(&conn, serie.id),
+                videos: database::get_videos_nologin(&mysql_conn, redis_conn, serie.id),
             };
             Some(Template::render("series/series_nologin", &context))
         }
