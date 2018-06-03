@@ -9,12 +9,16 @@ use database::DbConn;
 use structs::{PostmarkToken, StripeToken};
 use rocket::State;
 use charge::customer::charge;
+use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
 
 #[derive(Serialize)]
 pub struct ChargeContext<'a> {
     /// Header used in tera templates.
     /// Mainly used for the title.
     pub header: &'a str,
+    /// CSRF Token. Used as a hidden
+    /// input in the form.
+    pub csrf: String,
     /// The user struct used by templates.
     /// For example the username for the toolbar.
     pub user: User,
@@ -40,6 +44,7 @@ pub struct ChargeContext<'a> {
 #[get("/card/add")]
 fn add_card_page(
     user: User,
+    token: CsrfToken,
     stripe_token: State<StripeToken>,
     flash: Option<FlashMessage>,
 ) -> Template {
@@ -49,6 +54,7 @@ fn add_card_page(
     };
     let context = ChargeContext {
         header: "Add card",
+        csrf: token.value(),
         user: user,
         publishable_key: &stripe_token.publishable_key,
         flash_name: name,
@@ -70,6 +76,7 @@ fn add_card_page(
 #[get("/card/add/<_uuid>")]
 fn add_card_uuid_page(
     user: User,
+    token: CsrfToken,
     stripe_token: State<StripeToken>,
     flash: Option<FlashMessage>,
     _uuid: String,
@@ -80,6 +87,7 @@ fn add_card_uuid_page(
     };
     let context = ChargeContext {
         header: "Add card",
+        csrf: token.value(),
         user: user,
         publishable_key: &stripe_token.publishable_key,
         flash_name: name,
@@ -91,8 +99,10 @@ fn add_card_uuid_page(
 /// Struct for all of the data that we
 /// recieve from Stripe when using the
 /// Stripe JS Library.
-#[derive(Debug, FromForm)]
+#[derive(FromForm)]
 pub struct Stripe {
+    /// CSRF Token from the form
+    pub csrf: String,
     // Card Address City
     pub card_address_city: Option<String>,
     /// Card Address Country
@@ -171,12 +181,16 @@ pub struct Stripe {
 #[post("/card/add", data = "<form_data>")]
 fn add_card(
     conn: DbConn,
+    user: User,
+    csrf_cookie: CsrfCookie,
     stripe_token: State<StripeToken>,
     postmark: State<PostmarkToken>,
-    user: User,
     form_data: Form<Stripe>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let data = form_data.into_inner();
+    if !csrf_matches(&data.csrf, &csrf_cookie.value()) {
+        return Err(Flash::error(Redirect::to("/card/add"), "CSRF Failed."));
+    }
     match charge(
         &conn,
         &stripe_token.secret_key,
@@ -212,13 +226,20 @@ fn add_card(
 #[post("/card/add/<uuid>", data = "<form_data>")]
 fn add_card_uuid(
     conn: DbConn,
+    user: User,
+    csrf_cookie: CsrfCookie,
     stripe_token: State<StripeToken>,
     postmark: State<PostmarkToken>,
-    user: User,
     form_data: Form<Stripe>,
     uuid: String,
 ) -> Result<Redirect, Flash<Redirect>> {
     let data = form_data.into_inner();
+    if !csrf_matches(&data.csrf, &csrf_cookie.value()) {
+        return Err(Flash::error(
+            Redirect::to(&format!("/card/add/{}", uuid)),
+            "CSRF Failed.",
+        ));
+    }
     match charge(
         &conn,
         &stripe_token.secret_key,
@@ -229,7 +250,7 @@ fn add_card_uuid(
     ) {
         Ok(()) => Ok(Redirect::to(&format!("/watch/{}/buy", uuid))),
         _ => Err(Flash::error(
-            Redirect::to("/card/add"),
+            Redirect::to(&format!("/card/add/{}", uuid)),
             "An error occured, please try again later.",
         )),
     }

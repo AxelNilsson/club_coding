@@ -108,6 +108,7 @@
           <v-card flat>
             <h2 class="headline">Update the card on your account</h2>
             <form method="post" id="payment-form">
+              <input type="hidden" name="csrf" value="{{ csrf }}">
               <div class="form-row">
                   <div id="card-element"></div>
                   <div id="card-errors" role="alert"></div>

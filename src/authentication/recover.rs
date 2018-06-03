@@ -152,7 +152,7 @@ fn send_recover_email(
             "Email is not valid.",
         ));
     }
-    if !csrf_matches(input.csrf, csrf_cookie.value()) {
+    if !csrf_matches(&input.csrf, &csrf_cookie.value()) {
         return Err(Flash::error(
             Redirect::to("/recover/email"),
             "CSRF Doesn't match.",
@@ -295,7 +295,7 @@ fn update_password(
         return Err(Flash::error(Redirect::to("/"), "Link already used."));
     }
 
-    if !csrf_matches(input.csrf, csrf_cookie.value()) {
+    if !csrf_matches(&input.csrf, &csrf_cookie.value()) {
         return Err(Flash::error(
             Redirect::to(&format!("/email/recover/{}", uuid)),
             "CSRF Doesn't match.",

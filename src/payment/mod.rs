@@ -14,6 +14,7 @@ use charge::ChargeContext;
 use charge::Stripe;
 use payment::customer::{charge, delete};
 use payment::database::{get_charges, get_customer};
+use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
 
 #[derive(Serialize)]
 pub struct Charge {
@@ -100,6 +101,7 @@ fn update_card_page(
     user: User,
     stripe_token: State<StripeToken>,
     flash: Option<FlashMessage>,
+    token: CsrfToken,
 ) -> Result<Template, Flash<Redirect>> {
     match get_customer(&conn, user.id) {
         Some(_) => {
@@ -109,6 +111,7 @@ fn update_card_page(
             };
             let context = ChargeContext {
                 header: "Update card",
+                csrf: token.value(),
                 user: user,
                 publishable_key: &stripe_token.publishable_key,
                 flash_name: name,
@@ -137,14 +140,21 @@ fn update_card_page(
 #[post("/card/update", data = "<form_data>")]
 fn update_card(
     conn: DbConn,
+    user: User,
+    csrf_cookie: CsrfCookie,
     stripe_token: State<StripeToken>,
     postmark: State<PostmarkToken>,
-    user: User,
     form_data: Form<Stripe>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     match get_customer(&conn, user.id) {
         Some(_) => {
             let data = form_data.into_inner();
+            if !csrf_matches(&data.csrf, &csrf_cookie.value()) {
+                return Err(Flash::error(
+                    Redirect::to("/settings/payment/card/update"),
+                    "CSRF Failed.",
+                ));
+            }
             match charge(
                 &conn,
                 &stripe_token.secret_key,
@@ -164,7 +174,7 @@ fn update_card(
             }
         }
         None => Err(Flash::error(
-            Redirect::to("/card/add"),
+            Redirect::to("/settings/payment/card/update"),
             "No card found on account.",
         )),
     }

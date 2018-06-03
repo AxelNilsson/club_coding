@@ -118,7 +118,7 @@ fn register_user(
         ));
     }
 
-    if !csrf_matches(input.csrf, csrf_cookie.value()) {
+    if !csrf_matches(&input.csrf, &csrf_cookie.value()) {
         return Err(Flash::error(Redirect::to("/signup"), "CSRF Failed."));
     }
 

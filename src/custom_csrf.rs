@@ -35,9 +35,10 @@ impl<'a, 'r> FromRequest<'a, 'r> for CsrfToken {
         let protect = AesGcmCsrfProtection::from_key(*b"01234567012345670123456701234567");
         match protect.generate_token_pair(None, 300) {
             Ok((token, cookie)) => {
-                let mut c = Cookie::new("csrf", cookie.b64_string());
-                c.set_max_age(Duration::hours(24));
-                request.cookies().add(c);
+                let mut csrf_cookie = Cookie::new("csrf", cookie.b64_string());
+                csrf_cookie.set_max_age(Duration::hours(24));
+                csrf_cookie.set_path("/");
+                request.cookies().add(csrf_cookie);
                 Outcome::Success(CsrfToken(token.b64_string()))
             }
             Err(_) => Outcome::Forward(()),
@@ -87,19 +88,27 @@ impl<'a, 'r> FromRequest<'a, 'r> for CsrfCookie {
 /// and tries to verify the pair.
 /// Returns a boolean of whether the
 /// pairs match or not.
-pub fn csrf_matches(token: String, cookie: String) -> bool {
+pub fn csrf_matches(token: &str, cookie: &str) -> bool {
     let protect = AesGcmCsrfProtection::from_key(*b"01234567012345670123456701234567");
-    match BASE64.decode(token.as_bytes()) {
-        Ok(token_bytes) => match BASE64.decode(cookie.as_bytes()) {
-            Ok(cookie_bytes) => match protect.parse_token(&token_bytes) {
-                Ok(parsed_token) => match protect.parse_cookie(&cookie_bytes) {
-                    Ok(parsed_cookie) => protect.verify_token_pair(&parsed_token, &parsed_cookie),
-                    Err(_) => false,
-                },
-                Err(_) => false,
-            },
-            Err(_) => false,
-        },
-        Err(_) => false,
-    }
+    let token_bytes = match BASE64.decode(token.as_bytes()) {
+        Ok(token_bytes) => token_bytes,
+        Err(_) => return false,
+    };
+
+    let cookie_bytes = match BASE64.decode(cookie.as_bytes()) {
+        Ok(cookie_bytes) => cookie_bytes,
+        Err(_) => return false,
+    };
+
+    let parsed_token = match protect.parse_token(&token_bytes) {
+        Ok(parsed_token) => parsed_token,
+        Err(_) => return false,
+    };
+
+    let parsed_cookie = match protect.parse_cookie(&cookie_bytes) {
+        Ok(parsed_cookie) => parsed_cookie,
+        Err(_) => return false,
+    };
+
+    return protect.verify_token_pair(&parsed_token, &parsed_cookie);
 }

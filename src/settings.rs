@@ -4,11 +4,22 @@ use rocket_contrib::{Json, Template};
 use rocket::response::Redirect;
 use club_coding::models::Users;
 use database::DbConn;
-use structs::LoggedInContext;
 use users::User;
+use std::io::{Error, ErrorKind};
 use diesel;
 use diesel::prelude::*;
-use std::io::{Error, ErrorKind};
+
+/// Context for rendering tera templates
+/// for logged in endpoints.
+#[derive(Serialize)]
+pub struct PasswordContext<'a> {
+    /// Header used in tera templates.
+    /// Mainly used for the title.
+    pub header: &'a str,
+    /// The user struct used by templates.
+    /// For example the username for the toolbar.
+    pub user: User,
+}
 
 /// GET Endpoint for the page to change your
 /// password. Endpoints checks if the
@@ -20,7 +31,7 @@ use std::io::{Error, ErrorKind};
 /// in the settings folder.
 #[get("/settings/password")]
 fn password_page(user: User) -> Template {
-    let context = LoggedInContext {
+    let context = PasswordContext {
         header: "Update Password",
         user: user,
     };
@@ -118,41 +129,41 @@ fn update_password<'a>(
     user: User,
     json_data: Json<UpdatePasswordStruct>,
 ) -> Json<Message<'a>> {
-    if json_data.new_password == json_data.confirm_new_password {
-        let password_hash: String = match get_password_hash_from_userid(&conn, user.id) {
-            Ok(password_hash) => password_hash,
-            Err(_) => {
-                return Json(Message {
-                    text: "No password found in database for the user.",
-                })
-            }
-        };
-        let passwords_match: bool = match verify(&json_data.old_password, &password_hash) {
-            Ok(passwords_match) => passwords_match,
-            Err(_) => {
-                return Json(Message {
-                    text: "An unknown error occured. Please try again later.",
-                })
-            }
-        };
-        if !passwords_match {
+    if !(json_data.new_password == json_data.confirm_new_password) {
+        return Json(Message {
+            text: "The new passwords are not matching.",
+        });
+    }
+
+    let password_hash: String = match get_password_hash_from_userid(&conn, user.id) {
+        Ok(password_hash) => password_hash,
+        Err(_) => {
             return Json(Message {
-                text: "The old password is incorrect.",
-            });
-        } else {
-            match hash_and_update_password(&conn, user.id, &json_data.new_password) {
-                Ok(_) => Json(Message {
-                    text: "Your password has been updated",
-                }),
-                Err(_) => Json(Message {
-                    text: "An unknown error occured. Please try again later.",
-                }),
-            }
+                text: "No password found in database for the user.",
+            })
         }
+    };
+    let passwords_match: bool = match verify(&json_data.old_password, &password_hash) {
+        Ok(passwords_match) => passwords_match,
+        Err(_) => {
+            return Json(Message {
+                text: "An unknown error occured. Please try again later.",
+            })
+        }
+    };
+    if !passwords_match {
+        return Json(Message {
+            text: "The old password is incorrect.",
+        });
     } else {
-        Json(Message {
-            text: "The passwords are not matching.",
-        })
+        match hash_and_update_password(&conn, user.id, &json_data.new_password) {
+            Ok(_) => Json(Message {
+                text: "Your password has been updated",
+            }),
+            Err(_) => Json(Message {
+                text: "An unknown error occured. Please try again later.",
+            }),
+        }
     }
 }
 

@@ -89,7 +89,7 @@ fn login(
     user: Form<User>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input_data: User = user.into_inner();
-    if !csrf_matches(input_data.csrf, csrf_cookie.value()) {
+    if !csrf_matches(&input_data.csrf, &csrf_cookie.value()) {
         return Err(Flash::error(Redirect::to("/login"), "CSRF Failed."));
     }
 
