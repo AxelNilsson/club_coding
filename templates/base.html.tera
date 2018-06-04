@@ -10,6 +10,9 @@
     * {
       background-color: #f6f9fc;
     }
+    body {
+      background-color: #fafafa;
+    }
     .input-group.input-group--solo label {
       top: 14px;
     }

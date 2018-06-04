@@ -113,9 +113,10 @@
       </v-flex>
     </v-layout>
   </div>
-  <v-layout wrap row id="episodes">
-    <v-flex xs10 offset-xs1 lg10 offset-lg1 xl8 offset-xl2>
-     {% for video in videos %}
+  <v-container>
+    <v-layout wrap row id="episodes">
+      <v-flex xs12 lg10 offset-lg1>
+      {% for video in videos %}
       <v-card>
         <v-layout wrap row>
           <v-flex xs12 lg2>
@@ -139,12 +140,13 @@
           </v-flex>
         </v-layout>
       </v-card>
-     {% endfor %}
+      {% endfor %}
      {% if in_development %}
      <p id="in-development">*Series still in development. Check back often for updates.</p>
      {% endif %}
     </v-flex>
   </v-layout>
+</v-container>
 {% endblock content %}
 {% block script %}
 {{ super() }}

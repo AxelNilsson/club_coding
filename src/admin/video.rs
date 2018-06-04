@@ -1,19 +1,16 @@
-use rocket_contrib::Template;
+use admin::{create_slug, generate_token};
 use admin::structs::Administrator;
-use rocket::response::Redirect;
+use admin::series::{get_all_series, Serie, SeriesContext};
+use chrono::NaiveDateTime;
 use club_coding::models::{Series, Videos};
 use club_coding::create_new_video;
-use database::DbConn;
-use chrono::NaiveDateTime;
-use rocket_contrib::Json;
+use database::{DbConn, RedisConnection};
 use diesel::prelude::*;
-use rocket::request::Form;
-use admin::series::get_all_series;
-use admin::series::Serie;
-use admin::generate_token;
-use admin::create_slug;
-use admin::series::SeriesContext;
+use redis::Commands;
+use rocket_contrib::{Json, Template};
 use rocket::Route;
+use rocket::response::Redirect;
+use rocket::request::Form;
 
 #[derive(Serialize)]
 struct Video {
@@ -120,17 +117,22 @@ fn get_highest_episode_from_series(connection: &DbConn, sid: i64) -> i32 {
 
 #[post("/videos/new", data = "<video>")]
 pub fn insert_new_video(
-    conn: DbConn,
+    mysql_conn: DbConn,
+    redis_conn: RedisConnection,
     _user: Administrator,
     video: Form<NewVideo>,
 ) -> Result<Redirect, Redirect> {
     let new_video: NewVideo = video.into_inner();
     let slug = create_slug(&new_video.title);
-    let series: i64 = get_series_from_uuid(&conn, new_video.serie);
-    let episode_number: i32 = get_highest_episode_from_series(&conn, series);
+    let series: i64 = get_series_from_uuid(&mysql_conn, new_video.serie);
+    match redis_conn.del::<&str, String>(&format!("serie:{}", series)) {
+        Ok(_) => {}
+        Err(_) => {}
+    }
+    let episode_number: i32 = get_highest_episode_from_series(&mysql_conn, series);
     match generate_token(24) {
         Ok(uuid) => match create_new_video(
-            &conn,
+            &mysql_conn,
             &uuid,
             &new_video.title,
             &slug,
@@ -213,25 +215,35 @@ pub struct UpdateVideo {
 
 #[post("/videos/edit/<uid>", format = "application/json", data = "<data>")]
 pub fn update_video(
-    conn: DbConn,
+    mysql_conn: DbConn,
+    redis_conn: RedisConnection,
     uid: String,
     _user: Administrator,
     data: Json<UpdateVideo>,
 ) -> Result<(), ()> {
-    use club_coding::schema::videos::dsl::*;
+    match get_video(&mysql_conn, &uid) {
+        Some(video) => {
+            match redis_conn.del::<&str, String>(&format!("serie:{}", video.serie_id)) {
+                Ok(_) => {}
+                Err(_) => {}
+            }
+            use club_coding::schema::videos::dsl::*;
 
-    match diesel::update(videos.filter(uuid.eq(uid)))
-        .set((
-            title.eq(&data.0.title),
-            description.eq(&data.description),
-            vimeo_id.eq(&data.vimeo_id),
-            membership_only.eq(data.0.membership),
-            published.eq(data.0.published),
-        ))
-        .execute(&*conn)
-    {
-        Ok(_) => Ok(()),
-        Err(_) => Err(()),
+            match diesel::update(videos.find(video.id))
+                .set((
+                    title.eq(&data.0.title),
+                    description.eq(&data.description),
+                    vimeo_id.eq(&data.vimeo_id),
+                    membership_only.eq(data.0.membership),
+                    published.eq(data.0.published),
+                ))
+                .execute(&*mysql_conn)
+            {
+                Ok(_) => Ok(()),
+                Err(_) => Err(()),
+            }
+        }
+        None => Err(()),
     }
 }
 

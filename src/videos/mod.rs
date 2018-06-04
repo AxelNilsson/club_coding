@@ -98,12 +98,12 @@ fn watch_as_user(
                 flash_name: name,
                 flash_msg: msg,
             };
-            database::create_new_view(&mysql_conn, video.id, user.id);
             if video.membership_only {
                 if !database::user_has_bought(&mysql_conn, video.serie_id, user.id) {
                     return Ok(Template::render("videos/watch_nomember", &context));
                 }
             }
+            database::create_new_view(&mysql_conn, video.id, user.id);
             Ok(Template::render("videos/watch_member", &context))
         }
         Err(_video_not_found) => Err(Redirect::to("/")),

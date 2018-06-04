@@ -107,42 +107,44 @@
       <p class="title">{{ description | safe }}</p>
     </v-flex>
   </v-layout>
-  <v-layout wrap row id="episodes">
-    <v-flex xs10 offset-xs1 lg10 offset-lg1 xl8 offset-xl2>
-     {% for video in videos %}
-      <v-card>
-        <v-layout wrap row>
-          <v-flex xs12 lg2>
-            {% if video.watched %}
-            <div class="green--circle circle">
-            {% else %}
-            <div class="circle">
-            {% endif %}
-              <span class="display-1">
-                {% if video.episode_number > 9 %}
-                  {{ video.episode_number }}
-                {% else %}
-                  0{{ video.episode_number }}
-                {% endif %}
-              </span>
-            </div>
-          </v-flex>
-          <v-flex xs12 lg8>
-            {% if video.uuid == uuid %}
-            <h2 class="headline">{{ video.title }}</h2>
-            {% else %}
-            <h2 class="headline"><a href="/watch/{{ video.uuid }}">{{ video.title }}</a></h2>
-            {% endif %}
-            <p class="subheading">{{ video.description | safe }}</p>
-          </v-flex>
-        </v-layout>
-      </v-card>
-     {% endfor %}
-     {% if in_development %}
-     <p id="in-development">*Series still in development. Check back often for updates.</p>
-     {% endif %}
-    </v-flex>
-  </v-layout>
+  <v-container>
+    <v-layout wrap row id="episodes">
+       <v-flex xs12 lg10 offset-lg1>
+        {% for video in videos %}
+        <v-card>
+          <v-layout wrap row>
+            <v-flex xs12 lg2>
+              {% if video.watched %}
+              <div class="green--circle circle">
+              {% else %}
+              <div class="circle">
+              {% endif %}
+                <span class="display-1">
+                  {% if video.episode_number > 9 %}
+                    {{ video.episode_number }}
+                  {% else %}
+                    0{{ video.episode_number }}
+                  {% endif %}
+                </span>
+              </div>
+            </v-flex>
+            <v-flex xs12 lg8>
+              {% if video.uuid == uuid %}
+              <h2 class="headline">{{ video.title }}</h2>
+              {% else %}
+              <h2 class="headline"><a href="/watch/{{ video.uuid }}">{{ video.title }}</a></h2>
+              {% endif %}
+              <p class="subheading">{{ video.description | safe }}</p>
+            </v-flex>
+          </v-layout>
+        </v-card>
+        {% endfor %}
+        {% if in_development %}
+        <p id="in-development">*Series still in development. Check back often for updates.</p>
+        {% endif %}
+      </v-flex>
+    </v-layout>
+  </v-container>
 {% endblock content %}
 {% block script %}
 {{ super() }}

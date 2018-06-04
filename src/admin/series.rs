@@ -3,7 +3,7 @@ use admin::structs::{Administrator, LoggedInContext};
 use rocket::response::Redirect;
 use club_coding::models::Series;
 use club_coding::create_new_series;
-use database::DbConn;
+use database::{DbConn, RedisConnection};
 use chrono::NaiveDateTime;
 use rocket_contrib::Json;
 use diesel::prelude::*;
@@ -11,6 +11,7 @@ use rocket::request::Form;
 use admin::generate_token;
 use admin::create_slug;
 use rocket::Route;
+use redis::Commands;
 
 #[derive(Serialize)]
 pub struct Serie {
@@ -109,15 +110,20 @@ pub struct NewSerie {
 
 #[post("/series/new", data = "<serie>")]
 pub fn insert_new_series(
-    conn: DbConn,
+    mysql_conn: DbConn,
+    redis_conn: RedisConnection,
     _user: Administrator,
     serie: Form<NewSerie>,
 ) -> Result<Redirect, Redirect> {
     let new_serie: NewSerie = serie.into_inner();
+    match redis_conn.del::<&str, String>("last10") {
+        Ok(_) => {}
+        Err(_) => {}
+    }
     let slug = create_slug(&new_serie.title);
     match generate_token(24) {
         Ok(uuid) => match create_new_series(
-            &*conn,
+            &*mysql_conn,
             &uuid,
             &new_serie.title,
             &slug,
@@ -188,11 +194,16 @@ pub struct UpdateSerie {
 
 #[post("/series/edit/<uid>", format = "application/json", data = "<data>")]
 pub fn update_serie(
-    conn: DbConn,
+    mysql_conn: DbConn,
+    redis_conn: RedisConnection,
     uid: String,
     _user: Administrator,
     data: Json<UpdateSerie>,
 ) -> Result<(), ()> {
+    match redis_conn.del::<&str, String>("last10") {
+        Ok(_) => {}
+        Err(_) => {}
+    }
     use club_coding::schema::series::dsl::*;
 
     match diesel::update(series.filter(uuid.eq(uid)))
@@ -204,7 +215,7 @@ pub fn update_serie(
             archived.eq(data.0.archived),
             in_development.eq(data.0.in_development),
         ))
-        .execute(&*conn)
+        .execute(&*mysql_conn)
     {
         Ok(_) => Ok(()),
         Err(_) => Err(()),
