@@ -45,8 +45,11 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
             |cookie| match redis_pool.get() {
                 Ok(redis_conn) => match redis_conn.get::<&str, String>(cookie.value()) {
                     Ok(result) => {
-                        let v: User = serde_json::from_str(&result).unwrap();
-                        return Some(v);
+                        let user: User = match serde_json::from_str(&result) {
+                            Ok(user) => user,
+                            Err(_) => return None,
+                        };
+                        return Some(user);
                     }
                     Err(_) => match mysql_pool.get() {
                         Ok(connection) => {

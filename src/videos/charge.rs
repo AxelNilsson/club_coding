@@ -1,4 +1,5 @@
-use club_coding::{create_new_user_series_access, insert_new_users_stripe_charge};
+use club_coding::{create_new_request_network_payments, create_new_user_series_access,
+                  insert_new_users_stripe_charge};
 use club_coding::models::UsersStripeCustomer;
 use users::User;
 use std::io::{Error, ErrorKind};
@@ -6,6 +7,9 @@ use stripe::Source::Card;
 use database::DbConn;
 use videos::database;
 use email::{EmailBody, PostmarkClient};
+use request_network::{wooreq_request, ReqBody};
+use authentication;
+use series;
 
 /// Struct for emails, not used
 /// for updated card email but we
@@ -134,5 +138,112 @@ pub fn charge_card(
             Ok(())
         }
         None => Err(Error::new(ErrorKind::Other, "no customer_source")),
+    }
+}
+
+/// Generates a Request Network Payment
+/// with the use of the WooREQ website
+/// and inserts it into the database.
+pub fn generate_and_create_req_payment(
+    conn: &DbConn,
+    uuid: &str,
+    user_id: i64,
+    serie_id: i64,
+) -> Result<String, Error> {
+    let token = authentication::generate_token(30);
+
+    let serie = match series::database::get_serie_by_id(conn, serie_id) {
+        Some(serie) => serie,
+        None => return Err(Error::new(ErrorKind::Other, "No serie found.")),
+    };
+
+    let new_payment_id = create_new_request_network_payments(
+        conn,
+        &token,
+        user_id,
+        serie_id,
+        &(serie.price as f32 / (600 * 100) as f32).to_string(),
+        "0xadB2A92a1dD0D95Fcf0d70b2272244BDbd686464",
+        &format!("Buying \"{}\" at Club Coding.", serie.title),
+    )?;
+
+    let body = ReqBody {
+        to_pay: &(serie.price as f32 / (600 * 100) as f32).to_string(),
+        to_address: "0xadB2A92a1dD0D95Fcf0d70b2272244BDbd686464",
+        redirect_url: &format!("https://clubcoding.com/watch/{}/buy/req/{}", uuid, token),
+        order_id: &new_payment_id.to_string(),
+        reason: &format!("Buying \"{}\" at Club Coding.", serie.title),
+        network: 1,
+    };
+
+    wooreq_request(&body)
+}
+
+/// Validates the request network token
+/// and returns either OK or an error.
+/// Checks the validity of the token
+/// sets used to false (invalidates it).
+/// Grants access to the user and sends
+/// email to the user thanking for the
+/// purchase.
+pub fn validate_req_bought(
+    conn: &DbConn,
+    user: User,
+    postmark_token: &str,
+    uuid: &str,
+    token: &str,
+) -> Result<(), Error> {
+    match database::get_video_data_from_uuid(&conn, uuid) {
+        Ok(video) => {
+            let request_payment = match database::get_request_payment(conn, token) {
+                Some(payment) => payment,
+                None => return Err(Error::new(ErrorKind::Other, "Request Token doesn't exist.")),
+            };
+            if request_payment.used {
+                return Err(Error::new(ErrorKind::Other, "Request Token already used."));
+            }
+
+            let serie = match series::database::get_serie_by_id(conn, video.serie_id) {
+                Some(serie) => serie,
+                None => return Err(Error::new(ErrorKind::Other, "Serie doesn't exist.")),
+            };
+
+            if serie.id != request_payment.serie_id {
+                return Err(Error::new(
+                    ErrorKind::Other,
+                    "An error occured, please try again later.",
+                ));
+            }
+
+            match create_new_user_series_access(&*conn, user.id, serie.id, true) {
+                Ok(_) => {}
+                Err(_) => {
+                    return Err(Error::new(
+                        ErrorKind::Other,
+                        "An error occured, please try again later.",
+                    ));
+                }
+            }
+            match send_bought_email(postmark_token, &user.email) {
+                Ok(_) => {}
+                Err(_) => {
+                    return Err(Error::new(
+                        ErrorKind::Other,
+                        "An error occured, please try again later.",
+                    ))
+                }
+            }
+            match database::invalidate_request_payment(&conn, request_payment.id) {
+                Ok(_) => {}
+                Err(_) => {
+                    return Err(Error::new(
+                        ErrorKind::Other,
+                        "An error occured, please try again later.",
+                    ))
+                }
+            }
+            Ok(())
+        }
+        Err(_video_not_found) => return Err(Error::new(ErrorKind::Other, "Video doesn't exist.")),
     }
 }

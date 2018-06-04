@@ -191,8 +191,8 @@ fn watch_nouser(
 /// to the add card page. If the user has a card and
 /// has not already bought the series, it will perform
 /// the purchase and redirect to the video.
-#[get("/watch/<uuid>/buy")]
-fn buy_serie(
+#[get("/watch/<uuid>/buy/fiat")]
+fn buy_serie_fiat(
     conn: DbConn,
     stripe_token: State<StripeToken>,
     postmark_token: State<PostmarkToken>,
@@ -230,10 +230,83 @@ fn buy_serie(
     }
 }
 
+/// GET Endpoint to buy a certain series as
+/// defined by the video the series is in
+/// specified by the UUID. Endpoints checks
+/// if the user is logged in by using the
+/// user request guard. If the user
+/// is not logged in it forwards
+/// the request. The endpoint
+/// checks if the user already has bought it
+/// to avoid double purchases. If the series is already
+/// bought it will redirect to the watch page for the
+/// video. If the user doesn't have a card, it will redirect
+/// to the add card page. If the user has a card and
+/// has not already bought the series, it will perform
+/// the purchase and redirect to the video.
+#[get("/watch/<uuid>/buy/req")]
+fn buy_serie_req(conn: DbConn, user: User, uuid: String) -> Result<Redirect, Flash<Redirect>> {
+    match database::get_video_data_from_uuid(&conn, &uuid) {
+        Ok(video) => {
+            if database::user_has_bought(&conn, video.serie_id, user.id) {
+                return Err(Flash::error(
+                    Redirect::to(&format!("/watch/{}", uuid)),
+                    "You already own this series.",
+                ));
+            }
+            match charge::generate_and_create_req_payment(&conn, &uuid, user.id, video.serie_id) {
+                Ok(url) => Ok(Redirect::to(&url)),
+                Err(_) => Err(Flash::error(
+                    Redirect::to(&format!("/watch/{}", uuid)),
+                    "An error occured, please try again later.",
+                )),
+            }
+        }
+        Err(_video_not_found) => Err(Flash::error(Redirect::to("/"), "Video doesn't exist.")),
+    }
+}
+
+/// GET Endpoint to buy a certain series as
+/// defined by the video the series is in
+/// specified by the UUID. Endpoints checks
+/// if the user is logged in by using the
+/// user request guard. If the user
+/// is not logged in it forwards
+/// the request. The endpoint
+/// checks if the user already has bought it
+/// to avoid double purchases. If the series is already
+/// bought it will redirect to the watch page for the
+/// video. If the user doesn't have a card, it will redirect
+/// to the add card page. If the user has a card and
+/// has not already bought the series, it will perform
+/// the purchase and redirect to the video.
+#[get("/watch/<uuid>/buy/req/<token>")]
+fn validate_bought_series_req(
+    conn: DbConn,
+    user: User,
+    postmark_token: State<PostmarkToken>,
+    uuid: String,
+    token: String,
+) -> Result<Flash<Redirect>, Flash<Redirect>> {
+    match charge::validate_req_bought(&conn, user, &postmark_token.0, &uuid, &token) {
+        Ok(_) => Ok(Flash::success(
+            Redirect::to(&format!("/watch/{}", uuid)),
+            "Series unlocked! Congratulations!",
+        )),
+        Err(error) => Err(Flash::error(Redirect::to("/"), &error.to_string())),
+    }
+}
+
 /// Assembles all of the endpoints.
 /// The upside of assembling all of the endpoints here
 /// is that we don't have to update the main function but
 /// instead we can keep all of the changes in here.
 pub fn endpoints() -> Vec<Route> {
-    routes![watch_as_user, watch_nouser, buy_serie]
+    routes![
+        watch_as_user,
+        watch_nouser,
+        buy_serie_fiat,
+        buy_serie_req,
+        validate_bought_series_req
+    ]
 }

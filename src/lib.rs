@@ -9,10 +9,11 @@ pub mod schema;
 use diesel::prelude::*;
 use std::io::{Error, ErrorKind};
 
-use self::models::{NewGroup, NewNewsletterSubscriber, NewSerie, NewUser, NewUserGroup,
-                   NewUserRecoverEmail, NewUserSeriesAccess, NewUserSession, NewUserStripeCard,
-                   NewUserStripeCharge, NewUserStripeCustomer, NewUserStripeToken,
-                   NewUserVerifyEmail, NewUserView, NewVideo, Users};
+use self::models::{NewGroup, NewNewsletterSubscriber, NewRequestNetworkPayment, NewSerie, NewUser,
+                   NewUserGroup, NewUserRecoverEmail, NewUserSeriesAccess, NewUserSession,
+                   NewUserStripeCard, NewUserStripeCharge, NewUserStripeCustomer,
+                   NewUserStripeToken, NewUserVerifyEmail, NewUserView, NewVideo,
+                   RequestNetworkPayments, Users};
 
 pub fn create_new_group(conn: &MysqlConnection, uuid: &str, name: &str) -> Result<(), Error> {
     use schema::groups;
@@ -44,6 +45,47 @@ pub fn create_new_newsletter_subscriber(conn: &MysqlConnection, email: &str) -> 
         Err(_) => Err(Error::new(
             ErrorKind::Other,
             "No newsletter subscribers table found",
+        )),
+    }
+}
+
+pub fn create_new_request_network_payments(
+    conn: &MysqlConnection,
+    uuid: &str,
+    user_id: i64,
+    serie_id: i64,
+    amount_in_eth: &str,
+    to_address: &str,
+    reason: &str,
+) -> Result<i64, Error> {
+    use schema::request_network_payments;
+
+    let new_payment = NewRequestNetworkPayment {
+        uuid: uuid,
+        user_id: user_id,
+        serie_id: serie_id,
+        amount_in_eth: amount_in_eth,
+        to_address: to_address,
+        reason: reason,
+    };
+
+    match diesel::insert_into(request_network_payments::table)
+        .values(&new_payment)
+        .execute(conn)
+    {
+        Ok(_) => match request_network_payments::table
+            .order(request_network_payments::id.desc())
+            .first::<RequestNetworkPayments>(conn)
+        {
+            Ok(request_payment) => Ok(request_payment.id),
+            Err(_) => Err(Error::new(
+                ErrorKind::Other,
+                "No request network payment found",
+            )),
+        },
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "No request network payments table found",
         )),
     }
 }

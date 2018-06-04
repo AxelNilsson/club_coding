@@ -1,6 +1,6 @@
 use club_coding::create_new_user_view;
-use club_coding::models::{Series, UsersSeriesAccess, UsersStripeCustomer, UsersViews, VideoJoin,
-                          Videos};
+use club_coding::models::{RequestNetworkPayments, Series, UsersSeriesAccess, UsersStripeCustomer,
+                          UsersViews, VideoJoin, Videos};
 use std::io::{Error, ErrorKind};
 use database::DbConn;
 use diesel::prelude::*;
@@ -26,7 +26,7 @@ pub fn get_videos(connection: &DbConn) -> Vec<Videos> {
 
 /// Gets video data and related series
 /// data that the watch endpoint requres.
-pub fn get_video_data_from_uuid(connection: &DbConn, uid: &String) -> Result<VideoJoin, Error> {
+pub fn get_video_data_from_uuid(connection: &DbConn, uid: &str) -> Result<VideoJoin, Error> {
     use club_coding::schema::{series, videos};
 
     match videos::table
@@ -116,5 +116,36 @@ pub fn get_serie(connection: &DbConn, sid: i64) -> Option<Series> {
     match series.filter(id.eq(sid)).first(&**connection) {
         Ok(serie) => Some(serie),
         Err(_) => None,
+    }
+}
+
+/// Gets a request network payment.
+/// Returns either Some Series or None
+/// if the request network payment does not exist.
+pub fn get_request_payment(conn: &DbConn, token: &str) -> Option<RequestNetworkPayments> {
+    use club_coding::schema::request_network_payments;
+
+    match request_network_payments::table
+        .filter(request_network_payments::uuid.eq(token))
+        .first::<RequestNetworkPayments>(&**conn)
+    {
+        Ok(request_payment) => Some(request_payment),
+        Err(_) => None,
+    }
+}
+
+/// Invalidates request network payment.
+/// Returns either OK or Error if the
+/// request network payment does not
+/// exist.
+pub fn invalidate_request_payment(conn: &DbConn, request_network_id: i64) -> Result<(), ()> {
+    use club_coding::schema::request_network_payments;
+
+    match diesel::update(request_network_payments::table.find(request_network_id))
+        .set(request_network_payments::used.eq(true))
+        .execute(&**conn)
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(()),
     }
 }

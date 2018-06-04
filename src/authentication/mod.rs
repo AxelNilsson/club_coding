@@ -7,7 +7,7 @@ mod recover;
 pub mod verify;
 
 /// Generate a random token of size length.
-fn generate_token(length: u8) -> String {
+pub fn generate_token(length: u8) -> String {
     let bytes: Vec<u8> = (0..length).map(|_| rand::random::<u8>()).collect();
     let strings: Vec<String> = bytes.iter().map(|byte| format!("{:02X}", byte)).collect();
     return strings.join("");

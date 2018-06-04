@@ -46,6 +46,7 @@ mod charge;
 mod payment;
 mod database;
 mod errors;
+mod request_network;
 
 fn main() {
     rocket::ignite()

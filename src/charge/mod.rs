@@ -248,7 +248,7 @@ fn add_card_uuid(
         &user.email,
         user.id,
     ) {
-        Ok(()) => Ok(Redirect::to(&format!("/watch/{}/buy", uuid))),
+        Ok(()) => Ok(Redirect::to(&format!("/watch/{}/buy/fiat", uuid))),
         _ => Err(Flash::error(
             Redirect::to(&format!("/card/add/{}", uuid)),
             "An error occured, please try again later.",

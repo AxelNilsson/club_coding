@@ -19,6 +19,21 @@ table! {
 }
 
 table! {
+    request_network_payments (id) {
+        id -> Bigint,
+        uuid -> Varchar,
+        user_id -> Bigint,
+        serie_id -> Bigint,
+        amount_in_eth -> Varchar,
+        to_address -> Varchar,
+        reason -> Varchar,
+        used -> Bool,
+        created -> Timestamp,
+        updated -> Timestamp,
+    }
+}
+
+table! {
     series (id) {
         id -> Bigint,
         uuid -> Varchar,
@@ -221,6 +236,7 @@ table! {
 allow_tables_to_appear_in_same_query!(
     groups,
     newsletter_subscribers,
+    request_network_payments,
     series,
     users,
     users_group,

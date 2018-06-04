@@ -35,6 +35,31 @@ pub struct NewNewsletterSubscriber<'a> {
 }
 
 #[derive(Queryable, Clone)]
+pub struct RequestNetworkPayments {
+    pub id: i64,
+    pub uuid: String,
+    pub user_id: i64,
+    pub serie_id: i64,
+    pub amount_in_eth: String,
+    pub to_address: String,
+    pub reason: String,
+    pub used: bool,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name = "request_network_payments"]
+pub struct NewRequestNetworkPayment<'a> {
+    pub uuid: &'a str,
+    pub user_id: i64,
+    pub serie_id: i64,
+    pub amount_in_eth: &'a str,
+    pub to_address: &'a str,
+    pub reason: &'a str,
+}
+
+#[derive(Queryable, Clone)]
 pub struct Series {
     pub id: i64,
     pub uuid: String,

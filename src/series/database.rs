@@ -31,8 +31,11 @@ pub fn get_series(connection: &DbConn) -> Vec<Series> {
 pub fn get_last_10_series(mysql_conn: &DbConn, redis_conn: RedisConnection) -> Vec<PublicSeries> {
     match redis_conn.get::<&str, String>("last_10") {
         Ok(result) => {
-            let v: Vec<PublicSeries> = serde_json::from_str(&result).unwrap();
-            return v;
+            let series: Vec<PublicSeries> = match serde_json::from_str(&result) {
+                Ok(series) => series,
+                Err(_) => return vec![],
+            };
+            return series;
         }
         Err(_) => {
             use club_coding::schema::series::dsl::*;
@@ -92,6 +95,20 @@ pub fn get_serie(connection: &DbConn, uid: &String) -> Option<Series> {
     }
 }
 
+/// Gets a specific serie in the
+/// database specified by the ID.
+/// Returns some Series if it is
+/// found and otherwise returns
+/// None.
+pub fn get_serie_by_id(connection: &DbConn, sid: i64) -> Option<Series> {
+    use club_coding::schema::series::dsl::*;
+
+    match series.find(sid).first(&**connection) {
+        Ok(serie) => Some(serie),
+        Err(_) => None,
+    }
+}
+
 /// Checks if the user defined by
 /// the user_id has watched the video
 /// defined by the video id. Returns
@@ -122,7 +139,10 @@ pub fn get_videos(
 ) -> Vec<PublicVideo> {
     match redis_conn.get::<&str, String>(&format!("serie:{}", sid)) {
         Ok(result) => {
-            let mut videos: Vec<PublicVideo> = serde_json::from_str(&result).unwrap();
+            let mut videos: Vec<PublicVideo> = match serde_json::from_str(&result) {
+                Ok(videos) => videos,
+                Err(_) => return vec![],
+            };
             for mut video in &mut videos {
                 video.watched = get_video_watched(connection, uid, video.id);
             }
@@ -179,7 +199,10 @@ pub fn get_videos_nologin(
 ) -> Vec<PublicVideo> {
     match redis_conn.get::<&str, String>(&format!("serie:{}", sid)) {
         Ok(result) => {
-            let mut videos: Vec<PublicVideo> = serde_json::from_str(&result).unwrap();
+            let mut videos: Vec<PublicVideo> = match serde_json::from_str(&result) {
+                Ok(videos) => videos,
+                Err(_) => return vec![],
+            };
             for mut video in &mut videos {
                 video.watched = false;
             }

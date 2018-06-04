@@ -50,7 +50,10 @@ impl<'a, 'r> FromRequest<'a, 'r> for Administrator {
             |cookie| match redis_pool.get() {
                 Ok(redis_conn) => match redis_conn.get::<&str, String>(cookie.value()) {
                     Ok(result) => {
-                        let user: Administrator = serde_json::from_str(&result).unwrap();
+                        let user: Administrator = match serde_json::from_str(&result) {
+                            Ok(user) => user,
+                            Err(_) => return None,
+                        };
                         if user.admin {
                             return Some(user);
                         }
