@@ -5,4 +5,5 @@ videos/*
 thumbnails/*
 .DS_Store
 Cargo.lock
-rocket.toml
+Rocket.toml
+dump.rdb
