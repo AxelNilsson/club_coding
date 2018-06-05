@@ -1,6 +1,6 @@
 use club_coding::create_new_user_view;
-use club_coding::models::{Users, RequestNetworkPayments, Series, UsersSeriesAccess, UsersStripeCustomer,
-                          UsersViews, VideoJoin, Videos};
+use club_coding::models::{RequestNetworkPayments, Series, Users, UsersSeriesAccess,
+                          UsersStripeCustomer, UsersViews, VideoJoin, Videos};
 use std::io::{Error, ErrorKind};
 use database::DbConn;
 use diesel::prelude::*;
@@ -150,17 +150,13 @@ pub fn invalidate_request_payment(conn: &DbConn, request_network_id: i64) -> Res
     }
 }
 
-
-/// Gets a request network payment.
-/// Returns either Some Series or None
-/// if the request network payment does not exist.
+/// Gets a user by the user id.
+/// Returns either Some Users or None
+/// if the user does not exist.
 pub fn get_user(conn: &DbConn, user_id: i64) -> Option<Users> {
     use club_coding::schema::users;
 
-    match users::table
-        .find(user_id)
-        .first::<Users>(&**conn)
-    {
+    match users::table.find(user_id).first::<Users>(&**conn) {
         Ok(user) => Some(user),
         Err(_) => None,
     }
