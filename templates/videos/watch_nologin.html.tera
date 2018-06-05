@@ -20,6 +20,11 @@
   div.flex > .card:nth-child(2n) {
     background: #f7f7f7;
   }
+  div#app > div.application > div.application--wrap > div.alert {
+    margin: 0;
+    text-align: center;
+    font-size: 16px;
+  }
   .circle {
     margin: auto;
     cursor: pointer;
@@ -106,6 +111,12 @@
   </style>
 {% endblock head %}
 {% block content %}
+  {% if flash_name == "error" %}
+    <v-alert color="error" :value="true">{{ flash_msg }}</v-alert>
+  {% endif %}
+  {% if flash_name == "success" %}
+    <v-alert color="success" :value="true">{{ flash_msg }}</v-alert>
+  {% endif %}
   {{ super() }}
   <v-layout wrap>
     <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>

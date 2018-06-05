@@ -1,4 +1,4 @@
-use club_coding::{create_new_request_network_payments, create_new_user_series_access,
+use club_coding::{create_new_request_network_hash, create_new_request_network_payments, create_new_user_series_access,
                   insert_new_users_stripe_charge};
 use club_coding::models::UsersStripeCustomer;
 use users::User;
@@ -170,7 +170,7 @@ pub fn generate_and_create_req_payment(
     let body = ReqBody {
         to_pay: &(serie.price as f32 / (600 * 100) as f32).to_string(),
         to_address: "0xadB2A92a1dD0D95Fcf0d70b2272244BDbd686464",
-        redirect_url: &format!("https://clubcoding.com/watch/{}/buy/req/{}", uuid, token),
+        redirect_url: &format!("https://clubcoding.com/watch/{}/buy/req/{}/", uuid, token),
         order_id: &new_payment_id.to_string(),
         reason: &format!("Buying \"{}\" at Club Coding.", serie.title),
         network: 1,
@@ -188,16 +188,20 @@ pub fn generate_and_create_req_payment(
 /// purchase.
 pub fn validate_req_bought(
     conn: &DbConn,
-    user: User,
     postmark_token: &str,
     uuid: &str,
     token: &str,
+    hash: &str,
 ) -> Result<(), Error> {
     match database::get_video_data_from_uuid(&conn, uuid) {
         Ok(video) => {
             let request_payment = match database::get_request_payment(conn, token) {
                 Some(payment) => payment,
                 None => return Err(Error::new(ErrorKind::Other, "Request Token doesn't exist.")),
+            };
+            let user = match database::get_user(conn, request_payment.user_id) {
+                Some(user) => user,
+		None => return Err(Error::new(ErrorKind::Other, "User doesn't exist.")),
             };
             if request_payment.used {
                 return Err(Error::new(ErrorKind::Other, "Request Token already used."));
@@ -213,6 +217,16 @@ pub fn validate_req_bought(
                     ErrorKind::Other,
                     "An error occured, please try again later.",
                 ));
+            }
+
+            match create_new_request_network_hash(&*conn, request_payment.id, hash) {
+                Ok(_) => {}
+                Err(_) => {
+                    return Err(Error::new(
+                        ErrorKind::Other,
+                        "An error occured, please try again later.",
+                    ));
+                }
             }
 
             match create_new_user_series_access(&*conn, user.id, serie.id, true) {

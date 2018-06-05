@@ -280,18 +280,18 @@ fn buy_serie_req(conn: DbConn, user: User, uuid: String) -> Result<Redirect, Fla
 /// to the add card page. If the user has a card and
 /// has not already bought the series, it will perform
 /// the purchase and redirect to the video.
-#[get("/watch/<uuid>/buy/req/<token>")]
+#[get("/watch/<uuid>/buy/req/<token>/<hash>")]
 fn validate_bought_series_req(
     conn: DbConn,
-    user: User,
     postmark_token: State<PostmarkToken>,
     uuid: String,
     token: String,
+    hash: String,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
-    match charge::validate_req_bought(&conn, user, &postmark_token.0, &uuid, &token) {
+    match charge::validate_req_bought(&conn, &postmark_token.0, &uuid, &token, &hash) {
         Ok(_) => Ok(Flash::success(
             Redirect::to(&format!("/watch/{}", uuid)),
-            "Series unlocked! Congratulations!",
+            "Series unlocked! Congratulations! Please refresh the page.",
         )),
         Err(error) => Err(Flash::error(Redirect::to("/"), &error.to_string())),
     }

@@ -1,5 +1,5 @@
 use club_coding::create_new_user_view;
-use club_coding::models::{RequestNetworkPayments, Series, UsersSeriesAccess, UsersStripeCustomer,
+use club_coding::models::{Users, RequestNetworkPayments, Series, UsersSeriesAccess, UsersStripeCustomer,
                           UsersViews, VideoJoin, Videos};
 use std::io::{Error, ErrorKind};
 use database::DbConn;
@@ -147,5 +147,21 @@ pub fn invalidate_request_payment(conn: &DbConn, request_network_id: i64) -> Res
     {
         Ok(_) => Ok(()),
         Err(_) => Err(()),
+    }
+}
+
+
+/// Gets a request network payment.
+/// Returns either Some Series or None
+/// if the request network payment does not exist.
+pub fn get_user(conn: &DbConn, user_id: i64) -> Option<Users> {
+    use club_coding::schema::users;
+
+    match users::table
+        .find(user_id)
+        .first::<Users>(&**conn)
+    {
+        Ok(user) => Some(user),
+        Err(_) => None,
     }
 }

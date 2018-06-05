@@ -33,12 +33,12 @@
       text-decoration: none;
       color: #455a64!important;
     }
-    div.card#toolbar > .container > .layout.wrap.row > .flex.lg2 > .layout.wrap.row > .flex.xs4 > a.title {
+    div.card#toolbar > .container > .layout.wrap.row > .flex.lg2 > .layout.wrap.row > .flex.xl4 > a.title {
       color: #00b1b3!important;
       line-height: 56px!important;
       text-decoration: none;
     }
-    div.card#toolbar > .container > .layout.wrap.row > .flex.lg2 > .layout.wrap.row > .flex.xs4 > a.title.secondary-title {
+    div.card#toolbar > .container > .layout.wrap.row > .flex.lg2 > .layout.wrap.row > .flex.xl4 > a.title.secondary-title {
       color: #455a64!important;
       font-weight: 800;
     }
@@ -79,11 +79,11 @@
             <v-flex hidden-sm-and-down lg8></v-flex>
             <v-flex hidden-sm-and-down lg2>
               <v-layout wrap row>
-                <v-flex xs4></v-flex>
-                <v-flex xs4>
+                <v-flex xl4></v-flex>
+                <v-flex lg6 xl4>
                   <a href="/login" class="title">SIGN IN</a>
                 </v-flex>
-                <v-flex xs4>
+                <v-flex lg6 xl4>
                   <a href="/signup" class="title secondary-title">SIGN UP</a>
                 </v-flex>
               </v-layout>

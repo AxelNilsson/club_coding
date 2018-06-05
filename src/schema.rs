@@ -19,6 +19,16 @@ table! {
 }
 
 table! {
+    request_network_hashes (id) {
+        id -> Bigint,
+        payment_id -> Bigint,
+        hash -> Varchar,
+        created -> Timestamp,
+        updated -> Timestamp,
+    }
+}
+
+table! {
     request_network_payments (id) {
         id -> Bigint,
         uuid -> Varchar,
@@ -236,6 +246,7 @@ table! {
 allow_tables_to_appear_in_same_query!(
     groups,
     newsletter_subscribers,
+    request_network_hashes,
     request_network_payments,
     series,
     users,

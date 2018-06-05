@@ -60,6 +60,22 @@ pub struct NewRequestNetworkPayment<'a> {
 }
 
 #[derive(Queryable, Clone)]
+pub struct RequestNetworkHashes {
+    pub id: i64,
+    pub payment_id: i64,
+    pub hash: String,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name = "request_network_hashes"]
+pub struct NewRequestNetworkHash<'a> {
+    pub payment_id: i64,
+    pub hash: &'a str,
+}
+
+#[derive(Queryable, Clone)]
 pub struct Series {
     pub id: i64,
     pub uuid: String,

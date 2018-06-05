@@ -9,7 +9,7 @@ pub mod schema;
 use diesel::prelude::*;
 use std::io::{Error, ErrorKind};
 
-use self::models::{NewGroup, NewNewsletterSubscriber, NewRequestNetworkPayment, NewSerie, NewUser,
+use self::models::{NewGroup, NewNewsletterSubscriber, NewRequestNetworkHash, NewRequestNetworkPayment, NewSerie, NewUser,
                    NewUserGroup, NewUserRecoverEmail, NewUserSeriesAccess, NewUserSession,
                    NewUserStripeCard, NewUserStripeCharge, NewUserStripeCustomer,
                    NewUserStripeToken, NewUserVerifyEmail, NewUserView, NewVideo,
@@ -45,6 +45,31 @@ pub fn create_new_newsletter_subscriber(conn: &MysqlConnection, email: &str) -> 
         Err(_) => Err(Error::new(
             ErrorKind::Other,
             "No newsletter subscribers table found",
+        )),
+    }
+}
+
+pub fn create_new_request_network_hash(
+    conn: &MysqlConnection,
+    payment_id: i64,
+    hash: &str,
+) -> Result<(), Error> {
+
+    use schema::request_network_hashes;
+
+    let new_hash = NewRequestNetworkHash {
+        payment_id: payment_id,
+        hash: hash,
+    };
+
+    match diesel::insert_into(request_network_hashes::table)
+        .values(&new_hash)
+        .execute(conn)
+    {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::new(
+            ErrorKind::Other,
+            "No request network hashes table found",
         )),
     }
 }
