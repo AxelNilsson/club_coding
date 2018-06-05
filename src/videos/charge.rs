@@ -1,5 +1,5 @@
-use club_coding::{create_new_request_network_hash, create_new_request_network_payments, create_new_user_series_access,
-                  insert_new_users_stripe_charge};
+use club_coding::{create_new_request_network_hash, create_new_request_network_payments,
+                  create_new_user_series_access, insert_new_users_stripe_charge};
 use club_coding::models::UsersStripeCustomer;
 use users::User;
 use std::io::{Error, ErrorKind};
@@ -201,7 +201,7 @@ pub fn validate_req_bought(
             };
             let user = match database::get_user(conn, request_payment.user_id) {
                 Some(user) => user,
-		None => return Err(Error::new(ErrorKind::Other, "User doesn't exist.")),
+                None => return Err(Error::new(ErrorKind::Other, "User doesn't exist.")),
             };
             if request_payment.used {
                 return Err(Error::new(ErrorKind::Other, "Request Token already used."));
