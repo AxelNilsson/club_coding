@@ -48,7 +48,10 @@ mod database;
 mod errors;
 mod request_network;
 
-fn main() {
+#[cfg(test)]
+mod tests;
+
+pub fn website() -> rocket::Rocket {
     rocket::ignite()
         .mount("/", authentication::endpoints())
         .mount("/", settings::endpoints())
@@ -65,5 +68,8 @@ fn main() {
         .attach(structs::postmark_token_fairing())
         .attach(structs::email_regex_fairing())
         .catch(errors::endpoints())
-        .launch();
+}
+
+fn main() {
+    website().launch();
 }

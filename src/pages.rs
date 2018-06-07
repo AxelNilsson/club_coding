@@ -137,7 +137,7 @@ fn subscribe(conn: DbConn, data: Json<NewSubscriber>) -> Result<(), ()> {
 #[get("/terms_of_service")]
 fn terms_of_service(user: User) -> Template {
     let context = LoggedInContext {
-        header: "Club Coding",
+        header: "Terms of Service",
         user: user,
     };
     Template::render("pages/terms_of_service", &context)
@@ -151,7 +151,7 @@ fn terms_of_service(user: User) -> Template {
 #[get("/terms_of_service", rank = 2)]
 fn terms_of_service_nologin() -> Template {
     let context = Context {
-        header: "Club Coding",
+        header: "Terms of Service",
     };
     Template::render("pages/terms_of_service_nologin", &context)
 }
@@ -166,7 +166,7 @@ fn terms_of_service_nologin() -> Template {
 #[get("/cookie_policy")]
 fn cookie_policy(user: User) -> Template {
     let context = LoggedInContext {
-        header: "Club Coding",
+        header: "Cookie Policy",
         user: user,
     };
     Template::render("pages/cookie_policy", &context)
@@ -180,7 +180,7 @@ fn cookie_policy(user: User) -> Template {
 #[get("/cookie_policy", rank = 2)]
 fn cookie_policy_nologin() -> Template {
     let context = Context {
-        header: "Club Coding",
+        header: "Cookie Policy",
     };
     Template::render("pages/cookie_policy_nologin", &context)
 }
@@ -195,7 +195,7 @@ fn cookie_policy_nologin() -> Template {
 #[get("/privacy_policy")]
 fn privacy_policy(user: User) -> Template {
     let context = LoggedInContext {
-        header: "Club Coding",
+        header: "Privacy Policy",
         user: user,
     };
     Template::render("pages/privacy_policy", &context)
@@ -209,7 +209,7 @@ fn privacy_policy(user: User) -> Template {
 #[get("/privacy_policy", rank = 2)]
 fn privacy_policy_nologin() -> Template {
     let context = Context {
-        header: "Club Coding",
+        header: "Privacy Policy",
     };
     Template::render("pages/privacy_policy_nologin", &context)
 }
