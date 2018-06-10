@@ -1,0 +1,15 @@
+[development]
+address = "0.0.0.0"
+port = 80
+log = "normal"
+limits = { forms = 32768 }
+secret_key = ""
+mysql_user = ""
+mysql_password = ""
+mysql_host = ""
+mysql_port = ""
+mysql_database = ""
+stripe_publishable = ""
+stripe_secret = ""
+postmark_token = ""
+redis = ""
