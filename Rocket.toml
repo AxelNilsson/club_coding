@@ -1,15 +1,15 @@
 [development]
-address = "0.0.0.0"
-port = 80
+address = "192.168.1.5"
+port = 8000
 log = "normal"
 limits = { forms = 32768 }
-secret_key = ""
-mysql_user = ""
-mysql_password = ""
-mysql_host = ""
-mysql_port = ""
-mysql_database = ""
-stripe_publishable = ""
-stripe_secret = ""
-postmark_token = ""
-redis = ""
+secret_key = "I6zwdzlm3itGxZ44UBDIyeku/iWp+znCssBpDAbq9hg="
+mysql_user = "axel"
+mysql_password = "Testing1"
+mysql_host = "localhost"
+mysql_port = "3306"
+mysql_database = "youtube"
+stripe_publishable = "pk_test_6R2TWqdQ6zyR2BXbnCoOvcvB"
+stripe_secret = "sk_test_zN9YFmOTkrM26QYyVRg11o87"
+postmark_token = "5f60334c-c829-45c6-aa34-08144c70559c"
+redis = "127.0.0.1"
