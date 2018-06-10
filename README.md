@@ -62,7 +62,7 @@ cargo run --release
 
 ## Authors
 
-* **Axel Nilsson** - [AxelNilsson](https://github.com/AxelNilsson)
+* **Axel Nilsson** - [GitHub](https://github.com/AxelNilsson)
 
 ## License
 
