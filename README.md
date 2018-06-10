@@ -30,7 +30,7 @@ and then
 cargo run
 ```
 
-Then browse to http://<yourhost>:<yourport>
+Then browse to http://\<yourhost\>:\<yourport\>
 
 ### Running the tests
 Simply run
