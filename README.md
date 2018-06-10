@@ -1,6 +1,6 @@
 # Club Coding
 
-One Paragraph of project description goes here
+Club Coding is a website for learning programming, mainly with a focus on Rust and built in Rust.
 
 ## Getting Started
 
