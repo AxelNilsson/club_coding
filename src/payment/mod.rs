@@ -16,6 +16,9 @@ use payment::customer::{charge, delete};
 use payment::database::{get_charges, get_customer};
 use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Serialize)]
 pub struct Charge {
     /// Amount of the charge.

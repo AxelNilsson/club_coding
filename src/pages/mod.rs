@@ -9,6 +9,9 @@ use structs::{Context, LoggedInContext};
 use rocket::response::NamedFile;
 use club_coding::create_new_newsletter_subscriber;
 
+#[cfg(test)]
+mod tests;
+
 /// Context for rendering tera templates
 /// for the logged in index endpoint.
 #[derive(Serialize)]

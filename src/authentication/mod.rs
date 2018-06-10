@@ -6,6 +6,9 @@ mod login;
 mod recover;
 pub mod verify;
 
+#[cfg(test)]
+mod tests;
+
 /// Generate a random token of size length.
 pub fn generate_token(length: u8) -> String {
     let bytes: Vec<u8> = (0..length).map(|_| rand::random::<u8>()).collect();

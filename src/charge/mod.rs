@@ -11,6 +11,9 @@ use rocket::State;
 use charge::customer::charge;
 use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Serialize)]
 pub struct ChargeContext<'a> {
     /// Header used in tera templates.

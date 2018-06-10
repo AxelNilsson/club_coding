@@ -1,6 +1,9 @@
 use rocket::Catcher;
 use rocket_contrib::Template;
 
+#[cfg(test)]
+mod tests;
+
 /// Context for rendering tera templates
 /// for not logged in endpoints. Mainly
 /// the error endpoints.

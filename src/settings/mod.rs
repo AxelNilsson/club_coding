@@ -9,6 +9,9 @@ use std::io::{Error, ErrorKind};
 use diesel;
 use diesel::prelude::*;
 
+#[cfg(test)]
+mod tests;
+
 /// Context for rendering tera templates
 /// for logged in endpoints.
 #[derive(Serialize)]
@@ -112,6 +115,39 @@ fn hash_and_update_password(
     }
 }
 
+/// Compares the old password with
+/// the stored password and hashes
+/// and inserts a new password.
+fn compare_and_insert_password<'a>(
+    connection: &DbConn,
+    user_id: i64,
+    old_password: &str,
+    new_password: &str,
+) -> Result<(), &'a str> {
+    let password_hash: String = match get_password_hash_from_userid(connection, user_id) {
+        Ok(password_hash) => password_hash,
+        Err(_) => return Err("No password found in database for the user."),
+    };
+
+    // If it fails, it is the hashing and verifying that fails. It does not
+    // mean that the passwords match or do not match.
+    match verify(old_password, &password_hash) {
+        Ok(passwords_match) => {
+            if !passwords_match {
+                return Err("The old password is incorrect.");
+            }
+        }
+        Err(_) => {
+            return Err("An unknown error occured. Please try again later.");
+        }
+    };
+
+    match hash_and_update_password(connection, user_id, new_password) {
+        Ok(_) => Ok(()),
+        Err(_) => Err("An unknown error occured. Please try again later."),
+    }
+}
+
 /// POST Endpoint for the page to change your
 /// password. Endpoints checks if the
 /// user is logged in by using the
@@ -135,35 +171,18 @@ fn update_password<'a>(
         });
     }
 
-    let password_hash: String = match get_password_hash_from_userid(&conn, user.id) {
-        Ok(password_hash) => password_hash,
-        Err(_) => {
+    match compare_and_insert_password(
+        &conn,
+        user.id,
+        &json_data.old_password,
+        &json_data.new_password,
+    ) {
+        Ok(_) => {
             return Json(Message {
-                text: "No password found in database for the user.",
-            })
-        }
-    };
-    let passwords_match: bool = match verify(&json_data.old_password, &password_hash) {
-        Ok(passwords_match) => passwords_match,
-        Err(_) => {
-            return Json(Message {
-                text: "An unknown error occured. Please try again later.",
-            })
-        }
-    };
-    if !passwords_match {
-        return Json(Message {
-            text: "The old password is incorrect.",
-        });
-    } else {
-        match hash_and_update_password(&conn, user.id, &json_data.new_password) {
-            Ok(_) => Json(Message {
                 text: "Your password has been updated",
-            }),
-            Err(_) => Json(Message {
-                text: "An unknown error occured. Please try again later.",
-            }),
+            })
         }
+        Err(error) => return Json(Message { text: error }),
     }
 }
 

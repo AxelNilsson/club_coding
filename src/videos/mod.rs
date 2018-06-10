@@ -13,6 +13,9 @@ use rocket::State;
 use videos::charge::charge_card;
 use series;
 
+#[cfg(test)]
+mod tests;
+
 /// Context for rendering tera templates
 /// for logged in watch endpoints.
 #[derive(Serialize)]

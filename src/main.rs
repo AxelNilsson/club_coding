@@ -48,9 +48,6 @@ mod database;
 mod errors;
 mod request_network;
 
-#[cfg(test)]
-mod tests;
-
 pub fn website() -> rocket::Rocket {
     rocket::ignite()
         .mount("/", authentication::endpoints())

@@ -5,6 +5,9 @@ use rocket_contrib::Template;
 use database::{DbConn, RedisConnection};
 use users::User;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Serialize, Deserialize)]
 pub struct PublicSeries {
     /// UUID of the series.
