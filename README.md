@@ -1,6 +1,6 @@
 # Club Coding
 
-One Paragraph of project description goes here
+Club Coding is a website for learning programming, mainly with a focus on Rust and built in Rust.
 
 ## Getting Started
 
@@ -11,77 +11,59 @@ These instructions will get you a copy of the project up and running on your loc
 What things you need to install the software and how to install them
 
 ```
-Give examples
+Diesel Client
+MySQL Client
+MySQL Server
+Redis Server
 ```
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running
-
-Say what the step will be
-
-```
-Give the example
-```
-
-And repeat
+You need to create a Rocket.toml file before running the application.
+You also need to create a .env file for Diesel.
 
 ```
-until finished
+diesel migration run
+```
+and then
+```
+cargo run
 ```
 
-End with an example of getting some data out of the system or using it for a little demo
+Then browse to http://\<yourhost\>:\<yourport\>
 
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
+### Running the tests
+Simply run
 ```
-Give an example
+cargo test
 ```
 
 ### And coding style tests
 
-Explain what these tests test and why
-
-```
-Give an example
-```
+The whole project is styled according to the Rust Formatter.
 
 ## Deployment
 
-Add additional notes about how to deploy this on a live system
+You need to create a Rocket.toml file before running the application. You want to use the \[production\] environment for deploying the application live. See more on [the official rocket page.](https://rocket.rs/guide/configuration/)
+You also need to create a .env file for Diesel.
+
+```
+diesel migration run
+```
+and then
+```
+cargo run --release
+```
 
 ## Built With
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+* [Rocket](https://rocket.rs/) - The web framework used
+* [Diesel](http://diesel.rs) - Database Object-Relational Mapping.
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+* **Axel Nilsson** - [GitHub](https://github.com/AxelNilsson)
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
