@@ -4,6 +4,7 @@ port = 0000
 log = "normal"
 limits = { forms = 32768 }
 secret_key = ""
+csrf_secret_key = ""
 mysql_user = ""
 mysql_password = ""
 mysql_host = ""

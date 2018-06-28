@@ -24,10 +24,13 @@ pub fn csrf_secret_key_fairing() -> rocket::fairing::AdHoc {
             .get_str("csrf_secret_key")
             .expect("csrf_secret_key key not specified");
 
-        let mut arr = [0u8; 32];
-        arr.copy_from_slice(csrf_secret_key.as_bytes());
+        let csrf_secret_key = csrf_secret_key.as_bytes();
+        assert_eq!(csrf_secret_key.len(), 32);
 
-        Ok(rocket.manage(CSRFSecretToken(arr)))
+        let mut csrf_key = [0u8; 32];
+        csrf_key.copy_from_slice(csrf_secret_key);
+
+        Ok(rocket.manage(CSRFSecretToken(csrf_key)))
     })
 }
 
