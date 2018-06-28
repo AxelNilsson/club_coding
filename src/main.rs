@@ -32,21 +32,21 @@ extern crate hyper;
 #[macro_use]
 extern crate serde_derive;
 
-mod authentication;
-mod settings;
-mod pages;
-mod videos;
-mod users;
-mod structs;
 mod admin;
-mod series;
-mod email;
-mod custom_csrf;
+mod authentication;
 mod charge;
-mod payment;
+mod custom_csrf;
 mod database;
+mod email;
 mod errors;
+mod pages;
+mod payment;
 mod request_network;
+mod series;
+mod settings;
+mod structs;
+mod users;
+mod videos;
 
 pub fn website() -> rocket::Rocket {
     rocket::ignite()
@@ -59,6 +59,7 @@ pub fn website() -> rocket::Rocket {
         .mount("/series", series::endpoints())
         .mount("/admin", admin::endpoints())
         .attach(rocket_contrib::Template::fairing())
+        .attach(custom_csrf::csrf_secret_key_fairing())
         .attach(database::mysql_fairing())
         .attach(database::redis_fairing())
         .attach(structs::stripe_token_fairing())

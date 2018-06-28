@@ -1,20 +1,19 @@
 pub mod customer;
 pub mod database;
 
-use rocket::Route;
-use rocket::request::Form;
-use rocket_contrib::Template;
-use rocket::response::{Flash, Redirect};
-use database::DbConn;
-use users::User;
-use rocket::request::FlashMessage;
-use structs::{PostmarkToken, StripeToken};
-use rocket::State;
 use charge::ChargeContext;
 use charge::Stripe;
+use custom_csrf::{csrf_matches, CSRFSecretToken, CsrfCookie, CsrfToken};
+use database::DbConn;
 use payment::customer::{charge, delete};
 use payment::database::{get_charges, get_customer};
-use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
+use rocket::request::FlashMessage;
+use rocket::request::Form;
+use rocket::response::{Flash, Redirect};
+use rocket::{Route, State};
+use rocket_contrib::Template;
+use structs::{PostmarkToken, StripeToken};
+use users::User;
 
 #[cfg(test)]
 mod tests;
@@ -147,12 +146,13 @@ fn update_card(
     csrf_cookie: CsrfCookie,
     stripe_token: State<StripeToken>,
     postmark: State<PostmarkToken>,
+    csrf_secret_key: State<CSRFSecretToken>,
     form_data: Form<Stripe>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     match get_customer(&conn, user.id) {
         Some(_) => {
             let data = form_data.into_inner();
-            if !csrf_matches(&data.csrf, &csrf_cookie.value()) {
+            if !csrf_matches(csrf_secret_key.0, &data.csrf, &csrf_cookie.value()) {
                 return Err(Flash::error(
                     Redirect::to("/settings/payment/card/update"),
                     "CSRF Failed.",

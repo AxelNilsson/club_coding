@@ -1,16 +1,16 @@
-use bcrypt::{hash, DEFAULT_COST};
-use rocket::request::{FlashMessage, Form};
-use rocket_contrib::Template;
-use rocket::response::{Flash, Redirect};
-use club_coding::create_new_user;
-use database::DbConn;
-use rocket::{Route, State};
-use users::User as UserStruct;
-use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
-use structs::PostmarkToken;
-use structs::EmailRegex;
 use authentication::{login, verify};
+use bcrypt::{hash, DEFAULT_COST};
+use club_coding::create_new_user;
+use custom_csrf::{csrf_matches, CSRFSecretToken, CsrfCookie, CsrfToken};
+use database::DbConn;
+use rocket::request::{FlashMessage, Form};
+use rocket::response::{Flash, Redirect};
+use rocket::{Route, State};
+use rocket_contrib::Template;
 use std::io::{Error, ErrorKind};
+use structs::EmailRegex;
+use structs::PostmarkToken;
+use users::User as UserStruct;
 
 /// GET Endpoint to signup to the site.
 /// Endpoints checks if the user is
@@ -103,6 +103,7 @@ fn register_user(
     conn: DbConn,
     email_regex: State<EmailRegex>,
     postmark_token: State<PostmarkToken>,
+    csrf_secret_key: State<CSRFSecretToken>,
     csrf_cookie: CsrfCookie,
     user: Form<UserRegistration>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
@@ -118,7 +119,7 @@ fn register_user(
         ));
     }
 
-    if !csrf_matches(&input.csrf, &csrf_cookie.value()) {
+    if !csrf_matches(csrf_secret_key.0, &input.csrf, &csrf_cookie.value()) {
         return Err(Flash::error(Redirect::to("/signup"), "CSRF Failed."));
     }
 

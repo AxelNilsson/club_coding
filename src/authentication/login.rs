@@ -1,15 +1,15 @@
+use authentication;
 use bcrypt::verify;
-use rocket::request::{FlashMessage, Form};
-use rocket_contrib::Template;
-use rocket::response::{Flash, Redirect};
 use club_coding::create_new_user_session;
+use custom_csrf::{csrf_matches, CSRFSecretToken, CsrfCookie, CsrfToken};
 use database::DbConn;
 use rocket::http::{Cookie, Cookies};
+use rocket::request::{FlashMessage, Form};
+use rocket::response::{Flash, Redirect};
+use rocket::{Route, State};
+use rocket_contrib::Template;
 use time::Duration;
-use rocket::Route;
 use users::User as UserStruct;
-use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
-use authentication;
 
 /// Struct for parsing login forms
 #[derive(FromForm)]
@@ -84,12 +84,13 @@ fn login_page(token: CsrfToken, flash: Option<FlashMessage>) -> Template {
 #[post("/login", data = "<user>")]
 fn login(
     conn: DbConn,
+    csrf_secret_key: State<CSRFSecretToken>,
     csrf_cookie: CsrfCookie,
     mut cookies: Cookies,
     user: Form<User>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     let input_data: User = user.into_inner();
-    if !csrf_matches(&input_data.csrf, &csrf_cookie.value()) {
+    if !csrf_matches(csrf_secret_key.0, &input_data.csrf, &csrf_cookie.value()) {
         return Err(Flash::error(Redirect::to("/login"), "CSRF Failed."));
     }
 

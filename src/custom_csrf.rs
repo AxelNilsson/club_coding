@@ -1,9 +1,35 @@
-use rocket::http::Cookie;
-use time::Duration;
 use csrf::{AesGcmCsrfProtection, CsrfProtection};
-use rocket::request::{self, FromRequest, Request};
-use rocket::Outcome;
 use data_encoding::BASE64;
+use rocket::fairing::AdHoc;
+use rocket::http::Cookie;
+use rocket::request::{self, FromRequest, Request};
+use rocket::{Outcome, State};
+use time::Duration;
+
+/// Struct for CSRF secret key.
+/// Used in endpoints that requires the
+/// CSRF secret key. It is a Secret Key
+/// that you can not show in public.
+/// Only to be used in Rust code.
+pub struct CSRFSecretToken(pub [u8; 32]);
+
+/// Returns a AdHoc Fairing with the CSRF secret key.
+/// Will panic if no CSRF Key is set in
+/// Rocket.toml File
+pub fn csrf_secret_key_fairing() -> rocket::fairing::AdHoc {
+    AdHoc::on_attach(|rocket| {
+        let config = rocket.config().clone();
+
+        let csrf_secret_key = config
+            .get_str("csrf_secret_key")
+            .expect("csrf_secret_key key not specified");
+
+        let mut arr = [0u8; 32];
+        arr.copy_from_slice(csrf_secret_key.as_bytes());
+
+        Ok(rocket.manage(CSRFSecretToken(arr)))
+    })
+}
 
 /// Struct for CSRF Token.
 /// Used in endpoints that requires
@@ -32,7 +58,8 @@ impl<'a, 'r> FromRequest<'a, 'r> for CsrfToken {
     type Error = ();
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<CsrfToken, ()> {
-        let protect = AesGcmCsrfProtection::from_key(*b"01234567012345670123456701234567");
+        let csrf_secret_key = request.guard::<State<CSRFSecretToken>>()?;
+        let protect = AesGcmCsrfProtection::from_key(csrf_secret_key.0);
         match protect.generate_token_pair(None, 300) {
             Ok((token, cookie)) => {
                 let mut csrf_cookie = Cookie::new("csrf", cookie.b64_string());
@@ -88,8 +115,8 @@ impl<'a, 'r> FromRequest<'a, 'r> for CsrfCookie {
 /// and tries to verify the pair.
 /// Returns a boolean of whether the
 /// pairs match or not.
-pub fn csrf_matches(token: &str, cookie: &str) -> bool {
-    let protect = AesGcmCsrfProtection::from_key(*b"01234567012345670123456701234567");
+pub fn csrf_matches(csrf_secret_key: [u8; 32], token: &str, cookie: &str) -> bool {
+    let protect = AesGcmCsrfProtection::from_key(csrf_secret_key);
     let token_bytes = match BASE64.decode(token.as_bytes()) {
         Ok(token_bytes) => token_bytes,
         Err(_) => return false,

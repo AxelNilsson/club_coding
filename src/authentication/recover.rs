@@ -1,19 +1,18 @@
-use bcrypt::{hash, DEFAULT_COST};
-use rocket::request::{FlashMessage, Form};
-use rocket_contrib::Template;
-use rocket::response::{Flash, Redirect};
-use club_coding::create_new_users_recover_email;
-use database::DbConn;
-use rocket::Route;
-use users::User as UserStruct;
-use email::{EmailBody, PostmarkClient};
-use custom_csrf::{csrf_matches, CsrfCookie, CsrfToken};
-use std::io::{Error, ErrorKind};
-use structs::PostmarkToken;
-use rocket::State;
-use structs::EmailRegex;
 use authentication;
 use authentication::verify::VerifyEmail;
+use bcrypt::{hash, DEFAULT_COST};
+use club_coding::create_new_users_recover_email;
+use custom_csrf::{csrf_matches, CSRFSecretToken, CsrfCookie, CsrfToken};
+use database::DbConn;
+use email::{EmailBody, PostmarkClient};
+use rocket::request::{FlashMessage, Form};
+use rocket::response::{Flash, Redirect};
+use rocket::{Route, State};
+use rocket_contrib::Template;
+use std::io::{Error, ErrorKind};
+use structs::EmailRegex;
+use structs::PostmarkToken;
+use users::User as UserStruct;
 
 /// GET Endpoint for the recover email
 /// page. Endpoints checks if
@@ -142,6 +141,7 @@ fn send_recover_email(
     conn: DbConn,
     email_regex: State<EmailRegex>,
     postmark_token: State<PostmarkToken>,
+    csrf_secret_key: State<CSRFSecretToken>,
     csrf_cookie: CsrfCookie,
     user: Form<RecoverAccount>,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
@@ -152,7 +152,7 @@ fn send_recover_email(
             "Email is not valid.",
         ));
     }
-    if !csrf_matches(&input.csrf, &csrf_cookie.value()) {
+    if !csrf_matches(csrf_secret_key.0, &input.csrf, &csrf_cookie.value()) {
         return Err(Flash::error(
             Redirect::to("/recover/email"),
             "CSRF Doesn't match.",
@@ -274,6 +274,7 @@ struct UpdatePassword {
 #[post("/email/recover/<uuid>", data = "<user>", rank = 2)]
 fn update_password(
     conn: DbConn,
+    csrf_secret_key: State<CSRFSecretToken>,
     uuid: String,
     csrf_cookie: CsrfCookie,
     user: Form<UpdatePassword>,
@@ -295,7 +296,7 @@ fn update_password(
         return Err(Flash::error(Redirect::to("/"), "Link already used."));
     }
 
-    if !csrf_matches(&input.csrf, &csrf_cookie.value()) {
+    if !csrf_matches(csrf_secret_key.0, &input.csrf, &csrf_cookie.value()) {
         return Err(Flash::error(
             Redirect::to(&format!("/email/recover/{}", uuid)),
             "CSRF Doesn't match.",
