@@ -2,7 +2,7 @@
 {% block title %}{{ header }}{% endblock title %}
 {% block head %}
   {{ super() }}
-  <style>
+  <style type="text/css">
     .container > nav > .layout > .flex, .container > main > section > .layout > .flex {
       z-index: 100;
     }
@@ -260,7 +260,7 @@
   </v-card>
 {% endblock content %}
 {% block script %}
-  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/axios@0.18.0/dist/axios.min.js"></script>
   <script>
     new Vue({
       el: '#app',
