@@ -17,6 +17,12 @@
     width:100%;
     height:100%;
   }
+  #right-padding {
+    padding-right:1em
+  }
+  #left-padding {
+    padding-left:1em
+  }
 </style>
 {% endblock head %}
 {% block content %}{{ super() }}{% endblock content %}
@@ -30,5 +36,50 @@
       </v-flex>
     </v-layout>
   </div>
+  {% if user_voted == false %}
+  <v-layout wrap row v-show="!buttons_disabled">
+    <v-flex xs12 lg10 offset-lg1 xl8 offset-xl2>
+      <v-layout wrap row>
+        <v-flex hidden-sm-and-down lg6 id="right-padding">
+          <v-btn dark large block color="red" @click="dislike">Dislike</v-btn>
+        </v-flex>
+        <v-flex hidden-sm-and-down lg6 id="left-padding">
+          <v-btn dark large block color="green" @click="like">Like</v-btn>
+        </v-flex>
+        <v-flex xs12 hidden-md-and-up>
+          <v-btn dark large block color="green" @click="like">Like</v-btn>
+        </v-flex>
+        <v-flex xs12 hidden-md-and-up>
+          <v-btn dark large block color="red" @click="dislike">Dislike</v-btn>
+        </v-flex>
+      </v-layout>
+    </v-flex>
+  </v-layout>
+  {% endif %}
 {% endblock player %}
-{% block script %}{{ super() }}{% endblock script %}
+{% block script %}
+  <script src="https://unpkg.com/axios@0.18.0/dist/axios.min.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      delimiters: ["${","}"],
+      data: {
+        buttons_disabled: false,
+      },
+      methods: {
+        like() {
+          this.buttons_disabled = true;
+          axios.post('/watch/{{ uuid }}/vote', {
+            like: true
+          });
+        },
+        dislike() {
+          this.buttons_disabled = true;
+          axios.post('/watch/{{ uuid }}/vote', {
+            like: false
+          });
+        }
+      }
+    })
+  </script>
+{% endblock script %}

@@ -1,7 +1,7 @@
 extern crate chrono;
 
-use schema::*;
 use self::chrono::NaiveDateTime;
+use schema::*;
 
 #[derive(Queryable, Clone)]
 pub struct Groups {
@@ -378,6 +378,24 @@ pub struct UsersVerifyEmail {
 pub struct NewUserVerifyEmail<'a> {
     pub user_id: i64,
     pub token: &'a str,
+}
+
+#[derive(Queryable)]
+pub struct UsersVideosVotes {
+    pub id: i64,
+    pub user_id: i64,
+    pub video_id: i64,
+    pub is_like: bool,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+}
+
+#[derive(Insertable)]
+#[table_name = "users_videos_votes"]
+pub struct NewUserVideosVote {
+    pub user_id: i64,
+    pub video_id: i64,
+    pub is_like: bool,
 }
 
 #[derive(Queryable)]

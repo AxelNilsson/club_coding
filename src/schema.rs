@@ -216,6 +216,17 @@ table! {
 }
 
 table! {
+    users_videos_votes (id) {
+        id -> Bigint,
+        user_id -> Bigint,
+        video_id -> Bigint,
+        is_like -> Bool,
+        created -> Timestamp,
+        updated -> Timestamp,
+    }
+}
+
+table! {
     users_views (id) {
         id -> Bigint,
         user_id -> Bigint,
@@ -259,6 +270,7 @@ allow_tables_to_appear_in_same_query!(
     users_stripe_customer,
     users_stripe_token,
     users_verify_email,
+    users_videos_votes,
     users_views,
     videos,
 );

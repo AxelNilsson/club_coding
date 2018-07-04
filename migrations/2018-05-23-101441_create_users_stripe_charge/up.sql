@@ -23,4 +23,4 @@ CREATE TABLE `users_stripe_charge` (
   `statement_descriptor` varchar(255) DEFAULT NULL,
   `status` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
