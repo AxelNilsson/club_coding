@@ -9,12 +9,11 @@ pub mod schema;
 use diesel::prelude::*;
 use std::io::{Error, ErrorKind};
 
-use self::models::{
-    NewGroup, NewNewsletterSubscriber, NewRequestNetworkHash, NewRequestNetworkPayment, NewSerie,
-    NewUser, NewUserGroup, NewUserRecoverEmail, NewUserSeriesAccess, NewUserSession,
-    NewUserStripeCard, NewUserStripeCharge, NewUserStripeCustomer, NewUserStripeToken,
-    NewUserVerifyEmail, NewUserVideosVote, NewUserView, NewVideo, RequestNetworkPayments, Users,
-};
+use self::models::{NewGroup, NewNewsletterSubscriber, NewRequestNetworkHash, NewRequestNetworkPayment, NewSerie, NewUser,
+                   NewUserGroup, NewUserRecoverEmail, NewUserSeriesAccess, NewUserSession,
+                   NewUserStripeCard, NewUserStripeCharge, NewUserStripeCustomer,
+                   NewUserStripeToken, NewUserVerifyEmail, NewUserView, NewVideo,
+                   RequestNetworkPayments, Users};
 
 pub fn create_new_group(conn: &MysqlConnection, uuid: &str, name: &str) -> Result<(), Error> {
     use schema::groups;
@@ -55,6 +54,7 @@ pub fn create_new_request_network_hash(
     payment_id: i64,
     hash: &str,
 ) -> Result<(), Error> {
+
     use schema::request_network_hashes;
 
     let new_hash = NewRequestNetworkHash {
@@ -491,32 +491,6 @@ pub fn create_new_users_verify_email(
         Err(_) => Err(Error::new(
             ErrorKind::Other,
             "No users verify email table found",
-        )),
-    }
-}
-
-pub fn create_new_user_videos_votes(
-    conn: &MysqlConnection,
-    user_id: i64,
-    video_id: i64,
-    is_like: bool,
-) -> Result<(), Error> {
-    use schema::users_videos_votes;
-
-    let new_user_videos_vote = NewUserVideosVote {
-        user_id: user_id,
-        video_id: video_id,
-        is_like: is_like,
-    };
-
-    match diesel::insert_into(users_videos_votes::table)
-        .values(&new_user_videos_vote)
-        .execute(conn)
-    {
-        Ok(_) => Ok(()),
-        Err(_) => Err(Error::new(
-            ErrorKind::Other,
-            "No users videos votes table found",
         )),
     }
 }

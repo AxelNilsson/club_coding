@@ -42,7 +42,7 @@ pub struct StripeToken {
 /// Will panic if no Stripe Tokens are set in
 /// Rocket.toml File
 pub fn stripe_token_fairing() -> rocket::fairing::AdHoc {
-    AdHoc::on_attach(|rocket| {
+    AdHoc::on_attach("Stripe", |rocket| {
         let config = rocket.config().clone();
 
         let publishable = config
@@ -71,7 +71,7 @@ pub struct PostmarkToken(pub String);
 /// Will panic if no Postmark Token is set in
 /// Rocket.toml File
 pub fn postmark_token_fairing() -> rocket::fairing::AdHoc {
-    AdHoc::on_attach(|rocket| {
+    AdHoc::on_attach("Postmark", |rocket| {
         let config = rocket.config().clone();
 
         let postmark_token = config
@@ -91,7 +91,7 @@ pub struct EmailRegex(pub regex::Regex);
 /// Returns a AdHoc Fairing with the E-Mail Regex
 /// Will panic if the Regex is not valid.
 pub fn email_regex_fairing() -> rocket::fairing::AdHoc {
-    AdHoc::on_attach(|rocket| {
+    AdHoc::on_attach("EmailRegex", |rocket| {
         let email_regex = Regex::new(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
             .expect("email regex not valid");
 

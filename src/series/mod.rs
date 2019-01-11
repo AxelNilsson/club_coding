@@ -1,7 +1,7 @@
 pub mod database;
 
 use rocket::Route;
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 use database::{DbConn, RedisConnection};
 use users::User;
 

@@ -1,6 +1,7 @@
 use rocket::Route;
 use rocket::request::FlashMessage;
-use rocket_contrib::{Json, Template};
+use rocket_contrib::templates::Template;
+use rocket_contrib::json::Json;
 use users::User;
 use series::PublicSeries;
 use series::database::get_last_10_series;

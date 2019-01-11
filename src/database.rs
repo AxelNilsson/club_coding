@@ -16,7 +16,7 @@ pub type MySqlPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 /// Will panic if no MySQL credentials are set
 /// in Rocket.toml File
 pub fn mysql_fairing() -> rocket::fairing::AdHoc {
-    AdHoc::on_attach(|rocket| {
+    AdHoc::on_attach("MySQL", |rocket| {
         let config = rocket.config().clone();
 
         let user = config
@@ -83,7 +83,7 @@ impl Deref for DbConn {
 // Pool initiation.
 // Call it starting an app and store a pul as a rocket managed state.
 pub fn redis_fairing() -> rocket::fairing::AdHoc {
-    AdHoc::on_attach(|rocket| {
+    AdHoc::on_attach("Redis", |rocket| {
         let config = rocket.config().clone();
 
         let redis_url = config.get_str("redis").expect("redis not specified");

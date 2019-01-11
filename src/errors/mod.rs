@@ -1,5 +1,5 @@
 use rocket::Catcher;
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 
 #[cfg(test)]
 mod tests;
@@ -19,7 +19,7 @@ pub struct Context<'a> {
 /// if the requested page doesn't exist.
 /// Responds with the 404
 /// Template in the Errors folder.
-#[error(404)]
+#[catch(404)]
 fn not_found() -> Template {
     let context = Context {
         header: "404 - Not Found",
@@ -32,7 +32,7 @@ fn not_found() -> Template {
 /// if the requested page doesn't compute.
 /// Responds with the 500
 /// Template in the Errors folder.
-#[error(500)]
+#[catch(500)]
 fn internal_error() -> Template {
     let context = Context {
         header: "500 - Internal Server Error",
@@ -45,5 +45,5 @@ fn internal_error() -> Template {
 /// is that we don't have to update the main function but
 /// instead we can keep all of the changes in here.
 pub fn endpoints() -> Vec<Catcher> {
-    errors![not_found, internal_error]
+    catchers![not_found, internal_error]
 }

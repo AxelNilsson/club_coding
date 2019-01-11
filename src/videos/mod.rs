@@ -1,17 +1,17 @@
-pub mod charge;
 pub mod database;
+pub mod charge;
 
-use club_coding::create_new_user_videos_votes;
-use database::{DbConn, RedisConnection};
-use rocket::request::FlashMessage;
+use rocket::Route;
+use rocket_contrib::templates::Template;
 use rocket::response::{Flash, Redirect};
-use rocket::{Route, State};
-use rocket_contrib::{Json, Template};
-use series;
-use series::PublicVideo;
-use structs::{PostmarkToken, StripeToken};
 use users::User;
+use series::PublicVideo;
+use rocket::request::FlashMessage;
+use database::{DbConn, RedisConnection};
+use structs::{PostmarkToken, StripeToken};
+use rocket::State;
 use videos::charge::charge_card;
+use series;
 
 #[cfg(test)]
 mod tests;
@@ -47,13 +47,6 @@ struct WatchContext<'a> {
     /// Flash message if the request is redirected
     /// with one.
     flash_msg: String,
-    /// Boolean if the user has voted on this video.
-    /// Is needed because of bad support of Option
-    /// in Tera.
-    user_voted: bool,
-    /// If there is a vote, this boolean tells us if
-    /// the like or dislike.
-    is_like: bool,
 }
 
 /// GET Endpoint for the page to watch
@@ -107,16 +100,7 @@ fn watch_as_user(
                 videos: videos,
                 flash_name: name,
                 flash_msg: msg,
-                user_voted: false,
-                is_like: false,
             };
-            match database::get_user_videos_votes(&mysql_conn, user.id, video.id) {
-                Some(vote) => {
-                    context.is_like = vote.is_like;
-                    context.user_voted = true;
-                }
-                None => {}
-            }
             if video.membership_only {
                 if !database::user_has_bought(&mysql_conn, video.serie_id, user.id) {
                     return Ok(Template::render("videos/watch_nomember", &context));
@@ -231,18 +215,18 @@ fn buy_serie_fiat(
                         &stripe_customer,
                     ) {
                         Ok(_) => Ok(Flash::success(
-                            Redirect::to(&format!("/watch/{}", uuid)),
+                            Redirect::to(format!("/watch/{}", uuid)),
                             "Series unlocked! Congratulations!",
                         )),
                         Err(_) => Ok(Flash::error(
-                            Redirect::to(&format!("/watch/{}", uuid)),
+                            Redirect::to(format!("/watch/{}", uuid)),
                             "An error occured, please try again later.",
                         )),
                     },
-                    None => Err(Redirect::to(&format!("/card/add/{}", uuid))),
+                    None => Err(Redirect::to(format!("/card/add/{}", uuid))),
                 }
             } else {
-                Err(Redirect::to(&format!("/watch/{}", uuid)))
+                Err(Redirect::to(format!("/watch/{}", uuid)))
             }
         }
         Err(_video_not_found) => Err(Redirect::to("/")),
@@ -269,14 +253,14 @@ fn buy_serie_req(conn: DbConn, user: User, uuid: String) -> Result<Redirect, Fla
         Ok(video) => {
             if database::user_has_bought(&conn, video.serie_id, user.id) {
                 return Err(Flash::error(
-                    Redirect::to(&format!("/watch/{}", uuid)),
+                    Redirect::to(format!("/watch/{}", uuid)),
                     "You already own this series.",
                 ));
             }
             match charge::generate_and_create_req_payment(&conn, &uuid, user.id, video.serie_id) {
-                Ok(url) => Ok(Redirect::to(&url)),
+                Ok(url) => Ok(Redirect::to(url)),
                 Err(_) => Err(Flash::error(
-                    Redirect::to(&format!("/watch/{}", uuid)),
+                    Redirect::to(format!("/watch/{}", uuid)),
                     "An error occured, please try again later.",
                 )),
             }
@@ -309,72 +293,10 @@ fn validate_bought_series_req(
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     match charge::validate_req_bought(&conn, &postmark_token.0, &uuid, &token, &hash) {
         Ok(_) => Ok(Flash::success(
-            Redirect::to(&format!("/watch/{}", uuid)),
+            Redirect::to(format!("/watch/{}", uuid)),
             "Series unlocked! Congratulations! Please refresh the page.",
         )),
         Err(error) => Err(Flash::error(Redirect::to("/"), &error.to_string())),
-    }
-}
-
-/// Struct for voting on a video.
-/// Could be either a like or a
-/// dislike.
-#[derive(Deserialize)]
-struct VoteStruct {
-    /// The actual vote. True equals
-    /// a like and false equals a dislike.
-    like: bool,
-}
-
-/// Struct for responding with a JSON
-/// response to the vote endpoint.
-#[derive(Serialize)]
-struct Response {
-    /// Tells the user if the vote
-    /// was successful or not.
-    succeded: bool,
-}
-
-/// POST Endpoint to like or dislike
-/// a video. Endpoints checks if the
-/// user is logged in by using the
-/// user request guard. If the user
-/// is not logged in it forwards
-/// the request.
-/// The endpoint checks if the video
-/// requires that the series is bought and if
-/// it requires that, it will check if the user
-/// has the permission. If the user does not
-/// have the persmission it will respond with a
-/// message telling the user it has not succeded.
-/// If the user does have the persmission or the
-/// series does not require it, and the vote is
-/// inserted successfully it will respond with a
-/// message telling the user it has succeded.
-#[post("/watch/<uuid>/vote", format = "application/json", data = "<json_data>")]
-fn vote(
-    mysql_conn: DbConn,
-    user: User,
-    uuid: String,
-    json_data: Json<VoteStruct>,
-) -> Json<Response> {
-    match database::get_video_data_from_uuid(&mysql_conn, &uuid) {
-        Ok(video) => match database::get_user_videos_votes(&mysql_conn, user.id, video.id) {
-            Some(_) => Json(Response { succeded: false }),
-            None => {
-                if video.membership_only {
-                    if !database::user_has_bought(&mysql_conn, video.serie_id, user.id) {
-                        return Json(Response { succeded: false });
-                    }
-                }
-
-                match create_new_user_videos_votes(&mysql_conn, user.id, video.id, json_data.like) {
-                    Ok(_) => Json(Response { succeded: true }),
-                    Err(_) => Json(Response { succeded: false }),
-                }
-            }
-        },
-        Err(_video_not_found) => Json(Response { succeded: false }),
     }
 }
 
@@ -388,7 +310,6 @@ pub fn endpoints() -> Vec<Route> {
         watch_nouser,
         buy_serie_fiat,
         buy_serie_req,
-        validate_bought_series_req,
-        vote
+        validate_bought_series_req
     ]
 }

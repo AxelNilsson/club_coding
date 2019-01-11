@@ -1,4 +1,4 @@
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 use users::get_users;
 use admin::structs::{Administrator, LoggedInContext};
 use series::database::get_series;

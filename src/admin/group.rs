@@ -1,11 +1,11 @@
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 use admin::structs::{Administrator, LoggedInContext};
 use rocket::response::Redirect;
 use club_coding::models::Groups;
 use club_coding::create_new_group;
 use database::DbConn;
 use chrono::NaiveDateTime;
-use rocket_contrib::Json;
+use rocket_contrib::json::Json;
 use diesel::prelude::*;
 use rocket::request::Form;
 use admin::generate_token;
@@ -105,8 +105,8 @@ pub fn insert_new_group(
     let new_group: NewGroup = group.into_inner();
     match generate_token(24) {
         Ok(uuid) => match create_new_group(&*conn, &uuid, &new_group.name) {
-            Ok(_) => Ok(Redirect::to(&format!("/admin/groups/edit/{}", uuid))),
-            Err(_) => Ok(Redirect::to(&format!("/admin/groups/edit/{}", uuid))),
+            Ok(_) => Ok(Redirect::to(format!("/admin/groups/edit/{}", uuid))),
+            Err(_) => Ok(Redirect::to(format!("/admin/groups/edit/{}", uuid))),
         },
         Err(_) => Err(Redirect::to("/admin/groups/new")),
     }

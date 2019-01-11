@@ -6,7 +6,7 @@ use rocket::request::FlashMessage;
 use rocket::request::Form;
 use rocket::response::{Flash, Redirect};
 use rocket::{Route, State};
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 use structs::{PostmarkToken, StripeToken};
 use users::User;
 
@@ -240,7 +240,7 @@ fn add_card_uuid(
     let data = form_data.into_inner();
     if !csrf_matches(csrf_secret_key.0, &data.csrf, &csrf_cookie.value()) {
         return Err(Flash::error(
-            Redirect::to(&format!("/card/add/{}", uuid)),
+            Redirect::to(format!("/card/add/{}", uuid)),
             "CSRF Failed.",
         ));
     }
@@ -252,9 +252,9 @@ fn add_card_uuid(
         &user.email,
         user.id,
     ) {
-        Ok(()) => Ok(Redirect::to(&format!("/watch/{}/buy/fiat", uuid))),
+        Ok(()) => Ok(Redirect::to(format!("/watch/{}/buy/fiat", uuid))),
         _ => Err(Flash::error(
-            Redirect::to(&format!("/card/add/{}", uuid)),
+            Redirect::to(format!("/card/add/{}", uuid)),
             "An error occured, please try again later.",
         )),
     }

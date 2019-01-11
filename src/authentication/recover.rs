@@ -8,7 +8,7 @@ use email::{EmailBody, PostmarkClient};
 use rocket::request::{FlashMessage, Form};
 use rocket::response::{Flash, Redirect};
 use rocket::{Route, State};
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 use std::io::{Error, ErrorKind};
 use structs::EmailRegex;
 use structs::PostmarkToken;
@@ -282,7 +282,7 @@ fn update_password(
     let input: UpdatePassword = user.into_inner();
     if !(input.password == input.confirm_password) {
         return Err(Flash::error(
-            Redirect::to(&format!("/email/recover/{}", uuid)),
+            Redirect::to(format!("/email/recover/{}", uuid)),
             "Passwords not matching.",
         ));
     }
@@ -298,7 +298,7 @@ fn update_password(
 
     if !csrf_matches(csrf_secret_key.0, &input.csrf, &csrf_cookie.value()) {
         return Err(Flash::error(
-            Redirect::to(&format!("/email/recover/{}", uuid)),
+            Redirect::to(format!("/email/recover/{}", uuid)),
             "CSRF Doesn't match.",
         ));
     }
@@ -307,7 +307,7 @@ fn update_password(
         Ok(hashed_password) => hashed_password,
         Err(_) => {
             return Err(Flash::error(
-                Redirect::to(&format!("/email/recover/{}", uuid)),
+                Redirect::to(format!("/email/recover/{}", uuid)),
                 "An error occured, please try again later.",
             ))
         }
@@ -324,7 +324,7 @@ fn update_password(
             "Password updated, please sign in.",
         )),
         Err(_) => Err(Flash::error(
-            Redirect::to(&format!("/email/recover/{}", uuid)),
+            Redirect::to(format!("/email/recover/{}", uuid)),
             "An error occured, please try again later.",
         )),
     }

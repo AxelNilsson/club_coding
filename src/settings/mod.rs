@@ -1,6 +1,7 @@
 use rocket::Route;
 use bcrypt::{hash, verify, DEFAULT_COST};
-use rocket_contrib::{Json, Template};
+use rocket_contrib::templates::Template;
+use rocket_contrib::json::Json;
 use rocket::response::Redirect;
 use club_coding::models::Users;
 use database::DbConn;

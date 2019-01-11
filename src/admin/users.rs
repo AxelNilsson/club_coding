@@ -1,10 +1,10 @@
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 use admin::structs::Administrator;
 use club_coding::models::{Users, UsersGroup, UsersSeriesAccess};
 use club_coding::{create_new_user_group, create_new_user_series_access};
 use database::DbConn;
 use chrono::NaiveDateTime;
-use rocket_contrib::Json;
+use rocket_contrib::json::Json;
 use diesel::prelude::*;
 use admin::group::get_all_groupsc;
 use admin::series::get_all_seriesc;

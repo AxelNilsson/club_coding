@@ -1,21 +1,12 @@
-use futures::{Future, Stream};
-use futures::future;
-use hyper::Client;
-use tokio_core::reactor::Core;
-use hyper::Request;
-use hyper::Method;
-use hyper::header::{Accept, ContentType};
-use hyper_tls::HttpsConnector;
+use reqwest::header::{CONTENT_TYPE, HeaderName};
 use std::io::{Error, ErrorKind};
-
-/// Header for authentication for Postmark.
-header! { (PostmarkToken, "X-Postmark-Server-Token") => [String] }
 
 /// URL for the Postmark email endpoint.
 /// Should not change in the future,
 /// but make sure it is updated if the
 /// library does not work.
 static URL: &'static str = "https://api.postmarkapp.com/email";
+static POSTMARK_HEADER: &'static str = "x-postmark-server-token";
 
 #[derive(Serialize)]
 pub struct Headers {
@@ -92,63 +83,37 @@ impl PostmarkClient {
     /// or the error that occured.
     pub fn send_email(&self, body: &EmailBody) -> Result<Response, Error> {
         if body.html_body != None || body.text_body != None {
-            let json_body = serde_json::to_string(&body)?;
+            let json = serde_json::to_string(&body)?;
 
-            let mut core = Core::new()?;
-            match HttpsConnector::new(4, &core.handle()) {
-                Ok(connector) => {
-                    let client = Client::configure()
-                        .connector(connector)
-                        .build(&core.handle());
+            let client = reqwest::Client::new();
+            let mut res = match client.post(URL)
+                .header(CONTENT_TYPE, "application/json")
+                .header(HeaderName::from_static(POSTMARK_HEADER), self.postmark_token.clone())
+                .body(json)
+                .send() {
+                    Ok(res) => res,
+                    Err(_) => return Err(Error::new(
+                        ErrorKind::Other,
+                        "Could not connect to server at URL.",
+                    )),
+                };
 
-                    match URL.parse() {
-                        Ok(uri) => {
-                            let mut req = Request::new(Method::Post, uri);
-                            req.headers_mut().set(Accept::json());
-                            req.headers_mut().set(ContentType::json());
-                            req.headers_mut()
-                                .set(PostmarkToken(self.postmark_token.clone()));
+            let text = match res.text() {
+                Ok(text) => text,
+                Err(_) => return Err(Error::new(
+                    ErrorKind::Other,
+                    "Could not read response.",
+                )),
+            };
 
-                            req.set_body(json_body);
-
-                            let work = client.request(req).and_then(|res| {
-                                res.body()
-                                    .fold(Vec::new(), |mut v, chunk| {
-                                        v.extend(&chunk[..]);
-                                        future::ok::<_, hyper::Error>(v)
-                                    })
-                                    .and_then(|chunks| match String::from_utf8(chunks) {
-                                        Ok(string) => future::ok::<_, hyper::Error>(string),
-                                        Err(error) => future::err::<_, hyper::Error>(
-                                            hyper::Error::Utf8(error.utf8_error()),
-                                        ),
-                                    })
-                            });
-                            match core.run(work) {
-                                Ok(resp) => match serde_json::from_str(&resp) {
-                                    Ok(response) => Ok(response),
-                                    Err(_) => Err(Error::new(
-                                        ErrorKind::Other,
-                                        "Could not serialize response.",
-                                    )),
-                                },
-                                Err(_) => Err(Error::new(
-                                    ErrorKind::Other,
-                                    "Could not connect to server at URL.",
-                                )),
-                            }
-                        }
-                        Err(_) => Err(Error::new(
-                            ErrorKind::Other,
-                            "Could not parse URL. Please provide a valid URL.",
-                        )),
-                    }
-                }
+            let response = match serde_json::from_str(&text) {
+                Ok(response) => Ok(response),
                 Err(_) => Err(Error::new(
                     ErrorKind::Other,
-                    "Could not create HTTPS connector.",
+                    "Could not serialize response.",
                 )),
-            }
+            };
+            response
         } else {
             Err(Error::new(
                 ErrorKind::Other,

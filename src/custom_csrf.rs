@@ -17,7 +17,7 @@ pub struct CSRFSecretToken(pub [u8; 32]);
 /// Will panic if no CSRF Key is set in
 /// Rocket.toml File
 pub fn csrf_secret_key_fairing() -> rocket::fairing::AdHoc {
-    AdHoc::on_attach(|rocket| {
+    AdHoc::on_attach("CSRF", |rocket| {
         let config = rocket.config().clone();
 
         let csrf_secret_key = config

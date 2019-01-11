@@ -11,7 +11,7 @@ use rocket::request::FlashMessage;
 use rocket::request::Form;
 use rocket::response::{Flash, Redirect};
 use rocket::{Route, State};
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 use structs::{PostmarkToken, StripeToken};
 use users::User;
 

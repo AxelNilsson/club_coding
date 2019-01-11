@@ -7,7 +7,8 @@ use club_coding::create_new_video;
 use database::{DbConn, RedisConnection};
 use diesel::prelude::*;
 use redis::Commands;
-use rocket_contrib::{Json, Template};
+use rocket_contrib::templates::Template;
+use rocket_contrib::json::Json;
 use rocket::Route;
 use rocket::response::Redirect;
 use rocket::request::Form;
@@ -144,8 +145,8 @@ pub fn insert_new_video(
             false,
             &new_video.vimeo_id,
         ) {
-            Ok(_) => Ok(Redirect::to(&format!("/admin/videos/edit/{}", uuid))),
-            Err(_) => Ok(Redirect::to(&format!("/admin/videos/edit/{}", uuid))),
+            Ok(_) => Ok(Redirect::to(format!("/admin/videos/edit/{}", uuid))),
+            Err(_) => Ok(Redirect::to(format!("/admin/videos/edit/{}", uuid))),
         },
         Err(_) => Err(Redirect::to("/admin/videos/new")),
     }

@@ -6,7 +6,7 @@ use database::DbConn;
 use rocket::request::{FlashMessage, Form};
 use rocket::response::{Flash, Redirect};
 use rocket::{Route, State};
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 use std::io::{Error, ErrorKind};
 use structs::EmailRegex;
 use structs::PostmarkToken;

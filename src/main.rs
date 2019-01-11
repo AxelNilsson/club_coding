@@ -1,7 +1,4 @@
-#![feature(plugin)]
-#![plugin(rocket_codegen)]
-#![feature(custom_derive)]
-#![feature(extern_prelude)]
+#![feature(proc_macro_hygiene, decl_macro)]
 extern crate bcrypt;
 extern crate chrono;
 extern crate club_coding;
@@ -15,22 +12,20 @@ extern crate r2d2_redis;
 extern crate rand;
 extern crate redis;
 extern crate regex;
-extern crate rocket;
 extern crate rocket_contrib;
 extern crate serde;
 extern crate serde_json;
 extern crate stripe;
 extern crate time;
 extern crate tokio_core;
-
-#[macro_use]
-extern crate tera;
-
-#[macro_use]
 extern crate hyper;
+extern crate reqwest;
 
-#[macro_use]
-extern crate serde_derive;
+#[macro_use] extern crate rocket;
+
+#[macro_use] extern crate tera;
+
+#[macro_use] extern crate serde_derive;
 
 mod admin;
 mod authentication;
@@ -58,14 +53,14 @@ pub fn website() -> rocket::Rocket {
         .mount("/settings/payment", payment::endpoints())
         .mount("/series", series::endpoints())
         .mount("/admin", admin::endpoints())
-        .attach(rocket_contrib::Template::fairing())
+        .attach(rocket_contrib::templates::Template::fairing())
         .attach(custom_csrf::csrf_secret_key_fairing())
         .attach(database::mysql_fairing())
         .attach(database::redis_fairing())
         .attach(structs::stripe_token_fairing())
         .attach(structs::postmark_token_fairing())
         .attach(structs::email_regex_fairing())
-        .catch(errors::endpoints())
+        .register(errors::endpoints())
 }
 
 fn main() {

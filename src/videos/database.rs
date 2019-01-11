@@ -1,11 +1,9 @@
 use club_coding::create_new_user_view;
-use club_coding::models::{
-    RequestNetworkPayments, Series, Users, UsersSeriesAccess, UsersStripeCustomer,
-    UsersVideosVotes, UsersViews, VideoJoin, Videos,
-};
+use club_coding::models::{RequestNetworkPayments, Series, Users, UsersSeriesAccess,
+                          UsersStripeCustomer, UsersViews, VideoJoin, Videos};
+use std::io::{Error, ErrorKind};
 use database::DbConn;
 use diesel::prelude::*;
-use std::io::{Error, ErrorKind};
 
 /// Gets all of the videos in the
 /// database that are published and
@@ -160,27 +158,6 @@ pub fn get_user(conn: &DbConn, user_id: i64) -> Option<Users> {
 
     match users::table.find(user_id).first::<Users>(&**conn) {
         Ok(user) => Some(user),
-        Err(_) => None,
-    }
-}
-
-/// Gets a user videos vote by the user id
-/// and the video id. Returns either Some
-/// UsersVideosVotes or None if the user
-/// does not exist.
-pub fn get_user_videos_votes(
-    conn: &DbConn,
-    user_id: i64,
-    video_id: i64,
-) -> Option<UsersVideosVotes> {
-    use club_coding::schema::users_videos_votes;
-
-    match users_videos_votes::table
-        .filter(users_videos_votes::user_id.eq(user_id))
-        .filter(users_videos_votes::video_id.eq(video_id))
-        .first::<UsersVideosVotes>(&**conn)
-    {
-        Ok(vote) => Some(vote),
         Err(_) => None,
     }
 }

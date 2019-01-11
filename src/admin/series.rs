@@ -1,11 +1,11 @@
-use rocket_contrib::Template;
+use rocket_contrib::templates::Template;
 use admin::structs::{Administrator, LoggedInContext};
 use rocket::response::Redirect;
 use club_coding::models::Series;
 use club_coding::create_new_series;
 use database::{DbConn, RedisConnection};
 use chrono::NaiveDateTime;
-use rocket_contrib::Json;
+use rocket_contrib::json::Json;
 use diesel::prelude::*;
 use rocket::request::Form;
 use admin::generate_token;
@@ -132,8 +132,8 @@ pub fn insert_new_series(
             false,
             false,
         ) {
-            Ok(_) => Ok(Redirect::to(&format!("/admin/series/edit/{}", uuid))),
-            Err(_) => Ok(Redirect::to(&format!("/admin/series/edit/{}", uuid))),
+            Ok(_) => Ok(Redirect::to(format!("/admin/series/edit/{}", uuid))),
+            Err(_) => Ok(Redirect::to(format!("/admin/series/edit/{}", uuid))),
         },
         Err(_) => Err(Redirect::to("/admin/series/new")),
     }
